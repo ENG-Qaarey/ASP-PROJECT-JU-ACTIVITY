@@ -10,12 +10,13 @@ import { Platform } from 'react-native';
 // Your Detected IP: 172.20.10.11
 // -----------------------------------------------------------------------------
 
-const LAN_IP = '172.20.10.11'; // Updated based on current network config
+const LAN_IP = '172.20.10.11'; // Your computer's current IP
 
 const DEV_HOST = Platform.select({
-    android: LAN_IP, // Use LAN IP for all to be safe, or '10.0.2.2' if specifically emulator
-    ios: LAN_IP,     // Must use LAN IP for physical device
-    web: 'localhost', // Web is running on the same machine, so localhost is fine
+    // 10.0.2.2 is the magic IP for Android Emulators to reach the host machine
+    android: '10.0.2.2',
+    ios: LAN_IP,
+    web: 'localhost',
     default: LAN_IP,
 });
 

@@ -187,8 +187,9 @@ export default function CoordinatorActivities() {
             </View>
 
             {selectedActivity && (
-              <ScrollView showsVerticalScrollIndicator={false}>
-                <View style={{ height: 160, width: '100%', borderRadius: 16, overflow: 'hidden', marginBottom: 20 }}>
+              <View style={{ flex: 1 }}>
+                {/* Background Banner */}
+                <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 180, zIndex: 0, borderRadius: 16, overflow: 'hidden' }}>
                     <Image 
                         source={require('../../../assets/images/activity-banner.png')} 
                         style={StyleSheet.absoluteFillObject}
@@ -202,30 +203,36 @@ export default function CoordinatorActivities() {
                          />
                     </View>
                 </View>
-                
-                <View style={[styles.detailCategoryBadge, { backgroundColor: theme.primary + '15' }]}>
-                    <Text style={[styles.detailCategoryText, { color: theme.primary }]}>{selectedActivity.category}</Text>
-                </View>
 
-                <Text style={[styles.detailTitle, { color: theme.text }]}>{selectedActivity.title}</Text>
-                
-                <View style={styles.detailGrid}>
-                    <DetailItem icon={Calendar} label="Date" value={new Date(selectedActivity.date).toLocaleDateString()} theme={theme} />
-                    <DetailItem icon={Clock} label="Time" value={selectedActivity.time} theme={theme} />
-                    <DetailItem icon={MapPin} label="Location" value={selectedActivity.location} theme={theme} />
-                    <DetailItem icon={Users} label="Participation" value={`${selectedActivity.enrolled}/${selectedActivity.capacity} Enrolled`} theme={theme} />
-                </View>
+                <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1, zIndex: 1 }}>
+                    <View style={{ height: 160 }} />
+                    
+                    <View style={{ backgroundColor: theme.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, marginTop: -20, minHeight: 400 }}>
+                        <View style={[styles.detailCategoryBadge, { backgroundColor: theme.primary + '15' }]}>
+                            <Text style={[styles.detailCategoryText, { color: theme.primary }]}>{selectedActivity.category}</Text>
+                        </View>
 
-                <View style={styles.detailSection}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                        <AlignLeft size={16} color={theme.textSecondary} />
-                        <Text style={[styles.detailSectionLabel, { color: theme.textSecondary }]}>Description</Text>
+                        <Text style={[styles.detailTitle, { color: theme.text }]}>{selectedActivity.title}</Text>
+                        
+                        <View style={styles.detailGrid}>
+                            <DetailItem icon={Calendar} label="Date" value={new Date(selectedActivity.date).toLocaleDateString()} theme={theme} />
+                            <DetailItem icon={Clock} label="Time" value={selectedActivity.time} theme={theme} />
+                            <DetailItem icon={MapPin} label="Location" value={selectedActivity.location} theme={theme} />
+                            <DetailItem icon={Users} label="Participation" value={`${selectedActivity.enrolled}/${selectedActivity.capacity} Enrolled`} theme={theme} />
+                        </View>
+
+                        <View style={styles.detailSection}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                                <AlignLeft size={16} color={theme.textSecondary} />
+                                <Text style={[styles.detailSectionLabel, { color: theme.textSecondary }]}>Description</Text>
+                            </View>
+                            <Text style={[styles.detailDesc, { color: theme.text }]}>{selectedActivity.description || 'No additional details provided.'}</Text>
+                        </View>
+
+                        <View style={{ height: 40 }} />
                     </View>
-                    <Text style={[styles.detailDesc, { color: theme.text }]}>{selectedActivity.description || 'No additional details provided.'}</Text>
-                </View>
-
-                <View style={{ height: 40 }} />
-              </ScrollView>
+                </ScrollView>
+              </View>
             )}
           </GlassCard>
         </View>

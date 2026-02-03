@@ -94,56 +94,49 @@ export default function ActivityDetails() {
 
   return (
     <GradientBackground>
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
-        {/* Header Image & Actions */}
-        <View style={styles.topActions}>
-            <TouchableOpacity 
-              style={[styles.actionCircle, { backgroundColor: theme.card }]} 
-              onPress={handleBack}
-            >
-                <ArrowLeft size={22} color={theme.text} />
-            </TouchableOpacity>
-            <View style={styles.rightActions}>
-                <TouchableOpacity style={[styles.actionCircle, { backgroundColor: theme.card }]} onPress={onShare}>
-                    <Share2 size={22} color={theme.text} />
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.actionCircle, { backgroundColor: theme.card }]}>
-                    <Bookmark size={22} color={theme.text} />
-                </TouchableOpacity>
-            </View>
-        </View>
+      {/* Fixed Background Image */}
+      <View style={styles.headerImageContainer}>
+          <Image 
+              source={require('../../../assets/images/activity-banner.png')} 
+              style={StyleSheet.absoluteFillObject}
+              contentFit="cover"
+          />
+          <View style={styles.imageOverlay}>
+              <View style={styles.logoCircularContainer}>
+                  <Image 
+                      source={require('../../../assets/images/university-logo.png')}
+                      style={{ width: '100%', height: '100%' }}
+                      contentFit="contain"
+                  />
+              </View>
+          </View>
+      </View>
 
-        <View style={{ height: 320, width: '100%', overflow: 'hidden' }}>
-            <Image 
-                source={require('../../../assets/images/activity-banner.png')} 
-                style={StyleSheet.absoluteFillObject}
-                contentFit="cover"
-            />
-            <View style={{ 
-                ...StyleSheet.absoluteFillObject, 
-                backgroundColor: 'rgba(0,0,0,0.35)',
-                justifyContent: 'center',
-                alignItems: 'center'
-            }}>
-                <View style={{
-                    width: 140,
-                    height: 140,
-                    borderRadius: 70,
-                    backgroundColor: 'rgba(255,255,255,0.15)',
-                    borderWidth: 1,
-                    borderColor: 'rgba(255,255,255,0.3)',
-                    padding: 20,
-                    justifyContent: 'center',
-                    alignItems: 'center'
-                }}>
-                    <Image 
-                        source={require('../../../assets/images/university-logo.png')}
-                        style={{ width: '100%', height: '100%' }}
-                        contentFit="contain"
-                    />
-                </View>
-            </View>
-        </View>
+      {/* Fixed Top Actions (Fixed Icons) */}
+      <View style={styles.topActions}>
+          <TouchableOpacity 
+            style={[styles.actionCircle, { backgroundColor: theme.card }]} 
+            onPress={handleBack}
+          >
+              <ArrowLeft size={22} color={theme.text} />
+          </TouchableOpacity>
+          <View style={styles.rightActions}>
+              <TouchableOpacity style={[styles.actionCircle, { backgroundColor: theme.card }]} onPress={onShare}>
+                  <Share2 size={22} color={theme.text} />
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.actionCircle, { backgroundColor: theme.card }]}>
+                  <Bookmark size={22} color={theme.text} />
+              </TouchableOpacity>
+          </View>
+      </View>
+
+      <ScrollView 
+        style={styles.scrollView} 
+        contentContainerStyle={styles.contentContainer} 
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Spacer to push content down so image shows */}
+        <View style={styles.headerSpacer} />
 
         {/* Content */}
         <View style={[styles.content, { backgroundColor: theme.background }]}>
@@ -238,13 +231,32 @@ function BenefitItem({ text, theme }: any) {
 }
 
 const styles = StyleSheet.create({
-  scrollView: { flex: 1 },
+  scrollView: { flex: 1, zIndex: 1 },
+  headerImageContainer: { position: 'absolute', top: 0, left: 0, right: 0, height: 320, zIndex: 0 },
+  imageOverlay: { 
+    ...StyleSheet.absoluteFillObject, 
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  logoCircularContainer: {
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+    padding: 20,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  headerSpacer: { height: 280 },
   contentContainer: { paddingBottom: 120 },
   topActions: { position: 'absolute', top: 50, left: 20, right: 20, zIndex: 10, flexDirection: 'row', justifyContent: 'space-between' },
   rightActions: { flexDirection: 'row', gap: 12 },
   actionCircle: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 5 },
   headerImage: { width: '100%', height: 300 },
-  content: { padding: 24, marginTop: -24, borderTopLeftRadius: 32, borderTopRightRadius: 32 },
+  content: { padding: 24, borderTopLeftRadius: 32, borderTopRightRadius: 32, minHeight: 600 },
   categoryBadge: { alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, marginBottom: 16 },
   categoryText: { fontSize: 12, fontWeight: '800', textTransform: 'uppercase' },
   title: { fontSize: 26, fontWeight: '900', marginBottom: 24 },

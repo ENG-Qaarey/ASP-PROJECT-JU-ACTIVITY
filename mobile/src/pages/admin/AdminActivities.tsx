@@ -177,8 +177,9 @@ export default function AdminActivities() {
             </View>
 
             {selectedActivity && (
-              <ScrollView showsVerticalScrollIndicator={false} style={styles.modalScroll}>
-                <View style={{ height: 160, width: '100%', borderRadius: 16, overflow: 'hidden', marginBottom: 20 }}>
+              <View style={{ flex: 1 }}>
+                {/* Image Behind Content */}
+                <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 180, zIndex: 0, borderRadius: 16, overflow: 'hidden' }}>
                     <Image 
                         source={require('../../../assets/images/activity-banner.png')} 
                         style={StyleSheet.absoluteFillObject}
@@ -192,43 +193,50 @@ export default function AdminActivities() {
                          />
                     </View>
                 </View>
-                <View style={[styles.detailCategoryBadge, { backgroundColor: theme.primary + '15' }]}>
-                    <Text style={[styles.detailCategoryText, { color: theme.primary }]}>{selectedActivity.category}</Text>
-                </View>
 
-                <Text style={[styles.detailActivityTitle, { color: theme.text }]}>{selectedActivity.title}</Text>
-                
-                <View style={styles.detailGrid}>
-                    <DetailBlock icon={Calendar} label="Target Date" value={new Date(selectedActivity.date).toLocaleDateString()} theme={theme} />
-                    <DetailBlock icon={Clock} label="Operational Time" value={selectedActivity.time} theme={theme} />
-                    <DetailBlock icon={MapPin} label="Beacon Site" value={selectedActivity.location} theme={theme} />
-                    <DetailBlock icon={Users} label="Participation" value={`${selectedActivity.enrolled}/${selectedActivity.capacity} Enrolled`} theme={theme} />
-                </View>
-
-                <View style={styles.detailSection}>
-                    <View style={styles.detailSectionHeader}>
-                        <AlignLeft size={16} color={theme.textSecondary} />
-                        <Text style={[styles.detailSectionLabel, { color: theme.textSecondary }]}>Mission Briefing</Text>
-                    </View>
-                    <Text style={[styles.detailDescription, { color: theme.text }]}>{selectedActivity.description || 'No additional mission details provided.'}</Text>
-                </View>
-
-                <View style={styles.detailSection}>
-                    <View style={styles.detailSectionHeader}>
-                        <ShieldCheck size={16} color={theme.textSecondary} />
-                        <Text style={[styles.detailSectionLabel, { color: theme.textSecondary }]}>Authorized Coordinator</Text>
-                    </View>
-                    <View style={styles.detailCoordinatorBox}>
-                        <View style={[styles.detailAvatar, { backgroundColor: theme.border }]}>
-                            <User size={14} color={theme.textSecondary} />
+                <ScrollView showsVerticalScrollIndicator={false} style={[styles.modalScroll, { zIndex: 1 }]}>
+                    {/* Spacer to expose the background image */}
+                    <View style={{ height: 160 }} />
+                    
+                    <View style={[styles.modalCardContent, { backgroundColor: theme.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, marginTop: -20 }]}>
+                        <View style={[styles.detailCategoryBadge, { backgroundColor: theme.primary + '15' }]}>
+                            <Text style={[styles.detailCategoryText, { color: theme.primary }]}>{selectedActivity.category}</Text>
                         </View>
-                        <Text style={[styles.detailCoordinatorName, { color: theme.text }]}>{selectedActivity.coordinatorName || 'System Intelligence'}</Text>
-                    </View>
-                </View>
 
-                {/* NO APPLY BUTTON FOR ADMINS */}
-                <View style={{ height: 40 }} />
-              </ScrollView>
+                        <Text style={[styles.detailActivityTitle, { color: theme.text }]}>{selectedActivity.title}</Text>
+                        
+                        <View style={styles.detailGrid}>
+                            <DetailBlock icon={Calendar} label="Target Date" value={new Date(selectedActivity.date).toLocaleDateString()} theme={theme} />
+                            <DetailBlock icon={Clock} label="Operational Time" value={selectedActivity.time} theme={theme} />
+                            <DetailBlock icon={MapPin} label="Beacon Site" value={selectedActivity.location} theme={theme} />
+                            <DetailBlock icon={Users} label="Participation" value={`${selectedActivity.enrolled}/${selectedActivity.capacity} Enrolled`} theme={theme} />
+                        </View>
+
+                        <View style={styles.detailSection}>
+                            <View style={styles.detailSectionHeader}>
+                                <AlignLeft size={16} color={theme.textSecondary} />
+                                <Text style={[styles.detailSectionLabel, { color: theme.textSecondary }]}>Mission Briefing</Text>
+                            </View>
+                            <Text style={[styles.detailDescription, { color: theme.text }]}>{selectedActivity.description || 'No additional mission details provided.'}</Text>
+                        </View>
+
+                        <View style={styles.detailSection}>
+                            <View style={styles.detailSectionHeader}>
+                                <ShieldCheck size={16} color={theme.textSecondary} />
+                                <Text style={[styles.detailSectionLabel, { color: theme.textSecondary }]}>Authorized Coordinator</Text>
+                            </View>
+                            <View style={styles.detailCoordinatorBox}>
+                                <View style={[styles.detailAvatar, { backgroundColor: theme.border }]}>
+                                    <User size={14} color={theme.textSecondary} />
+                                </View>
+                                <Text style={[styles.detailCoordinatorName, { color: theme.text }]}>{selectedActivity.coordinatorName || 'System Intelligence'}</Text>
+                            </View>
+                        </View>
+
+                        <View style={{ height: 40 }} />
+                    </View>
+                </ScrollView>
+              </View>
             )}
           </GlassCard>
         </View>
@@ -435,6 +443,7 @@ const styles = StyleSheet.create({
   modalTitle: { fontSize: 18, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 1 },
   closeIconBtn: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
   modalScroll: { flex: 1 },
+  modalCardContent: { borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20 },
   detailCategoryBadge: { alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, marginBottom: 12 },
   detailCategoryText: { fontSize: 11, fontWeight: '800', textTransform: 'uppercase' },
   detailActivityTitle: { fontSize: 26, fontWeight: '900', marginBottom: 20, letterSpacing: -0.5 },
