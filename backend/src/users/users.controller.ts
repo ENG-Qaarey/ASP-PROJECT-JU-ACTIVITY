@@ -32,6 +32,11 @@ export class UsersController {
     return this.usersService.findOne(req.user.id);
   }
 
+  @Get('chat-directory')
+  chatDirectory(@Req() req: any, @Query('search') search?: string) {
+    return this.usersService.getChatDirectory(req.user.id, search);
+  }
+
   @Patch('me')
   updateMe(
     @Req() req: any,
@@ -98,7 +103,6 @@ export class UsersController {
   }
 
   @Get(':id')
-  @Roles('admin')
   findOne(@Param('id') id: string) {
     return this.usersService.findOne(id);
   }

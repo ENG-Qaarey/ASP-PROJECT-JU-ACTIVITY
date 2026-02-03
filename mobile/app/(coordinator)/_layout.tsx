@@ -13,6 +13,7 @@ import { Image } from 'expo-image';
 import { useAuth } from '@/src/context/AuthContext';
 import { IMAGE_BASE } from '@/src/lib/config';
 import { ShakingBellIcon } from '@/src/components/ShakingBellIcon';
+import { ChatIcon } from '@/src/components/ChatIcon';
 
 export default function CoordinatorLayout() {
   const { user } = useAuth();
@@ -135,9 +136,11 @@ export default function CoordinatorLayout() {
           ),
           headerRight: () => (
             <View style={styles.headerIcons}>
-              <TouchableOpacity style={[styles.headerIconBtn, { backgroundColor: theme.background }]}>
-                <MessageCircle size={20} color={theme.icon} />
-              </TouchableOpacity>
+              <ChatIcon 
+                size={20} 
+                color={theme.icon} 
+                backgroundColor={theme.background}
+              />
               <Image 
                 source={{ uri: user?.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${IMAGE_BASE}${user.avatar}`) : 'https://github.com/shadcn.png' }} 
                 style={[styles.headerAvatar, { borderColor: theme.border }]} 

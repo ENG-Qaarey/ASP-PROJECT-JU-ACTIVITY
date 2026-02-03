@@ -70,6 +70,35 @@ export class UsersService {
     });
   }
 
+  async getChatDirectory(excludeUserId: string, search?: string) {
+    const where: any = {
+      id: { not: excludeUserId },
+      status: 'active',
+    };
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    return this.prisma.user.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        avatar: true,
+        role: true,
+      },
+      orderBy: {
+        name: 'asc',
+      },
+      take: 50,
+    });
+  }
+
   async findOne(id: string) {
     const user = await this.prisma.user.findUnique({
       where: { id },

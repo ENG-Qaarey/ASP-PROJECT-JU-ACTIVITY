@@ -8,6 +8,7 @@ import { Image } from 'expo-image';
 import { useAuth } from '@/src/context/AuthContext';
 import { IMAGE_BASE } from '@/src/lib/config';
 import { ShakingBellIcon } from '@/src/components/ShakingBellIcon';
+import { ChatIcon } from '@/src/components/ChatIcon';
 
 export default function StudentTabsLayout() {
   const { user } = useAuth();
@@ -36,9 +37,11 @@ export default function StudentTabsLayout() {
         headerTitle: '',
         headerRight: () => (
           <View style={styles.headerIcons}>
-            <TouchableOpacity style={[styles.headerIconBtn, { backgroundColor: theme.background }]}>
-              <MessageCircle size={20} color={theme.icon} />
-            </TouchableOpacity>
+            <ChatIcon 
+              size={20} 
+              color={theme.icon} 
+              backgroundColor={theme.background}
+            />
           </View>
         ),
         headerStyle: {

@@ -8,6 +8,7 @@ import { useColorScheme } from '@/src/hooks/use-color-scheme';
 import { Colors } from '@/src/data/theme';
 import { ThemeProvider } from '@/src/context/ThemeContext';
 import { AuthProvider } from '@/src/context/AuthContext';
+import { ChatProvider } from '@/src/context/ChatContext';
  
 function RootLayoutNav() {
   const colorScheme = useColorScheme() ?? 'light';
@@ -59,7 +60,9 @@ export default function RootLayout() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <RootLayoutNav />
+        <ChatProvider>
+          <RootLayoutNav />
+        </ChatProvider>
       </AuthProvider>
     </ThemeProvider>
   );

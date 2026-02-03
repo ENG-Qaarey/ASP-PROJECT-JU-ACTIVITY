@@ -14,6 +14,7 @@ import { usePathname } from 'expo-router';
 import { useAuth } from '@/src/context/AuthContext';
 import { IMAGE_BASE } from '@/src/lib/config';
 import { ShakingBellIcon } from '@/src/components/ShakingBellIcon';
+import { ChatIcon } from '@/src/components/ChatIcon';
 
 export default function AdminLayout() {
   const router = useRouter();
@@ -170,9 +171,11 @@ export default function AdminLayout() {
           ),
           headerRight: () => (
             <View style={styles.headerIcons}>
-              <TouchableOpacity style={[styles.headerIconBtn, { backgroundColor: theme.background }]}>
-                <MessageCircle size={20} color={theme.icon} />
-              </TouchableOpacity>
+              <ChatIcon 
+                size={20} 
+                color={theme.icon} 
+                backgroundColor={theme.background}
+              />
               <Image 
                 source={{ uri: fullAvatarUrl }} 
                 style={[styles.headerAvatar, { borderColor: theme.border }]} 

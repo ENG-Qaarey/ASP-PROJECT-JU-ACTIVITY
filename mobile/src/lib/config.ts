@@ -23,6 +23,7 @@ const DEV_HOST = Platform.select({
 const PORT = 3001;
 
 export const BASE_URL = `http://${DEV_HOST}:${PORT}/api`;
+export const SOCKET_URL = `http://${DEV_HOST}:${PORT}`;
 export const IMAGE_BASE = `http://${DEV_HOST}:${PORT}`;
 
 export const ENDPOINTS = {

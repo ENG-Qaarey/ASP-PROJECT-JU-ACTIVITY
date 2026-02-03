@@ -14,6 +14,7 @@ import { CoordinatorsModule } from './coordinators/coordinators.module';
 import { AuthzModule } from './authz/authz.module';
 import { AuditLogsModule } from './audit-logs/audit-logs.module';
 import { CategoriesModule } from './categories/categories.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { CategoriesModule } from './categories/categories.module';
     CoordinatorsModule,
     AuditLogsModule,
     CategoriesModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [AppService],

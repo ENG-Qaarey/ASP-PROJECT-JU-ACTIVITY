@@ -35,11 +35,29 @@ model User {
   auditLogsAsTarget              AuditLog[]     @relation("AuditTarget")
   coordinatorProfile             Coordinator?
   notifications                  Notification[]
+  sentMessages                   Message[]      @relation("SentMessages")
+  receivedMessages               Message[]      @relation("ReceivedMessages")
 
   @@index([email])
   @@index([role])
   @@index([status])
   @@map("users")
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  content   String
+  senderId  String
+  receiverId String
+  createdAt DateTime @default(now())
+  read      Boolean  @default(false)
+
+  sender    User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiver  User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+
+  @@index([senderId])
+  @@index([receiverId])
+  @@map("messages")
 }
 
 model Admin {

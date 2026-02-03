@@ -52,6 +52,7 @@ export const AnyNull = runtime.AnyNull
 
 export const ModelName = {
   User: 'User',
+  Message: 'Message',
   Admin: 'Admin',
   Coordinator: 'Coordinator',
   Category: 'Category',
@@ -88,18 +89,30 @@ export const UserScalarFieldEnum = {
   department: 'department',
   joinedAt: 'joinedAt',
   status: 'status',
-  emailVerified: 'emailVerified',
-  emailVerificationCodeHash: 'emailVerificationCodeHash',
-  emailVerificationCodeExpiresAt: 'emailVerificationCodeExpiresAt',
-  resetPasswordCodeHash: 'resetPasswordCodeHash',
-  resetPasswordCodeExpiresAt: 'resetPasswordCodeExpiresAt',
   passwordHash: 'passwordHash',
   passwordVersion: 'passwordVersion',
   createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
+  updatedAt: 'updatedAt',
+  emailVerificationCodeExpiresAt: 'emailVerificationCodeExpiresAt',
+  emailVerificationCodeHash: 'emailVerificationCodeHash',
+  emailVerified: 'emailVerified',
+  resetPasswordCodeExpiresAt: 'resetPasswordCodeExpiresAt',
+  resetPasswordCodeHash: 'resetPasswordCodeHash'
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
+
+
+export const MessageScalarFieldEnum = {
+  id: 'id',
+  content: 'content',
+  senderId: 'senderId',
+  receiverId: 'receiverId',
+  createdAt: 'createdAt',
+  read: 'read'
+} as const
+
+export type MessageScalarFieldEnum = (typeof MessageScalarFieldEnum)[keyof typeof MessageScalarFieldEnum]
 
 
 export const AdminScalarFieldEnum = {
@@ -143,7 +156,6 @@ export const ActivityScalarFieldEnum = {
   id: 'id',
   title: 'title',
   description: 'description',
-  category: 'category',
   date: 'date',
   time: 'time',
   location: 'location',
@@ -153,7 +165,8 @@ export const ActivityScalarFieldEnum = {
   coordinatorName: 'coordinatorName',
   status: 'status',
   createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
+  updatedAt: 'updatedAt',
+  category: 'category'
 } as const
 
 export type ActivityScalarFieldEnum = (typeof ActivityScalarFieldEnum)[keyof typeof ActivityScalarFieldEnum]

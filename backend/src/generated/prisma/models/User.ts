@@ -44,15 +44,15 @@ export type UserMinAggregateOutputType = {
   department: string | null
   joinedAt: Date | null
   status: $Enums.UserStatus | null
-  emailVerified: boolean | null
-  emailVerificationCodeHash: string | null
-  emailVerificationCodeExpiresAt: Date | null
-  resetPasswordCodeHash: string | null
-  resetPasswordCodeExpiresAt: Date | null
   passwordHash: string | null
   passwordVersion: number | null
   createdAt: Date | null
   updatedAt: Date | null
+  emailVerificationCodeExpiresAt: Date | null
+  emailVerificationCodeHash: string | null
+  emailVerified: boolean | null
+  resetPasswordCodeExpiresAt: Date | null
+  resetPasswordCodeHash: string | null
 }
 
 export type UserMaxAggregateOutputType = {
@@ -65,15 +65,15 @@ export type UserMaxAggregateOutputType = {
   department: string | null
   joinedAt: Date | null
   status: $Enums.UserStatus | null
-  emailVerified: boolean | null
-  emailVerificationCodeHash: string | null
-  emailVerificationCodeExpiresAt: Date | null
-  resetPasswordCodeHash: string | null
-  resetPasswordCodeExpiresAt: Date | null
   passwordHash: string | null
   passwordVersion: number | null
   createdAt: Date | null
   updatedAt: Date | null
+  emailVerificationCodeExpiresAt: Date | null
+  emailVerificationCodeHash: string | null
+  emailVerified: boolean | null
+  resetPasswordCodeExpiresAt: Date | null
+  resetPasswordCodeHash: string | null
 }
 
 export type UserCountAggregateOutputType = {
@@ -86,15 +86,15 @@ export type UserCountAggregateOutputType = {
   department: number
   joinedAt: number
   status: number
-  emailVerified: number
-  emailVerificationCodeHash: number
-  emailVerificationCodeExpiresAt: number
-  resetPasswordCodeHash: number
-  resetPasswordCodeExpiresAt: number
   passwordHash: number
   passwordVersion: number
   createdAt: number
   updatedAt: number
+  emailVerificationCodeExpiresAt: number
+  emailVerificationCodeHash: number
+  emailVerified: number
+  resetPasswordCodeExpiresAt: number
+  resetPasswordCodeHash: number
   _all: number
 }
 
@@ -117,15 +117,15 @@ export type UserMinAggregateInputType = {
   department?: true
   joinedAt?: true
   status?: true
-  emailVerified?: true
-  emailVerificationCodeHash?: true
-  emailVerificationCodeExpiresAt?: true
-  resetPasswordCodeHash?: true
-  resetPasswordCodeExpiresAt?: true
   passwordHash?: true
   passwordVersion?: true
   createdAt?: true
   updatedAt?: true
+  emailVerificationCodeExpiresAt?: true
+  emailVerificationCodeHash?: true
+  emailVerified?: true
+  resetPasswordCodeExpiresAt?: true
+  resetPasswordCodeHash?: true
 }
 
 export type UserMaxAggregateInputType = {
@@ -138,15 +138,15 @@ export type UserMaxAggregateInputType = {
   department?: true
   joinedAt?: true
   status?: true
-  emailVerified?: true
-  emailVerificationCodeHash?: true
-  emailVerificationCodeExpiresAt?: true
-  resetPasswordCodeHash?: true
-  resetPasswordCodeExpiresAt?: true
   passwordHash?: true
   passwordVersion?: true
   createdAt?: true
   updatedAt?: true
+  emailVerificationCodeExpiresAt?: true
+  emailVerificationCodeHash?: true
+  emailVerified?: true
+  resetPasswordCodeExpiresAt?: true
+  resetPasswordCodeHash?: true
 }
 
 export type UserCountAggregateInputType = {
@@ -159,15 +159,15 @@ export type UserCountAggregateInputType = {
   department?: true
   joinedAt?: true
   status?: true
-  emailVerified?: true
-  emailVerificationCodeHash?: true
-  emailVerificationCodeExpiresAt?: true
-  resetPasswordCodeHash?: true
-  resetPasswordCodeExpiresAt?: true
   passwordHash?: true
   passwordVersion?: true
   createdAt?: true
   updatedAt?: true
+  emailVerificationCodeExpiresAt?: true
+  emailVerificationCodeHash?: true
+  emailVerified?: true
+  resetPasswordCodeExpiresAt?: true
+  resetPasswordCodeHash?: true
   _all?: true
 }
 
@@ -267,15 +267,15 @@ export type UserGroupByOutputType = {
   department: string | null
   joinedAt: Date | null
   status: $Enums.UserStatus
-  emailVerified: boolean
-  emailVerificationCodeHash: string | null
-  emailVerificationCodeExpiresAt: Date | null
-  resetPasswordCodeHash: string | null
-  resetPasswordCodeExpiresAt: Date | null
   passwordHash: string
   passwordVersion: number
   createdAt: Date
   updatedAt: Date
+  emailVerificationCodeExpiresAt: Date | null
+  emailVerificationCodeHash: string | null
+  emailVerified: boolean
+  resetPasswordCodeExpiresAt: Date | null
+  resetPasswordCodeHash: string | null
   _count: UserCountAggregateOutputType | null
   _avg: UserAvgAggregateOutputType | null
   _sum: UserSumAggregateOutputType | null
@@ -311,24 +311,26 @@ export type UserWhereInput = {
   department?: Prisma.StringNullableFilter<"User"> | string | null
   joinedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   status?: Prisma.EnumUserStatusFilter<"User"> | $Enums.UserStatus
-  emailVerified?: Prisma.BoolFilter<"User"> | boolean
-  emailVerificationCodeHash?: Prisma.StringNullableFilter<"User"> | string | null
-  emailVerificationCodeExpiresAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
-  resetPasswordCodeHash?: Prisma.StringNullableFilter<"User"> | string | null
-  resetPasswordCodeExpiresAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   passwordHash?: Prisma.StringFilter<"User"> | string
   passwordVersion?: Prisma.IntFilter<"User"> | number
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
+  emailVerificationCodeExpiresAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
+  emailVerificationCodeHash?: Prisma.StringNullableFilter<"User"> | string | null
+  emailVerified?: Prisma.BoolFilter<"User"> | boolean
+  resetPasswordCodeExpiresAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
+  resetPasswordCodeHash?: Prisma.StringNullableFilter<"User"> | string | null
   activitiesAsCoordinator?: Prisma.ActivityListRelationFilter
-  applications?: Prisma.ApplicationListRelationFilter
-  notifications?: Prisma.NotificationListRelationFilter
-  attendanceRecords?: Prisma.AttendanceListRelationFilter
-  markedAttendance?: Prisma.AttendanceListRelationFilter
   adminProfile?: Prisma.XOR<Prisma.AdminNullableScalarRelationFilter, Prisma.AdminWhereInput> | null
-  coordinatorProfile?: Prisma.XOR<Prisma.CoordinatorNullableScalarRelationFilter, Prisma.CoordinatorWhereInput> | null
+  applications?: Prisma.ApplicationListRelationFilter
+  markedAttendance?: Prisma.AttendanceListRelationFilter
+  attendanceRecords?: Prisma.AttendanceListRelationFilter
   auditLogsAsActor?: Prisma.AuditLogListRelationFilter
   auditLogsAsTarget?: Prisma.AuditLogListRelationFilter
+  coordinatorProfile?: Prisma.XOR<Prisma.CoordinatorNullableScalarRelationFilter, Prisma.CoordinatorWhereInput> | null
+  notifications?: Prisma.NotificationListRelationFilter
+  sentMessages?: Prisma.MessageListRelationFilter
+  receivedMessages?: Prisma.MessageListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -341,24 +343,26 @@ export type UserOrderByWithRelationInput = {
   department?: Prisma.SortOrderInput | Prisma.SortOrder
   joinedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
-  emailVerified?: Prisma.SortOrder
-  emailVerificationCodeHash?: Prisma.SortOrderInput | Prisma.SortOrder
-  emailVerificationCodeExpiresAt?: Prisma.SortOrderInput | Prisma.SortOrder
-  resetPasswordCodeHash?: Prisma.SortOrderInput | Prisma.SortOrder
-  resetPasswordCodeExpiresAt?: Prisma.SortOrderInput | Prisma.SortOrder
   passwordHash?: Prisma.SortOrder
   passwordVersion?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  emailVerificationCodeExpiresAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  emailVerificationCodeHash?: Prisma.SortOrderInput | Prisma.SortOrder
+  emailVerified?: Prisma.SortOrder
+  resetPasswordCodeExpiresAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  resetPasswordCodeHash?: Prisma.SortOrderInput | Prisma.SortOrder
   activitiesAsCoordinator?: Prisma.ActivityOrderByRelationAggregateInput
-  applications?: Prisma.ApplicationOrderByRelationAggregateInput
-  notifications?: Prisma.NotificationOrderByRelationAggregateInput
-  attendanceRecords?: Prisma.AttendanceOrderByRelationAggregateInput
-  markedAttendance?: Prisma.AttendanceOrderByRelationAggregateInput
   adminProfile?: Prisma.AdminOrderByWithRelationInput
-  coordinatorProfile?: Prisma.CoordinatorOrderByWithRelationInput
+  applications?: Prisma.ApplicationOrderByRelationAggregateInput
+  markedAttendance?: Prisma.AttendanceOrderByRelationAggregateInput
+  attendanceRecords?: Prisma.AttendanceOrderByRelationAggregateInput
   auditLogsAsActor?: Prisma.AuditLogOrderByRelationAggregateInput
   auditLogsAsTarget?: Prisma.AuditLogOrderByRelationAggregateInput
+  coordinatorProfile?: Prisma.CoordinatorOrderByWithRelationInput
+  notifications?: Prisma.NotificationOrderByRelationAggregateInput
+  sentMessages?: Prisma.MessageOrderByRelationAggregateInput
+  receivedMessages?: Prisma.MessageOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -374,24 +378,26 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   department?: Prisma.StringNullableFilter<"User"> | string | null
   joinedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   status?: Prisma.EnumUserStatusFilter<"User"> | $Enums.UserStatus
-  emailVerified?: Prisma.BoolFilter<"User"> | boolean
-  emailVerificationCodeHash?: Prisma.StringNullableFilter<"User"> | string | null
-  emailVerificationCodeExpiresAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
-  resetPasswordCodeHash?: Prisma.StringNullableFilter<"User"> | string | null
-  resetPasswordCodeExpiresAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   passwordHash?: Prisma.StringFilter<"User"> | string
   passwordVersion?: Prisma.IntFilter<"User"> | number
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
+  emailVerificationCodeExpiresAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
+  emailVerificationCodeHash?: Prisma.StringNullableFilter<"User"> | string | null
+  emailVerified?: Prisma.BoolFilter<"User"> | boolean
+  resetPasswordCodeExpiresAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
+  resetPasswordCodeHash?: Prisma.StringNullableFilter<"User"> | string | null
   activitiesAsCoordinator?: Prisma.ActivityListRelationFilter
-  applications?: Prisma.ApplicationListRelationFilter
-  notifications?: Prisma.NotificationListRelationFilter
-  attendanceRecords?: Prisma.AttendanceListRelationFilter
-  markedAttendance?: Prisma.AttendanceListRelationFilter
   adminProfile?: Prisma.XOR<Prisma.AdminNullableScalarRelationFilter, Prisma.AdminWhereInput> | null
-  coordinatorProfile?: Prisma.XOR<Prisma.CoordinatorNullableScalarRelationFilter, Prisma.CoordinatorWhereInput> | null
+  applications?: Prisma.ApplicationListRelationFilter
+  markedAttendance?: Prisma.AttendanceListRelationFilter
+  attendanceRecords?: Prisma.AttendanceListRelationFilter
   auditLogsAsActor?: Prisma.AuditLogListRelationFilter
   auditLogsAsTarget?: Prisma.AuditLogListRelationFilter
+  coordinatorProfile?: Prisma.XOR<Prisma.CoordinatorNullableScalarRelationFilter, Prisma.CoordinatorWhereInput> | null
+  notifications?: Prisma.NotificationListRelationFilter
+  sentMessages?: Prisma.MessageListRelationFilter
+  receivedMessages?: Prisma.MessageListRelationFilter
 }, "id" | "email">
 
 export type UserOrderByWithAggregationInput = {
@@ -404,15 +410,15 @@ export type UserOrderByWithAggregationInput = {
   department?: Prisma.SortOrderInput | Prisma.SortOrder
   joinedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
-  emailVerified?: Prisma.SortOrder
-  emailVerificationCodeHash?: Prisma.SortOrderInput | Prisma.SortOrder
-  emailVerificationCodeExpiresAt?: Prisma.SortOrderInput | Prisma.SortOrder
-  resetPasswordCodeHash?: Prisma.SortOrderInput | Prisma.SortOrder
-  resetPasswordCodeExpiresAt?: Prisma.SortOrderInput | Prisma.SortOrder
   passwordHash?: Prisma.SortOrder
   passwordVersion?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  emailVerificationCodeExpiresAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  emailVerificationCodeHash?: Prisma.SortOrderInput | Prisma.SortOrder
+  emailVerified?: Prisma.SortOrder
+  resetPasswordCodeExpiresAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  resetPasswordCodeHash?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.UserCountOrderByAggregateInput
   _avg?: Prisma.UserAvgOrderByAggregateInput
   _max?: Prisma.UserMaxOrderByAggregateInput
@@ -433,15 +439,15 @@ export type UserScalarWhereWithAggregatesInput = {
   department?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   joinedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
   status?: Prisma.EnumUserStatusWithAggregatesFilter<"User"> | $Enums.UserStatus
-  emailVerified?: Prisma.BoolWithAggregatesFilter<"User"> | boolean
-  emailVerificationCodeHash?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
-  emailVerificationCodeExpiresAt?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
-  resetPasswordCodeHash?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
-  resetPasswordCodeExpiresAt?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
   passwordHash?: Prisma.StringWithAggregatesFilter<"User"> | string
   passwordVersion?: Prisma.IntWithAggregatesFilter<"User"> | number
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
+  emailVerificationCodeExpiresAt?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
+  emailVerificationCodeHash?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
+  emailVerified?: Prisma.BoolWithAggregatesFilter<"User"> | boolean
+  resetPasswordCodeExpiresAt?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
+  resetPasswordCodeHash?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
 }
 
 export type UserCreateInput = {
@@ -454,24 +460,26 @@ export type UserCreateInput = {
   department?: string | null
   joinedAt?: Date | string | null
   status?: $Enums.UserStatus
-  emailVerified?: boolean
-  emailVerificationCodeHash?: string | null
-  emailVerificationCodeExpiresAt?: Date | string | null
-  resetPasswordCodeHash?: string | null
-  resetPasswordCodeExpiresAt?: Date | string | null
   passwordHash: string
   passwordVersion?: number
   createdAt?: Date | string
   updatedAt?: Date | string
+  emailVerificationCodeExpiresAt?: Date | string | null
+  emailVerificationCodeHash?: string | null
+  emailVerified?: boolean
+  resetPasswordCodeExpiresAt?: Date | string | null
+  resetPasswordCodeHash?: string | null
   activitiesAsCoordinator?: Prisma.ActivityCreateNestedManyWithoutCoordinatorInput
-  applications?: Prisma.ApplicationCreateNestedManyWithoutStudentInput
-  notifications?: Prisma.NotificationCreateNestedManyWithoutRecipientInput
-  attendanceRecords?: Prisma.AttendanceCreateNestedManyWithoutStudentInput
-  markedAttendance?: Prisma.AttendanceCreateNestedManyWithoutMarkedByUserInput
   adminProfile?: Prisma.AdminCreateNestedOneWithoutUserInput
-  coordinatorProfile?: Prisma.CoordinatorCreateNestedOneWithoutUserInput
+  applications?: Prisma.ApplicationCreateNestedManyWithoutStudentInput
+  markedAttendance?: Prisma.AttendanceCreateNestedManyWithoutMarkedByUserInput
+  attendanceRecords?: Prisma.AttendanceCreateNestedManyWithoutStudentInput
   auditLogsAsActor?: Prisma.AuditLogCreateNestedManyWithoutActorInput
   auditLogsAsTarget?: Prisma.AuditLogCreateNestedManyWithoutTargetInput
+  coordinatorProfile?: Prisma.CoordinatorCreateNestedOneWithoutUserInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutRecipientInput
+  sentMessages?: Prisma.MessageCreateNestedManyWithoutSenderInput
+  receivedMessages?: Prisma.MessageCreateNestedManyWithoutReceiverInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -484,24 +492,26 @@ export type UserUncheckedCreateInput = {
   department?: string | null
   joinedAt?: Date | string | null
   status?: $Enums.UserStatus
-  emailVerified?: boolean
-  emailVerificationCodeHash?: string | null
-  emailVerificationCodeExpiresAt?: Date | string | null
-  resetPasswordCodeHash?: string | null
-  resetPasswordCodeExpiresAt?: Date | string | null
   passwordHash: string
   passwordVersion?: number
   createdAt?: Date | string
   updatedAt?: Date | string
+  emailVerificationCodeExpiresAt?: Date | string | null
+  emailVerificationCodeHash?: string | null
+  emailVerified?: boolean
+  resetPasswordCodeExpiresAt?: Date | string | null
+  resetPasswordCodeHash?: string | null
   activitiesAsCoordinator?: Prisma.ActivityUncheckedCreateNestedManyWithoutCoordinatorInput
-  applications?: Prisma.ApplicationUncheckedCreateNestedManyWithoutStudentInput
-  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutRecipientInput
-  attendanceRecords?: Prisma.AttendanceUncheckedCreateNestedManyWithoutStudentInput
-  markedAttendance?: Prisma.AttendanceUncheckedCreateNestedManyWithoutMarkedByUserInput
   adminProfile?: Prisma.AdminUncheckedCreateNestedOneWithoutUserInput
-  coordinatorProfile?: Prisma.CoordinatorUncheckedCreateNestedOneWithoutUserInput
+  applications?: Prisma.ApplicationUncheckedCreateNestedManyWithoutStudentInput
+  markedAttendance?: Prisma.AttendanceUncheckedCreateNestedManyWithoutMarkedByUserInput
+  attendanceRecords?: Prisma.AttendanceUncheckedCreateNestedManyWithoutStudentInput
   auditLogsAsActor?: Prisma.AuditLogUncheckedCreateNestedManyWithoutActorInput
   auditLogsAsTarget?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTargetInput
+  coordinatorProfile?: Prisma.CoordinatorUncheckedCreateNestedOneWithoutUserInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutRecipientInput
+  sentMessages?: Prisma.MessageUncheckedCreateNestedManyWithoutSenderInput
+  receivedMessages?: Prisma.MessageUncheckedCreateNestedManyWithoutReceiverInput
 }
 
 export type UserUpdateInput = {
@@ -514,24 +524,26 @@ export type UserUpdateInput = {
   department?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   joinedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   passwordVersion?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   activitiesAsCoordinator?: Prisma.ActivityUpdateManyWithoutCoordinatorNestedInput
-  applications?: Prisma.ApplicationUpdateManyWithoutStudentNestedInput
-  notifications?: Prisma.NotificationUpdateManyWithoutRecipientNestedInput
-  attendanceRecords?: Prisma.AttendanceUpdateManyWithoutStudentNestedInput
-  markedAttendance?: Prisma.AttendanceUpdateManyWithoutMarkedByUserNestedInput
   adminProfile?: Prisma.AdminUpdateOneWithoutUserNestedInput
-  coordinatorProfile?: Prisma.CoordinatorUpdateOneWithoutUserNestedInput
+  applications?: Prisma.ApplicationUpdateManyWithoutStudentNestedInput
+  markedAttendance?: Prisma.AttendanceUpdateManyWithoutMarkedByUserNestedInput
+  attendanceRecords?: Prisma.AttendanceUpdateManyWithoutStudentNestedInput
   auditLogsAsActor?: Prisma.AuditLogUpdateManyWithoutActorNestedInput
   auditLogsAsTarget?: Prisma.AuditLogUpdateManyWithoutTargetNestedInput
+  coordinatorProfile?: Prisma.CoordinatorUpdateOneWithoutUserNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutRecipientNestedInput
+  sentMessages?: Prisma.MessageUpdateManyWithoutSenderNestedInput
+  receivedMessages?: Prisma.MessageUpdateManyWithoutReceiverNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -544,24 +556,26 @@ export type UserUncheckedUpdateInput = {
   department?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   joinedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   passwordVersion?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   activitiesAsCoordinator?: Prisma.ActivityUncheckedUpdateManyWithoutCoordinatorNestedInput
-  applications?: Prisma.ApplicationUncheckedUpdateManyWithoutStudentNestedInput
-  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutRecipientNestedInput
-  attendanceRecords?: Prisma.AttendanceUncheckedUpdateManyWithoutStudentNestedInput
-  markedAttendance?: Prisma.AttendanceUncheckedUpdateManyWithoutMarkedByUserNestedInput
   adminProfile?: Prisma.AdminUncheckedUpdateOneWithoutUserNestedInput
-  coordinatorProfile?: Prisma.CoordinatorUncheckedUpdateOneWithoutUserNestedInput
+  applications?: Prisma.ApplicationUncheckedUpdateManyWithoutStudentNestedInput
+  markedAttendance?: Prisma.AttendanceUncheckedUpdateManyWithoutMarkedByUserNestedInput
+  attendanceRecords?: Prisma.AttendanceUncheckedUpdateManyWithoutStudentNestedInput
   auditLogsAsActor?: Prisma.AuditLogUncheckedUpdateManyWithoutActorNestedInput
   auditLogsAsTarget?: Prisma.AuditLogUncheckedUpdateManyWithoutTargetNestedInput
+  coordinatorProfile?: Prisma.CoordinatorUncheckedUpdateOneWithoutUserNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutRecipientNestedInput
+  sentMessages?: Prisma.MessageUncheckedUpdateManyWithoutSenderNestedInput
+  receivedMessages?: Prisma.MessageUncheckedUpdateManyWithoutReceiverNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -574,15 +588,15 @@ export type UserCreateManyInput = {
   department?: string | null
   joinedAt?: Date | string | null
   status?: $Enums.UserStatus
-  emailVerified?: boolean
-  emailVerificationCodeHash?: string | null
-  emailVerificationCodeExpiresAt?: Date | string | null
-  resetPasswordCodeHash?: string | null
-  resetPasswordCodeExpiresAt?: Date | string | null
   passwordHash: string
   passwordVersion?: number
   createdAt?: Date | string
   updatedAt?: Date | string
+  emailVerificationCodeExpiresAt?: Date | string | null
+  emailVerificationCodeHash?: string | null
+  emailVerified?: boolean
+  resetPasswordCodeExpiresAt?: Date | string | null
+  resetPasswordCodeHash?: string | null
 }
 
 export type UserUpdateManyMutationInput = {
@@ -595,15 +609,15 @@ export type UserUpdateManyMutationInput = {
   department?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   joinedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   passwordVersion?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type UserUncheckedUpdateManyInput = {
@@ -616,15 +630,15 @@ export type UserUncheckedUpdateManyInput = {
   department?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   joinedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   passwordVersion?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type UserCountOrderByAggregateInput = {
@@ -637,15 +651,15 @@ export type UserCountOrderByAggregateInput = {
   department?: Prisma.SortOrder
   joinedAt?: Prisma.SortOrder
   status?: Prisma.SortOrder
-  emailVerified?: Prisma.SortOrder
-  emailVerificationCodeHash?: Prisma.SortOrder
-  emailVerificationCodeExpiresAt?: Prisma.SortOrder
-  resetPasswordCodeHash?: Prisma.SortOrder
-  resetPasswordCodeExpiresAt?: Prisma.SortOrder
   passwordHash?: Prisma.SortOrder
   passwordVersion?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  emailVerificationCodeExpiresAt?: Prisma.SortOrder
+  emailVerificationCodeHash?: Prisma.SortOrder
+  emailVerified?: Prisma.SortOrder
+  resetPasswordCodeExpiresAt?: Prisma.SortOrder
+  resetPasswordCodeHash?: Prisma.SortOrder
 }
 
 export type UserAvgOrderByAggregateInput = {
@@ -662,15 +676,15 @@ export type UserMaxOrderByAggregateInput = {
   department?: Prisma.SortOrder
   joinedAt?: Prisma.SortOrder
   status?: Prisma.SortOrder
-  emailVerified?: Prisma.SortOrder
-  emailVerificationCodeHash?: Prisma.SortOrder
-  emailVerificationCodeExpiresAt?: Prisma.SortOrder
-  resetPasswordCodeHash?: Prisma.SortOrder
-  resetPasswordCodeExpiresAt?: Prisma.SortOrder
   passwordHash?: Prisma.SortOrder
   passwordVersion?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  emailVerificationCodeExpiresAt?: Prisma.SortOrder
+  emailVerificationCodeHash?: Prisma.SortOrder
+  emailVerified?: Prisma.SortOrder
+  resetPasswordCodeExpiresAt?: Prisma.SortOrder
+  resetPasswordCodeHash?: Prisma.SortOrder
 }
 
 export type UserMinOrderByAggregateInput = {
@@ -683,15 +697,15 @@ export type UserMinOrderByAggregateInput = {
   department?: Prisma.SortOrder
   joinedAt?: Prisma.SortOrder
   status?: Prisma.SortOrder
-  emailVerified?: Prisma.SortOrder
-  emailVerificationCodeHash?: Prisma.SortOrder
-  emailVerificationCodeExpiresAt?: Prisma.SortOrder
-  resetPasswordCodeHash?: Prisma.SortOrder
-  resetPasswordCodeExpiresAt?: Prisma.SortOrder
   passwordHash?: Prisma.SortOrder
   passwordVersion?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  emailVerificationCodeExpiresAt?: Prisma.SortOrder
+  emailVerificationCodeHash?: Prisma.SortOrder
+  emailVerified?: Prisma.SortOrder
+  resetPasswordCodeExpiresAt?: Prisma.SortOrder
+  resetPasswordCodeHash?: Prisma.SortOrder
 }
 
 export type UserSumOrderByAggregateInput = {
@@ -728,10 +742,6 @@ export type EnumUserStatusFieldUpdateOperationsInput = {
   set?: $Enums.UserStatus
 }
 
-export type BoolFieldUpdateOperationsInput = {
-  set?: boolean
-}
-
 export type IntFieldUpdateOperationsInput = {
   set?: number
   increment?: number
@@ -742,6 +752,38 @@ export type IntFieldUpdateOperationsInput = {
 
 export type DateTimeFieldUpdateOperationsInput = {
   set?: Date | string
+}
+
+export type BoolFieldUpdateOperationsInput = {
+  set?: boolean
+}
+
+export type UserCreateNestedOneWithoutSentMessagesInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutSentMessagesInput, Prisma.UserUncheckedCreateWithoutSentMessagesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutSentMessagesInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserCreateNestedOneWithoutReceivedMessagesInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutReceivedMessagesInput, Prisma.UserUncheckedCreateWithoutReceivedMessagesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutReceivedMessagesInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutSentMessagesNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutSentMessagesInput, Prisma.UserUncheckedCreateWithoutSentMessagesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutSentMessagesInput
+  upsert?: Prisma.UserUpsertWithoutSentMessagesInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutSentMessagesInput, Prisma.UserUpdateWithoutSentMessagesInput>, Prisma.UserUncheckedUpdateWithoutSentMessagesInput>
+}
+
+export type UserUpdateOneRequiredWithoutReceivedMessagesNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutReceivedMessagesInput, Prisma.UserUncheckedCreateWithoutReceivedMessagesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutReceivedMessagesInput
+  upsert?: Prisma.UserUpsertWithoutReceivedMessagesInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutReceivedMessagesInput, Prisma.UserUpdateWithoutReceivedMessagesInput>, Prisma.UserUncheckedUpdateWithoutReceivedMessagesInput>
 }
 
 export type UserCreateNestedOneWithoutAdminProfileInput = {
@@ -814,24 +856,16 @@ export type UserUpdateOneRequiredWithoutNotificationsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutNotificationsInput, Prisma.UserUpdateWithoutNotificationsInput>, Prisma.UserUncheckedUpdateWithoutNotificationsInput>
 }
 
-export type UserCreateNestedOneWithoutAttendanceRecordsInput = {
-  create?: Prisma.XOR<Prisma.UserCreateWithoutAttendanceRecordsInput, Prisma.UserUncheckedCreateWithoutAttendanceRecordsInput>
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutAttendanceRecordsInput
-  connect?: Prisma.UserWhereUniqueInput
-}
-
 export type UserCreateNestedOneWithoutMarkedAttendanceInput = {
   create?: Prisma.XOR<Prisma.UserCreateWithoutMarkedAttendanceInput, Prisma.UserUncheckedCreateWithoutMarkedAttendanceInput>
   connectOrCreate?: Prisma.UserCreateOrConnectWithoutMarkedAttendanceInput
   connect?: Prisma.UserWhereUniqueInput
 }
 
-export type UserUpdateOneRequiredWithoutAttendanceRecordsNestedInput = {
+export type UserCreateNestedOneWithoutAttendanceRecordsInput = {
   create?: Prisma.XOR<Prisma.UserCreateWithoutAttendanceRecordsInput, Prisma.UserUncheckedCreateWithoutAttendanceRecordsInput>
   connectOrCreate?: Prisma.UserCreateOrConnectWithoutAttendanceRecordsInput
-  upsert?: Prisma.UserUpsertWithoutAttendanceRecordsInput
   connect?: Prisma.UserWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutAttendanceRecordsInput, Prisma.UserUpdateWithoutAttendanceRecordsInput>, Prisma.UserUncheckedUpdateWithoutAttendanceRecordsInput>
 }
 
 export type UserUpdateOneRequiredWithoutMarkedAttendanceNestedInput = {
@@ -840,6 +874,14 @@ export type UserUpdateOneRequiredWithoutMarkedAttendanceNestedInput = {
   upsert?: Prisma.UserUpsertWithoutMarkedAttendanceInput
   connect?: Prisma.UserWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutMarkedAttendanceInput, Prisma.UserUpdateWithoutMarkedAttendanceInput>, Prisma.UserUncheckedUpdateWithoutMarkedAttendanceInput>
+}
+
+export type UserUpdateOneRequiredWithoutAttendanceRecordsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutAttendanceRecordsInput, Prisma.UserUncheckedCreateWithoutAttendanceRecordsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutAttendanceRecordsInput
+  upsert?: Prisma.UserUpsertWithoutAttendanceRecordsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutAttendanceRecordsInput, Prisma.UserUpdateWithoutAttendanceRecordsInput>, Prisma.UserUncheckedUpdateWithoutAttendanceRecordsInput>
 }
 
 export type UserCreateNestedOneWithoutAuditLogsAsActorInput = {
@@ -874,6 +916,286 @@ export type UserUpdateOneWithoutAuditLogsAsTargetNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutAuditLogsAsTargetInput, Prisma.UserUpdateWithoutAuditLogsAsTargetInput>, Prisma.UserUncheckedUpdateWithoutAuditLogsAsTargetInput>
 }
 
+export type UserCreateWithoutSentMessagesInput = {
+  id?: string
+  name: string
+  email: string
+  role: $Enums.UserRole
+  studentId?: string | null
+  avatar?: string | null
+  department?: string | null
+  joinedAt?: Date | string | null
+  status?: $Enums.UserStatus
+  passwordHash: string
+  passwordVersion?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  emailVerificationCodeExpiresAt?: Date | string | null
+  emailVerificationCodeHash?: string | null
+  emailVerified?: boolean
+  resetPasswordCodeExpiresAt?: Date | string | null
+  resetPasswordCodeHash?: string | null
+  activitiesAsCoordinator?: Prisma.ActivityCreateNestedManyWithoutCoordinatorInput
+  adminProfile?: Prisma.AdminCreateNestedOneWithoutUserInput
+  applications?: Prisma.ApplicationCreateNestedManyWithoutStudentInput
+  markedAttendance?: Prisma.AttendanceCreateNestedManyWithoutMarkedByUserInput
+  attendanceRecords?: Prisma.AttendanceCreateNestedManyWithoutStudentInput
+  auditLogsAsActor?: Prisma.AuditLogCreateNestedManyWithoutActorInput
+  auditLogsAsTarget?: Prisma.AuditLogCreateNestedManyWithoutTargetInput
+  coordinatorProfile?: Prisma.CoordinatorCreateNestedOneWithoutUserInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutRecipientInput
+  receivedMessages?: Prisma.MessageCreateNestedManyWithoutReceiverInput
+}
+
+export type UserUncheckedCreateWithoutSentMessagesInput = {
+  id?: string
+  name: string
+  email: string
+  role: $Enums.UserRole
+  studentId?: string | null
+  avatar?: string | null
+  department?: string | null
+  joinedAt?: Date | string | null
+  status?: $Enums.UserStatus
+  passwordHash: string
+  passwordVersion?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  emailVerificationCodeExpiresAt?: Date | string | null
+  emailVerificationCodeHash?: string | null
+  emailVerified?: boolean
+  resetPasswordCodeExpiresAt?: Date | string | null
+  resetPasswordCodeHash?: string | null
+  activitiesAsCoordinator?: Prisma.ActivityUncheckedCreateNestedManyWithoutCoordinatorInput
+  adminProfile?: Prisma.AdminUncheckedCreateNestedOneWithoutUserInput
+  applications?: Prisma.ApplicationUncheckedCreateNestedManyWithoutStudentInput
+  markedAttendance?: Prisma.AttendanceUncheckedCreateNestedManyWithoutMarkedByUserInput
+  attendanceRecords?: Prisma.AttendanceUncheckedCreateNestedManyWithoutStudentInput
+  auditLogsAsActor?: Prisma.AuditLogUncheckedCreateNestedManyWithoutActorInput
+  auditLogsAsTarget?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTargetInput
+  coordinatorProfile?: Prisma.CoordinatorUncheckedCreateNestedOneWithoutUserInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutRecipientInput
+  receivedMessages?: Prisma.MessageUncheckedCreateNestedManyWithoutReceiverInput
+}
+
+export type UserCreateOrConnectWithoutSentMessagesInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutSentMessagesInput, Prisma.UserUncheckedCreateWithoutSentMessagesInput>
+}
+
+export type UserCreateWithoutReceivedMessagesInput = {
+  id?: string
+  name: string
+  email: string
+  role: $Enums.UserRole
+  studentId?: string | null
+  avatar?: string | null
+  department?: string | null
+  joinedAt?: Date | string | null
+  status?: $Enums.UserStatus
+  passwordHash: string
+  passwordVersion?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  emailVerificationCodeExpiresAt?: Date | string | null
+  emailVerificationCodeHash?: string | null
+  emailVerified?: boolean
+  resetPasswordCodeExpiresAt?: Date | string | null
+  resetPasswordCodeHash?: string | null
+  activitiesAsCoordinator?: Prisma.ActivityCreateNestedManyWithoutCoordinatorInput
+  adminProfile?: Prisma.AdminCreateNestedOneWithoutUserInput
+  applications?: Prisma.ApplicationCreateNestedManyWithoutStudentInput
+  markedAttendance?: Prisma.AttendanceCreateNestedManyWithoutMarkedByUserInput
+  attendanceRecords?: Prisma.AttendanceCreateNestedManyWithoutStudentInput
+  auditLogsAsActor?: Prisma.AuditLogCreateNestedManyWithoutActorInput
+  auditLogsAsTarget?: Prisma.AuditLogCreateNestedManyWithoutTargetInput
+  coordinatorProfile?: Prisma.CoordinatorCreateNestedOneWithoutUserInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutRecipientInput
+  sentMessages?: Prisma.MessageCreateNestedManyWithoutSenderInput
+}
+
+export type UserUncheckedCreateWithoutReceivedMessagesInput = {
+  id?: string
+  name: string
+  email: string
+  role: $Enums.UserRole
+  studentId?: string | null
+  avatar?: string | null
+  department?: string | null
+  joinedAt?: Date | string | null
+  status?: $Enums.UserStatus
+  passwordHash: string
+  passwordVersion?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  emailVerificationCodeExpiresAt?: Date | string | null
+  emailVerificationCodeHash?: string | null
+  emailVerified?: boolean
+  resetPasswordCodeExpiresAt?: Date | string | null
+  resetPasswordCodeHash?: string | null
+  activitiesAsCoordinator?: Prisma.ActivityUncheckedCreateNestedManyWithoutCoordinatorInput
+  adminProfile?: Prisma.AdminUncheckedCreateNestedOneWithoutUserInput
+  applications?: Prisma.ApplicationUncheckedCreateNestedManyWithoutStudentInput
+  markedAttendance?: Prisma.AttendanceUncheckedCreateNestedManyWithoutMarkedByUserInput
+  attendanceRecords?: Prisma.AttendanceUncheckedCreateNestedManyWithoutStudentInput
+  auditLogsAsActor?: Prisma.AuditLogUncheckedCreateNestedManyWithoutActorInput
+  auditLogsAsTarget?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTargetInput
+  coordinatorProfile?: Prisma.CoordinatorUncheckedCreateNestedOneWithoutUserInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutRecipientInput
+  sentMessages?: Prisma.MessageUncheckedCreateNestedManyWithoutSenderInput
+}
+
+export type UserCreateOrConnectWithoutReceivedMessagesInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutReceivedMessagesInput, Prisma.UserUncheckedCreateWithoutReceivedMessagesInput>
+}
+
+export type UserUpsertWithoutSentMessagesInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutSentMessagesInput, Prisma.UserUncheckedUpdateWithoutSentMessagesInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutSentMessagesInput, Prisma.UserUncheckedCreateWithoutSentMessagesInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutSentMessagesInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutSentMessagesInput, Prisma.UserUncheckedUpdateWithoutSentMessagesInput>
+}
+
+export type UserUpdateWithoutSentMessagesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  studentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatar?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  department?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  joinedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activitiesAsCoordinator?: Prisma.ActivityUpdateManyWithoutCoordinatorNestedInput
+  adminProfile?: Prisma.AdminUpdateOneWithoutUserNestedInput
+  applications?: Prisma.ApplicationUpdateManyWithoutStudentNestedInput
+  markedAttendance?: Prisma.AttendanceUpdateManyWithoutMarkedByUserNestedInput
+  attendanceRecords?: Prisma.AttendanceUpdateManyWithoutStudentNestedInput
+  auditLogsAsActor?: Prisma.AuditLogUpdateManyWithoutActorNestedInput
+  auditLogsAsTarget?: Prisma.AuditLogUpdateManyWithoutTargetNestedInput
+  coordinatorProfile?: Prisma.CoordinatorUpdateOneWithoutUserNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutRecipientNestedInput
+  receivedMessages?: Prisma.MessageUpdateManyWithoutReceiverNestedInput
+}
+
+export type UserUncheckedUpdateWithoutSentMessagesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  studentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatar?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  department?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  joinedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activitiesAsCoordinator?: Prisma.ActivityUncheckedUpdateManyWithoutCoordinatorNestedInput
+  adminProfile?: Prisma.AdminUncheckedUpdateOneWithoutUserNestedInput
+  applications?: Prisma.ApplicationUncheckedUpdateManyWithoutStudentNestedInput
+  markedAttendance?: Prisma.AttendanceUncheckedUpdateManyWithoutMarkedByUserNestedInput
+  attendanceRecords?: Prisma.AttendanceUncheckedUpdateManyWithoutStudentNestedInput
+  auditLogsAsActor?: Prisma.AuditLogUncheckedUpdateManyWithoutActorNestedInput
+  auditLogsAsTarget?: Prisma.AuditLogUncheckedUpdateManyWithoutTargetNestedInput
+  coordinatorProfile?: Prisma.CoordinatorUncheckedUpdateOneWithoutUserNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutRecipientNestedInput
+  receivedMessages?: Prisma.MessageUncheckedUpdateManyWithoutReceiverNestedInput
+}
+
+export type UserUpsertWithoutReceivedMessagesInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutReceivedMessagesInput, Prisma.UserUncheckedUpdateWithoutReceivedMessagesInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutReceivedMessagesInput, Prisma.UserUncheckedCreateWithoutReceivedMessagesInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutReceivedMessagesInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutReceivedMessagesInput, Prisma.UserUncheckedUpdateWithoutReceivedMessagesInput>
+}
+
+export type UserUpdateWithoutReceivedMessagesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  studentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatar?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  department?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  joinedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activitiesAsCoordinator?: Prisma.ActivityUpdateManyWithoutCoordinatorNestedInput
+  adminProfile?: Prisma.AdminUpdateOneWithoutUserNestedInput
+  applications?: Prisma.ApplicationUpdateManyWithoutStudentNestedInput
+  markedAttendance?: Prisma.AttendanceUpdateManyWithoutMarkedByUserNestedInput
+  attendanceRecords?: Prisma.AttendanceUpdateManyWithoutStudentNestedInput
+  auditLogsAsActor?: Prisma.AuditLogUpdateManyWithoutActorNestedInput
+  auditLogsAsTarget?: Prisma.AuditLogUpdateManyWithoutTargetNestedInput
+  coordinatorProfile?: Prisma.CoordinatorUpdateOneWithoutUserNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutRecipientNestedInput
+  sentMessages?: Prisma.MessageUpdateManyWithoutSenderNestedInput
+}
+
+export type UserUncheckedUpdateWithoutReceivedMessagesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  studentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatar?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  department?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  joinedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activitiesAsCoordinator?: Prisma.ActivityUncheckedUpdateManyWithoutCoordinatorNestedInput
+  adminProfile?: Prisma.AdminUncheckedUpdateOneWithoutUserNestedInput
+  applications?: Prisma.ApplicationUncheckedUpdateManyWithoutStudentNestedInput
+  markedAttendance?: Prisma.AttendanceUncheckedUpdateManyWithoutMarkedByUserNestedInput
+  attendanceRecords?: Prisma.AttendanceUncheckedUpdateManyWithoutStudentNestedInput
+  auditLogsAsActor?: Prisma.AuditLogUncheckedUpdateManyWithoutActorNestedInput
+  auditLogsAsTarget?: Prisma.AuditLogUncheckedUpdateManyWithoutTargetNestedInput
+  coordinatorProfile?: Prisma.CoordinatorUncheckedUpdateOneWithoutUserNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutRecipientNestedInput
+  sentMessages?: Prisma.MessageUncheckedUpdateManyWithoutSenderNestedInput
+}
+
 export type UserCreateWithoutAdminProfileInput = {
   id?: string
   name: string
@@ -884,23 +1206,25 @@ export type UserCreateWithoutAdminProfileInput = {
   department?: string | null
   joinedAt?: Date | string | null
   status?: $Enums.UserStatus
-  emailVerified?: boolean
-  emailVerificationCodeHash?: string | null
-  emailVerificationCodeExpiresAt?: Date | string | null
-  resetPasswordCodeHash?: string | null
-  resetPasswordCodeExpiresAt?: Date | string | null
   passwordHash: string
   passwordVersion?: number
   createdAt?: Date | string
   updatedAt?: Date | string
+  emailVerificationCodeExpiresAt?: Date | string | null
+  emailVerificationCodeHash?: string | null
+  emailVerified?: boolean
+  resetPasswordCodeExpiresAt?: Date | string | null
+  resetPasswordCodeHash?: string | null
   activitiesAsCoordinator?: Prisma.ActivityCreateNestedManyWithoutCoordinatorInput
   applications?: Prisma.ApplicationCreateNestedManyWithoutStudentInput
-  notifications?: Prisma.NotificationCreateNestedManyWithoutRecipientInput
-  attendanceRecords?: Prisma.AttendanceCreateNestedManyWithoutStudentInput
   markedAttendance?: Prisma.AttendanceCreateNestedManyWithoutMarkedByUserInput
-  coordinatorProfile?: Prisma.CoordinatorCreateNestedOneWithoutUserInput
+  attendanceRecords?: Prisma.AttendanceCreateNestedManyWithoutStudentInput
   auditLogsAsActor?: Prisma.AuditLogCreateNestedManyWithoutActorInput
   auditLogsAsTarget?: Prisma.AuditLogCreateNestedManyWithoutTargetInput
+  coordinatorProfile?: Prisma.CoordinatorCreateNestedOneWithoutUserInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutRecipientInput
+  sentMessages?: Prisma.MessageCreateNestedManyWithoutSenderInput
+  receivedMessages?: Prisma.MessageCreateNestedManyWithoutReceiverInput
 }
 
 export type UserUncheckedCreateWithoutAdminProfileInput = {
@@ -913,23 +1237,25 @@ export type UserUncheckedCreateWithoutAdminProfileInput = {
   department?: string | null
   joinedAt?: Date | string | null
   status?: $Enums.UserStatus
-  emailVerified?: boolean
-  emailVerificationCodeHash?: string | null
-  emailVerificationCodeExpiresAt?: Date | string | null
-  resetPasswordCodeHash?: string | null
-  resetPasswordCodeExpiresAt?: Date | string | null
   passwordHash: string
   passwordVersion?: number
   createdAt?: Date | string
   updatedAt?: Date | string
+  emailVerificationCodeExpiresAt?: Date | string | null
+  emailVerificationCodeHash?: string | null
+  emailVerified?: boolean
+  resetPasswordCodeExpiresAt?: Date | string | null
+  resetPasswordCodeHash?: string | null
   activitiesAsCoordinator?: Prisma.ActivityUncheckedCreateNestedManyWithoutCoordinatorInput
   applications?: Prisma.ApplicationUncheckedCreateNestedManyWithoutStudentInput
-  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutRecipientInput
-  attendanceRecords?: Prisma.AttendanceUncheckedCreateNestedManyWithoutStudentInput
   markedAttendance?: Prisma.AttendanceUncheckedCreateNestedManyWithoutMarkedByUserInput
-  coordinatorProfile?: Prisma.CoordinatorUncheckedCreateNestedOneWithoutUserInput
+  attendanceRecords?: Prisma.AttendanceUncheckedCreateNestedManyWithoutStudentInput
   auditLogsAsActor?: Prisma.AuditLogUncheckedCreateNestedManyWithoutActorInput
   auditLogsAsTarget?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTargetInput
+  coordinatorProfile?: Prisma.CoordinatorUncheckedCreateNestedOneWithoutUserInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutRecipientInput
+  sentMessages?: Prisma.MessageUncheckedCreateNestedManyWithoutSenderInput
+  receivedMessages?: Prisma.MessageUncheckedCreateNestedManyWithoutReceiverInput
 }
 
 export type UserCreateOrConnectWithoutAdminProfileInput = {
@@ -958,23 +1284,25 @@ export type UserUpdateWithoutAdminProfileInput = {
   department?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   joinedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   passwordVersion?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   activitiesAsCoordinator?: Prisma.ActivityUpdateManyWithoutCoordinatorNestedInput
   applications?: Prisma.ApplicationUpdateManyWithoutStudentNestedInput
-  notifications?: Prisma.NotificationUpdateManyWithoutRecipientNestedInput
-  attendanceRecords?: Prisma.AttendanceUpdateManyWithoutStudentNestedInput
   markedAttendance?: Prisma.AttendanceUpdateManyWithoutMarkedByUserNestedInput
-  coordinatorProfile?: Prisma.CoordinatorUpdateOneWithoutUserNestedInput
+  attendanceRecords?: Prisma.AttendanceUpdateManyWithoutStudentNestedInput
   auditLogsAsActor?: Prisma.AuditLogUpdateManyWithoutActorNestedInput
   auditLogsAsTarget?: Prisma.AuditLogUpdateManyWithoutTargetNestedInput
+  coordinatorProfile?: Prisma.CoordinatorUpdateOneWithoutUserNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutRecipientNestedInput
+  sentMessages?: Prisma.MessageUpdateManyWithoutSenderNestedInput
+  receivedMessages?: Prisma.MessageUpdateManyWithoutReceiverNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAdminProfileInput = {
@@ -987,23 +1315,25 @@ export type UserUncheckedUpdateWithoutAdminProfileInput = {
   department?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   joinedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   passwordVersion?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   activitiesAsCoordinator?: Prisma.ActivityUncheckedUpdateManyWithoutCoordinatorNestedInput
   applications?: Prisma.ApplicationUncheckedUpdateManyWithoutStudentNestedInput
-  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutRecipientNestedInput
-  attendanceRecords?: Prisma.AttendanceUncheckedUpdateManyWithoutStudentNestedInput
   markedAttendance?: Prisma.AttendanceUncheckedUpdateManyWithoutMarkedByUserNestedInput
-  coordinatorProfile?: Prisma.CoordinatorUncheckedUpdateOneWithoutUserNestedInput
+  attendanceRecords?: Prisma.AttendanceUncheckedUpdateManyWithoutStudentNestedInput
   auditLogsAsActor?: Prisma.AuditLogUncheckedUpdateManyWithoutActorNestedInput
   auditLogsAsTarget?: Prisma.AuditLogUncheckedUpdateManyWithoutTargetNestedInput
+  coordinatorProfile?: Prisma.CoordinatorUncheckedUpdateOneWithoutUserNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutRecipientNestedInput
+  sentMessages?: Prisma.MessageUncheckedUpdateManyWithoutSenderNestedInput
+  receivedMessages?: Prisma.MessageUncheckedUpdateManyWithoutReceiverNestedInput
 }
 
 export type UserCreateWithoutCoordinatorProfileInput = {
@@ -1016,23 +1346,25 @@ export type UserCreateWithoutCoordinatorProfileInput = {
   department?: string | null
   joinedAt?: Date | string | null
   status?: $Enums.UserStatus
-  emailVerified?: boolean
-  emailVerificationCodeHash?: string | null
-  emailVerificationCodeExpiresAt?: Date | string | null
-  resetPasswordCodeHash?: string | null
-  resetPasswordCodeExpiresAt?: Date | string | null
   passwordHash: string
   passwordVersion?: number
   createdAt?: Date | string
   updatedAt?: Date | string
+  emailVerificationCodeExpiresAt?: Date | string | null
+  emailVerificationCodeHash?: string | null
+  emailVerified?: boolean
+  resetPasswordCodeExpiresAt?: Date | string | null
+  resetPasswordCodeHash?: string | null
   activitiesAsCoordinator?: Prisma.ActivityCreateNestedManyWithoutCoordinatorInput
-  applications?: Prisma.ApplicationCreateNestedManyWithoutStudentInput
-  notifications?: Prisma.NotificationCreateNestedManyWithoutRecipientInput
-  attendanceRecords?: Prisma.AttendanceCreateNestedManyWithoutStudentInput
-  markedAttendance?: Prisma.AttendanceCreateNestedManyWithoutMarkedByUserInput
   adminProfile?: Prisma.AdminCreateNestedOneWithoutUserInput
+  applications?: Prisma.ApplicationCreateNestedManyWithoutStudentInput
+  markedAttendance?: Prisma.AttendanceCreateNestedManyWithoutMarkedByUserInput
+  attendanceRecords?: Prisma.AttendanceCreateNestedManyWithoutStudentInput
   auditLogsAsActor?: Prisma.AuditLogCreateNestedManyWithoutActorInput
   auditLogsAsTarget?: Prisma.AuditLogCreateNestedManyWithoutTargetInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutRecipientInput
+  sentMessages?: Prisma.MessageCreateNestedManyWithoutSenderInput
+  receivedMessages?: Prisma.MessageCreateNestedManyWithoutReceiverInput
 }
 
 export type UserUncheckedCreateWithoutCoordinatorProfileInput = {
@@ -1045,23 +1377,25 @@ export type UserUncheckedCreateWithoutCoordinatorProfileInput = {
   department?: string | null
   joinedAt?: Date | string | null
   status?: $Enums.UserStatus
-  emailVerified?: boolean
-  emailVerificationCodeHash?: string | null
-  emailVerificationCodeExpiresAt?: Date | string | null
-  resetPasswordCodeHash?: string | null
-  resetPasswordCodeExpiresAt?: Date | string | null
   passwordHash: string
   passwordVersion?: number
   createdAt?: Date | string
   updatedAt?: Date | string
+  emailVerificationCodeExpiresAt?: Date | string | null
+  emailVerificationCodeHash?: string | null
+  emailVerified?: boolean
+  resetPasswordCodeExpiresAt?: Date | string | null
+  resetPasswordCodeHash?: string | null
   activitiesAsCoordinator?: Prisma.ActivityUncheckedCreateNestedManyWithoutCoordinatorInput
-  applications?: Prisma.ApplicationUncheckedCreateNestedManyWithoutStudentInput
-  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutRecipientInput
-  attendanceRecords?: Prisma.AttendanceUncheckedCreateNestedManyWithoutStudentInput
-  markedAttendance?: Prisma.AttendanceUncheckedCreateNestedManyWithoutMarkedByUserInput
   adminProfile?: Prisma.AdminUncheckedCreateNestedOneWithoutUserInput
+  applications?: Prisma.ApplicationUncheckedCreateNestedManyWithoutStudentInput
+  markedAttendance?: Prisma.AttendanceUncheckedCreateNestedManyWithoutMarkedByUserInput
+  attendanceRecords?: Prisma.AttendanceUncheckedCreateNestedManyWithoutStudentInput
   auditLogsAsActor?: Prisma.AuditLogUncheckedCreateNestedManyWithoutActorInput
   auditLogsAsTarget?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTargetInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutRecipientInput
+  sentMessages?: Prisma.MessageUncheckedCreateNestedManyWithoutSenderInput
+  receivedMessages?: Prisma.MessageUncheckedCreateNestedManyWithoutReceiverInput
 }
 
 export type UserCreateOrConnectWithoutCoordinatorProfileInput = {
@@ -1090,23 +1424,25 @@ export type UserUpdateWithoutCoordinatorProfileInput = {
   department?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   joinedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   passwordVersion?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   activitiesAsCoordinator?: Prisma.ActivityUpdateManyWithoutCoordinatorNestedInput
-  applications?: Prisma.ApplicationUpdateManyWithoutStudentNestedInput
-  notifications?: Prisma.NotificationUpdateManyWithoutRecipientNestedInput
-  attendanceRecords?: Prisma.AttendanceUpdateManyWithoutStudentNestedInput
-  markedAttendance?: Prisma.AttendanceUpdateManyWithoutMarkedByUserNestedInput
   adminProfile?: Prisma.AdminUpdateOneWithoutUserNestedInput
+  applications?: Prisma.ApplicationUpdateManyWithoutStudentNestedInput
+  markedAttendance?: Prisma.AttendanceUpdateManyWithoutMarkedByUserNestedInput
+  attendanceRecords?: Prisma.AttendanceUpdateManyWithoutStudentNestedInput
   auditLogsAsActor?: Prisma.AuditLogUpdateManyWithoutActorNestedInput
   auditLogsAsTarget?: Prisma.AuditLogUpdateManyWithoutTargetNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutRecipientNestedInput
+  sentMessages?: Prisma.MessageUpdateManyWithoutSenderNestedInput
+  receivedMessages?: Prisma.MessageUpdateManyWithoutReceiverNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCoordinatorProfileInput = {
@@ -1119,23 +1455,25 @@ export type UserUncheckedUpdateWithoutCoordinatorProfileInput = {
   department?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   joinedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   passwordVersion?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   activitiesAsCoordinator?: Prisma.ActivityUncheckedUpdateManyWithoutCoordinatorNestedInput
-  applications?: Prisma.ApplicationUncheckedUpdateManyWithoutStudentNestedInput
-  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutRecipientNestedInput
-  attendanceRecords?: Prisma.AttendanceUncheckedUpdateManyWithoutStudentNestedInput
-  markedAttendance?: Prisma.AttendanceUncheckedUpdateManyWithoutMarkedByUserNestedInput
   adminProfile?: Prisma.AdminUncheckedUpdateOneWithoutUserNestedInput
+  applications?: Prisma.ApplicationUncheckedUpdateManyWithoutStudentNestedInput
+  markedAttendance?: Prisma.AttendanceUncheckedUpdateManyWithoutMarkedByUserNestedInput
+  attendanceRecords?: Prisma.AttendanceUncheckedUpdateManyWithoutStudentNestedInput
   auditLogsAsActor?: Prisma.AuditLogUncheckedUpdateManyWithoutActorNestedInput
   auditLogsAsTarget?: Prisma.AuditLogUncheckedUpdateManyWithoutTargetNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutRecipientNestedInput
+  sentMessages?: Prisma.MessageUncheckedUpdateManyWithoutSenderNestedInput
+  receivedMessages?: Prisma.MessageUncheckedUpdateManyWithoutReceiverNestedInput
 }
 
 export type UserCreateWithoutActivitiesAsCoordinatorInput = {
@@ -1148,23 +1486,25 @@ export type UserCreateWithoutActivitiesAsCoordinatorInput = {
   department?: string | null
   joinedAt?: Date | string | null
   status?: $Enums.UserStatus
-  emailVerified?: boolean
-  emailVerificationCodeHash?: string | null
-  emailVerificationCodeExpiresAt?: Date | string | null
-  resetPasswordCodeHash?: string | null
-  resetPasswordCodeExpiresAt?: Date | string | null
   passwordHash: string
   passwordVersion?: number
   createdAt?: Date | string
   updatedAt?: Date | string
-  applications?: Prisma.ApplicationCreateNestedManyWithoutStudentInput
-  notifications?: Prisma.NotificationCreateNestedManyWithoutRecipientInput
-  attendanceRecords?: Prisma.AttendanceCreateNestedManyWithoutStudentInput
-  markedAttendance?: Prisma.AttendanceCreateNestedManyWithoutMarkedByUserInput
+  emailVerificationCodeExpiresAt?: Date | string | null
+  emailVerificationCodeHash?: string | null
+  emailVerified?: boolean
+  resetPasswordCodeExpiresAt?: Date | string | null
+  resetPasswordCodeHash?: string | null
   adminProfile?: Prisma.AdminCreateNestedOneWithoutUserInput
-  coordinatorProfile?: Prisma.CoordinatorCreateNestedOneWithoutUserInput
+  applications?: Prisma.ApplicationCreateNestedManyWithoutStudentInput
+  markedAttendance?: Prisma.AttendanceCreateNestedManyWithoutMarkedByUserInput
+  attendanceRecords?: Prisma.AttendanceCreateNestedManyWithoutStudentInput
   auditLogsAsActor?: Prisma.AuditLogCreateNestedManyWithoutActorInput
   auditLogsAsTarget?: Prisma.AuditLogCreateNestedManyWithoutTargetInput
+  coordinatorProfile?: Prisma.CoordinatorCreateNestedOneWithoutUserInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutRecipientInput
+  sentMessages?: Prisma.MessageCreateNestedManyWithoutSenderInput
+  receivedMessages?: Prisma.MessageCreateNestedManyWithoutReceiverInput
 }
 
 export type UserUncheckedCreateWithoutActivitiesAsCoordinatorInput = {
@@ -1177,23 +1517,25 @@ export type UserUncheckedCreateWithoutActivitiesAsCoordinatorInput = {
   department?: string | null
   joinedAt?: Date | string | null
   status?: $Enums.UserStatus
-  emailVerified?: boolean
-  emailVerificationCodeHash?: string | null
-  emailVerificationCodeExpiresAt?: Date | string | null
-  resetPasswordCodeHash?: string | null
-  resetPasswordCodeExpiresAt?: Date | string | null
   passwordHash: string
   passwordVersion?: number
   createdAt?: Date | string
   updatedAt?: Date | string
-  applications?: Prisma.ApplicationUncheckedCreateNestedManyWithoutStudentInput
-  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutRecipientInput
-  attendanceRecords?: Prisma.AttendanceUncheckedCreateNestedManyWithoutStudentInput
-  markedAttendance?: Prisma.AttendanceUncheckedCreateNestedManyWithoutMarkedByUserInput
+  emailVerificationCodeExpiresAt?: Date | string | null
+  emailVerificationCodeHash?: string | null
+  emailVerified?: boolean
+  resetPasswordCodeExpiresAt?: Date | string | null
+  resetPasswordCodeHash?: string | null
   adminProfile?: Prisma.AdminUncheckedCreateNestedOneWithoutUserInput
-  coordinatorProfile?: Prisma.CoordinatorUncheckedCreateNestedOneWithoutUserInput
+  applications?: Prisma.ApplicationUncheckedCreateNestedManyWithoutStudentInput
+  markedAttendance?: Prisma.AttendanceUncheckedCreateNestedManyWithoutMarkedByUserInput
+  attendanceRecords?: Prisma.AttendanceUncheckedCreateNestedManyWithoutStudentInput
   auditLogsAsActor?: Prisma.AuditLogUncheckedCreateNestedManyWithoutActorInput
   auditLogsAsTarget?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTargetInput
+  coordinatorProfile?: Prisma.CoordinatorUncheckedCreateNestedOneWithoutUserInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutRecipientInput
+  sentMessages?: Prisma.MessageUncheckedCreateNestedManyWithoutSenderInput
+  receivedMessages?: Prisma.MessageUncheckedCreateNestedManyWithoutReceiverInput
 }
 
 export type UserCreateOrConnectWithoutActivitiesAsCoordinatorInput = {
@@ -1222,23 +1564,25 @@ export type UserUpdateWithoutActivitiesAsCoordinatorInput = {
   department?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   joinedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   passwordVersion?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  applications?: Prisma.ApplicationUpdateManyWithoutStudentNestedInput
-  notifications?: Prisma.NotificationUpdateManyWithoutRecipientNestedInput
-  attendanceRecords?: Prisma.AttendanceUpdateManyWithoutStudentNestedInput
-  markedAttendance?: Prisma.AttendanceUpdateManyWithoutMarkedByUserNestedInput
+  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   adminProfile?: Prisma.AdminUpdateOneWithoutUserNestedInput
-  coordinatorProfile?: Prisma.CoordinatorUpdateOneWithoutUserNestedInput
+  applications?: Prisma.ApplicationUpdateManyWithoutStudentNestedInput
+  markedAttendance?: Prisma.AttendanceUpdateManyWithoutMarkedByUserNestedInput
+  attendanceRecords?: Prisma.AttendanceUpdateManyWithoutStudentNestedInput
   auditLogsAsActor?: Prisma.AuditLogUpdateManyWithoutActorNestedInput
   auditLogsAsTarget?: Prisma.AuditLogUpdateManyWithoutTargetNestedInput
+  coordinatorProfile?: Prisma.CoordinatorUpdateOneWithoutUserNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutRecipientNestedInput
+  sentMessages?: Prisma.MessageUpdateManyWithoutSenderNestedInput
+  receivedMessages?: Prisma.MessageUpdateManyWithoutReceiverNestedInput
 }
 
 export type UserUncheckedUpdateWithoutActivitiesAsCoordinatorInput = {
@@ -1251,23 +1595,25 @@ export type UserUncheckedUpdateWithoutActivitiesAsCoordinatorInput = {
   department?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   joinedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   passwordVersion?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  applications?: Prisma.ApplicationUncheckedUpdateManyWithoutStudentNestedInput
-  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutRecipientNestedInput
-  attendanceRecords?: Prisma.AttendanceUncheckedUpdateManyWithoutStudentNestedInput
-  markedAttendance?: Prisma.AttendanceUncheckedUpdateManyWithoutMarkedByUserNestedInput
+  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   adminProfile?: Prisma.AdminUncheckedUpdateOneWithoutUserNestedInput
-  coordinatorProfile?: Prisma.CoordinatorUncheckedUpdateOneWithoutUserNestedInput
+  applications?: Prisma.ApplicationUncheckedUpdateManyWithoutStudentNestedInput
+  markedAttendance?: Prisma.AttendanceUncheckedUpdateManyWithoutMarkedByUserNestedInput
+  attendanceRecords?: Prisma.AttendanceUncheckedUpdateManyWithoutStudentNestedInput
   auditLogsAsActor?: Prisma.AuditLogUncheckedUpdateManyWithoutActorNestedInput
   auditLogsAsTarget?: Prisma.AuditLogUncheckedUpdateManyWithoutTargetNestedInput
+  coordinatorProfile?: Prisma.CoordinatorUncheckedUpdateOneWithoutUserNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutRecipientNestedInput
+  sentMessages?: Prisma.MessageUncheckedUpdateManyWithoutSenderNestedInput
+  receivedMessages?: Prisma.MessageUncheckedUpdateManyWithoutReceiverNestedInput
 }
 
 export type UserCreateWithoutApplicationsInput = {
@@ -1280,23 +1626,25 @@ export type UserCreateWithoutApplicationsInput = {
   department?: string | null
   joinedAt?: Date | string | null
   status?: $Enums.UserStatus
-  emailVerified?: boolean
-  emailVerificationCodeHash?: string | null
-  emailVerificationCodeExpiresAt?: Date | string | null
-  resetPasswordCodeHash?: string | null
-  resetPasswordCodeExpiresAt?: Date | string | null
   passwordHash: string
   passwordVersion?: number
   createdAt?: Date | string
   updatedAt?: Date | string
+  emailVerificationCodeExpiresAt?: Date | string | null
+  emailVerificationCodeHash?: string | null
+  emailVerified?: boolean
+  resetPasswordCodeExpiresAt?: Date | string | null
+  resetPasswordCodeHash?: string | null
   activitiesAsCoordinator?: Prisma.ActivityCreateNestedManyWithoutCoordinatorInput
-  notifications?: Prisma.NotificationCreateNestedManyWithoutRecipientInput
-  attendanceRecords?: Prisma.AttendanceCreateNestedManyWithoutStudentInput
-  markedAttendance?: Prisma.AttendanceCreateNestedManyWithoutMarkedByUserInput
   adminProfile?: Prisma.AdminCreateNestedOneWithoutUserInput
-  coordinatorProfile?: Prisma.CoordinatorCreateNestedOneWithoutUserInput
+  markedAttendance?: Prisma.AttendanceCreateNestedManyWithoutMarkedByUserInput
+  attendanceRecords?: Prisma.AttendanceCreateNestedManyWithoutStudentInput
   auditLogsAsActor?: Prisma.AuditLogCreateNestedManyWithoutActorInput
   auditLogsAsTarget?: Prisma.AuditLogCreateNestedManyWithoutTargetInput
+  coordinatorProfile?: Prisma.CoordinatorCreateNestedOneWithoutUserInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutRecipientInput
+  sentMessages?: Prisma.MessageCreateNestedManyWithoutSenderInput
+  receivedMessages?: Prisma.MessageCreateNestedManyWithoutReceiverInput
 }
 
 export type UserUncheckedCreateWithoutApplicationsInput = {
@@ -1309,23 +1657,25 @@ export type UserUncheckedCreateWithoutApplicationsInput = {
   department?: string | null
   joinedAt?: Date | string | null
   status?: $Enums.UserStatus
-  emailVerified?: boolean
-  emailVerificationCodeHash?: string | null
-  emailVerificationCodeExpiresAt?: Date | string | null
-  resetPasswordCodeHash?: string | null
-  resetPasswordCodeExpiresAt?: Date | string | null
   passwordHash: string
   passwordVersion?: number
   createdAt?: Date | string
   updatedAt?: Date | string
+  emailVerificationCodeExpiresAt?: Date | string | null
+  emailVerificationCodeHash?: string | null
+  emailVerified?: boolean
+  resetPasswordCodeExpiresAt?: Date | string | null
+  resetPasswordCodeHash?: string | null
   activitiesAsCoordinator?: Prisma.ActivityUncheckedCreateNestedManyWithoutCoordinatorInput
-  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutRecipientInput
-  attendanceRecords?: Prisma.AttendanceUncheckedCreateNestedManyWithoutStudentInput
-  markedAttendance?: Prisma.AttendanceUncheckedCreateNestedManyWithoutMarkedByUserInput
   adminProfile?: Prisma.AdminUncheckedCreateNestedOneWithoutUserInput
-  coordinatorProfile?: Prisma.CoordinatorUncheckedCreateNestedOneWithoutUserInput
+  markedAttendance?: Prisma.AttendanceUncheckedCreateNestedManyWithoutMarkedByUserInput
+  attendanceRecords?: Prisma.AttendanceUncheckedCreateNestedManyWithoutStudentInput
   auditLogsAsActor?: Prisma.AuditLogUncheckedCreateNestedManyWithoutActorInput
   auditLogsAsTarget?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTargetInput
+  coordinatorProfile?: Prisma.CoordinatorUncheckedCreateNestedOneWithoutUserInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutRecipientInput
+  sentMessages?: Prisma.MessageUncheckedCreateNestedManyWithoutSenderInput
+  receivedMessages?: Prisma.MessageUncheckedCreateNestedManyWithoutReceiverInput
 }
 
 export type UserCreateOrConnectWithoutApplicationsInput = {
@@ -1354,23 +1704,25 @@ export type UserUpdateWithoutApplicationsInput = {
   department?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   joinedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   passwordVersion?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   activitiesAsCoordinator?: Prisma.ActivityUpdateManyWithoutCoordinatorNestedInput
-  notifications?: Prisma.NotificationUpdateManyWithoutRecipientNestedInput
-  attendanceRecords?: Prisma.AttendanceUpdateManyWithoutStudentNestedInput
-  markedAttendance?: Prisma.AttendanceUpdateManyWithoutMarkedByUserNestedInput
   adminProfile?: Prisma.AdminUpdateOneWithoutUserNestedInput
-  coordinatorProfile?: Prisma.CoordinatorUpdateOneWithoutUserNestedInput
+  markedAttendance?: Prisma.AttendanceUpdateManyWithoutMarkedByUserNestedInput
+  attendanceRecords?: Prisma.AttendanceUpdateManyWithoutStudentNestedInput
   auditLogsAsActor?: Prisma.AuditLogUpdateManyWithoutActorNestedInput
   auditLogsAsTarget?: Prisma.AuditLogUpdateManyWithoutTargetNestedInput
+  coordinatorProfile?: Prisma.CoordinatorUpdateOneWithoutUserNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutRecipientNestedInput
+  sentMessages?: Prisma.MessageUpdateManyWithoutSenderNestedInput
+  receivedMessages?: Prisma.MessageUpdateManyWithoutReceiverNestedInput
 }
 
 export type UserUncheckedUpdateWithoutApplicationsInput = {
@@ -1383,23 +1735,25 @@ export type UserUncheckedUpdateWithoutApplicationsInput = {
   department?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   joinedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   passwordVersion?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   activitiesAsCoordinator?: Prisma.ActivityUncheckedUpdateManyWithoutCoordinatorNestedInput
-  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutRecipientNestedInput
-  attendanceRecords?: Prisma.AttendanceUncheckedUpdateManyWithoutStudentNestedInput
-  markedAttendance?: Prisma.AttendanceUncheckedUpdateManyWithoutMarkedByUserNestedInput
   adminProfile?: Prisma.AdminUncheckedUpdateOneWithoutUserNestedInput
-  coordinatorProfile?: Prisma.CoordinatorUncheckedUpdateOneWithoutUserNestedInput
+  markedAttendance?: Prisma.AttendanceUncheckedUpdateManyWithoutMarkedByUserNestedInput
+  attendanceRecords?: Prisma.AttendanceUncheckedUpdateManyWithoutStudentNestedInput
   auditLogsAsActor?: Prisma.AuditLogUncheckedUpdateManyWithoutActorNestedInput
   auditLogsAsTarget?: Prisma.AuditLogUncheckedUpdateManyWithoutTargetNestedInput
+  coordinatorProfile?: Prisma.CoordinatorUncheckedUpdateOneWithoutUserNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutRecipientNestedInput
+  sentMessages?: Prisma.MessageUncheckedUpdateManyWithoutSenderNestedInput
+  receivedMessages?: Prisma.MessageUncheckedUpdateManyWithoutReceiverNestedInput
 }
 
 export type UserCreateWithoutNotificationsInput = {
@@ -1412,23 +1766,25 @@ export type UserCreateWithoutNotificationsInput = {
   department?: string | null
   joinedAt?: Date | string | null
   status?: $Enums.UserStatus
-  emailVerified?: boolean
-  emailVerificationCodeHash?: string | null
-  emailVerificationCodeExpiresAt?: Date | string | null
-  resetPasswordCodeHash?: string | null
-  resetPasswordCodeExpiresAt?: Date | string | null
   passwordHash: string
   passwordVersion?: number
   createdAt?: Date | string
   updatedAt?: Date | string
+  emailVerificationCodeExpiresAt?: Date | string | null
+  emailVerificationCodeHash?: string | null
+  emailVerified?: boolean
+  resetPasswordCodeExpiresAt?: Date | string | null
+  resetPasswordCodeHash?: string | null
   activitiesAsCoordinator?: Prisma.ActivityCreateNestedManyWithoutCoordinatorInput
-  applications?: Prisma.ApplicationCreateNestedManyWithoutStudentInput
-  attendanceRecords?: Prisma.AttendanceCreateNestedManyWithoutStudentInput
-  markedAttendance?: Prisma.AttendanceCreateNestedManyWithoutMarkedByUserInput
   adminProfile?: Prisma.AdminCreateNestedOneWithoutUserInput
-  coordinatorProfile?: Prisma.CoordinatorCreateNestedOneWithoutUserInput
+  applications?: Prisma.ApplicationCreateNestedManyWithoutStudentInput
+  markedAttendance?: Prisma.AttendanceCreateNestedManyWithoutMarkedByUserInput
+  attendanceRecords?: Prisma.AttendanceCreateNestedManyWithoutStudentInput
   auditLogsAsActor?: Prisma.AuditLogCreateNestedManyWithoutActorInput
   auditLogsAsTarget?: Prisma.AuditLogCreateNestedManyWithoutTargetInput
+  coordinatorProfile?: Prisma.CoordinatorCreateNestedOneWithoutUserInput
+  sentMessages?: Prisma.MessageCreateNestedManyWithoutSenderInput
+  receivedMessages?: Prisma.MessageCreateNestedManyWithoutReceiverInput
 }
 
 export type UserUncheckedCreateWithoutNotificationsInput = {
@@ -1441,23 +1797,25 @@ export type UserUncheckedCreateWithoutNotificationsInput = {
   department?: string | null
   joinedAt?: Date | string | null
   status?: $Enums.UserStatus
-  emailVerified?: boolean
-  emailVerificationCodeHash?: string | null
-  emailVerificationCodeExpiresAt?: Date | string | null
-  resetPasswordCodeHash?: string | null
-  resetPasswordCodeExpiresAt?: Date | string | null
   passwordHash: string
   passwordVersion?: number
   createdAt?: Date | string
   updatedAt?: Date | string
+  emailVerificationCodeExpiresAt?: Date | string | null
+  emailVerificationCodeHash?: string | null
+  emailVerified?: boolean
+  resetPasswordCodeExpiresAt?: Date | string | null
+  resetPasswordCodeHash?: string | null
   activitiesAsCoordinator?: Prisma.ActivityUncheckedCreateNestedManyWithoutCoordinatorInput
-  applications?: Prisma.ApplicationUncheckedCreateNestedManyWithoutStudentInput
-  attendanceRecords?: Prisma.AttendanceUncheckedCreateNestedManyWithoutStudentInput
-  markedAttendance?: Prisma.AttendanceUncheckedCreateNestedManyWithoutMarkedByUserInput
   adminProfile?: Prisma.AdminUncheckedCreateNestedOneWithoutUserInput
-  coordinatorProfile?: Prisma.CoordinatorUncheckedCreateNestedOneWithoutUserInput
+  applications?: Prisma.ApplicationUncheckedCreateNestedManyWithoutStudentInput
+  markedAttendance?: Prisma.AttendanceUncheckedCreateNestedManyWithoutMarkedByUserInput
+  attendanceRecords?: Prisma.AttendanceUncheckedCreateNestedManyWithoutStudentInput
   auditLogsAsActor?: Prisma.AuditLogUncheckedCreateNestedManyWithoutActorInput
   auditLogsAsTarget?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTargetInput
+  coordinatorProfile?: Prisma.CoordinatorUncheckedCreateNestedOneWithoutUserInput
+  sentMessages?: Prisma.MessageUncheckedCreateNestedManyWithoutSenderInput
+  receivedMessages?: Prisma.MessageUncheckedCreateNestedManyWithoutReceiverInput
 }
 
 export type UserCreateOrConnectWithoutNotificationsInput = {
@@ -1486,23 +1844,25 @@ export type UserUpdateWithoutNotificationsInput = {
   department?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   joinedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   passwordVersion?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   activitiesAsCoordinator?: Prisma.ActivityUpdateManyWithoutCoordinatorNestedInput
-  applications?: Prisma.ApplicationUpdateManyWithoutStudentNestedInput
-  attendanceRecords?: Prisma.AttendanceUpdateManyWithoutStudentNestedInput
-  markedAttendance?: Prisma.AttendanceUpdateManyWithoutMarkedByUserNestedInput
   adminProfile?: Prisma.AdminUpdateOneWithoutUserNestedInput
-  coordinatorProfile?: Prisma.CoordinatorUpdateOneWithoutUserNestedInput
+  applications?: Prisma.ApplicationUpdateManyWithoutStudentNestedInput
+  markedAttendance?: Prisma.AttendanceUpdateManyWithoutMarkedByUserNestedInput
+  attendanceRecords?: Prisma.AttendanceUpdateManyWithoutStudentNestedInput
   auditLogsAsActor?: Prisma.AuditLogUpdateManyWithoutActorNestedInput
   auditLogsAsTarget?: Prisma.AuditLogUpdateManyWithoutTargetNestedInput
+  coordinatorProfile?: Prisma.CoordinatorUpdateOneWithoutUserNestedInput
+  sentMessages?: Prisma.MessageUpdateManyWithoutSenderNestedInput
+  receivedMessages?: Prisma.MessageUpdateManyWithoutReceiverNestedInput
 }
 
 export type UserUncheckedUpdateWithoutNotificationsInput = {
@@ -1515,86 +1875,25 @@ export type UserUncheckedUpdateWithoutNotificationsInput = {
   department?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   joinedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   passwordVersion?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   activitiesAsCoordinator?: Prisma.ActivityUncheckedUpdateManyWithoutCoordinatorNestedInput
-  applications?: Prisma.ApplicationUncheckedUpdateManyWithoutStudentNestedInput
-  attendanceRecords?: Prisma.AttendanceUncheckedUpdateManyWithoutStudentNestedInput
-  markedAttendance?: Prisma.AttendanceUncheckedUpdateManyWithoutMarkedByUserNestedInput
   adminProfile?: Prisma.AdminUncheckedUpdateOneWithoutUserNestedInput
-  coordinatorProfile?: Prisma.CoordinatorUncheckedUpdateOneWithoutUserNestedInput
+  applications?: Prisma.ApplicationUncheckedUpdateManyWithoutStudentNestedInput
+  markedAttendance?: Prisma.AttendanceUncheckedUpdateManyWithoutMarkedByUserNestedInput
+  attendanceRecords?: Prisma.AttendanceUncheckedUpdateManyWithoutStudentNestedInput
   auditLogsAsActor?: Prisma.AuditLogUncheckedUpdateManyWithoutActorNestedInput
   auditLogsAsTarget?: Prisma.AuditLogUncheckedUpdateManyWithoutTargetNestedInput
-}
-
-export type UserCreateWithoutAttendanceRecordsInput = {
-  id?: string
-  name: string
-  email: string
-  role: $Enums.UserRole
-  studentId?: string | null
-  avatar?: string | null
-  department?: string | null
-  joinedAt?: Date | string | null
-  status?: $Enums.UserStatus
-  emailVerified?: boolean
-  emailVerificationCodeHash?: string | null
-  emailVerificationCodeExpiresAt?: Date | string | null
-  resetPasswordCodeHash?: string | null
-  resetPasswordCodeExpiresAt?: Date | string | null
-  passwordHash: string
-  passwordVersion?: number
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  activitiesAsCoordinator?: Prisma.ActivityCreateNestedManyWithoutCoordinatorInput
-  applications?: Prisma.ApplicationCreateNestedManyWithoutStudentInput
-  notifications?: Prisma.NotificationCreateNestedManyWithoutRecipientInput
-  markedAttendance?: Prisma.AttendanceCreateNestedManyWithoutMarkedByUserInput
-  adminProfile?: Prisma.AdminCreateNestedOneWithoutUserInput
-  coordinatorProfile?: Prisma.CoordinatorCreateNestedOneWithoutUserInput
-  auditLogsAsActor?: Prisma.AuditLogCreateNestedManyWithoutActorInput
-  auditLogsAsTarget?: Prisma.AuditLogCreateNestedManyWithoutTargetInput
-}
-
-export type UserUncheckedCreateWithoutAttendanceRecordsInput = {
-  id?: string
-  name: string
-  email: string
-  role: $Enums.UserRole
-  studentId?: string | null
-  avatar?: string | null
-  department?: string | null
-  joinedAt?: Date | string | null
-  status?: $Enums.UserStatus
-  emailVerified?: boolean
-  emailVerificationCodeHash?: string | null
-  emailVerificationCodeExpiresAt?: Date | string | null
-  resetPasswordCodeHash?: string | null
-  resetPasswordCodeExpiresAt?: Date | string | null
-  passwordHash: string
-  passwordVersion?: number
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  activitiesAsCoordinator?: Prisma.ActivityUncheckedCreateNestedManyWithoutCoordinatorInput
-  applications?: Prisma.ApplicationUncheckedCreateNestedManyWithoutStudentInput
-  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutRecipientInput
-  markedAttendance?: Prisma.AttendanceUncheckedCreateNestedManyWithoutMarkedByUserInput
-  adminProfile?: Prisma.AdminUncheckedCreateNestedOneWithoutUserInput
-  coordinatorProfile?: Prisma.CoordinatorUncheckedCreateNestedOneWithoutUserInput
-  auditLogsAsActor?: Prisma.AuditLogUncheckedCreateNestedManyWithoutActorInput
-  auditLogsAsTarget?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTargetInput
-}
-
-export type UserCreateOrConnectWithoutAttendanceRecordsInput = {
-  where: Prisma.UserWhereUniqueInput
-  create: Prisma.XOR<Prisma.UserCreateWithoutAttendanceRecordsInput, Prisma.UserUncheckedCreateWithoutAttendanceRecordsInput>
+  coordinatorProfile?: Prisma.CoordinatorUncheckedUpdateOneWithoutUserNestedInput
+  sentMessages?: Prisma.MessageUncheckedUpdateManyWithoutSenderNestedInput
+  receivedMessages?: Prisma.MessageUncheckedUpdateManyWithoutReceiverNestedInput
 }
 
 export type UserCreateWithoutMarkedAttendanceInput = {
@@ -1607,23 +1906,25 @@ export type UserCreateWithoutMarkedAttendanceInput = {
   department?: string | null
   joinedAt?: Date | string | null
   status?: $Enums.UserStatus
-  emailVerified?: boolean
-  emailVerificationCodeHash?: string | null
-  emailVerificationCodeExpiresAt?: Date | string | null
-  resetPasswordCodeHash?: string | null
-  resetPasswordCodeExpiresAt?: Date | string | null
   passwordHash: string
   passwordVersion?: number
   createdAt?: Date | string
   updatedAt?: Date | string
+  emailVerificationCodeExpiresAt?: Date | string | null
+  emailVerificationCodeHash?: string | null
+  emailVerified?: boolean
+  resetPasswordCodeExpiresAt?: Date | string | null
+  resetPasswordCodeHash?: string | null
   activitiesAsCoordinator?: Prisma.ActivityCreateNestedManyWithoutCoordinatorInput
-  applications?: Prisma.ApplicationCreateNestedManyWithoutStudentInput
-  notifications?: Prisma.NotificationCreateNestedManyWithoutRecipientInput
-  attendanceRecords?: Prisma.AttendanceCreateNestedManyWithoutStudentInput
   adminProfile?: Prisma.AdminCreateNestedOneWithoutUserInput
-  coordinatorProfile?: Prisma.CoordinatorCreateNestedOneWithoutUserInput
+  applications?: Prisma.ApplicationCreateNestedManyWithoutStudentInput
+  attendanceRecords?: Prisma.AttendanceCreateNestedManyWithoutStudentInput
   auditLogsAsActor?: Prisma.AuditLogCreateNestedManyWithoutActorInput
   auditLogsAsTarget?: Prisma.AuditLogCreateNestedManyWithoutTargetInput
+  coordinatorProfile?: Prisma.CoordinatorCreateNestedOneWithoutUserInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutRecipientInput
+  sentMessages?: Prisma.MessageCreateNestedManyWithoutSenderInput
+  receivedMessages?: Prisma.MessageCreateNestedManyWithoutReceiverInput
 }
 
 export type UserUncheckedCreateWithoutMarkedAttendanceInput = {
@@ -1636,23 +1937,25 @@ export type UserUncheckedCreateWithoutMarkedAttendanceInput = {
   department?: string | null
   joinedAt?: Date | string | null
   status?: $Enums.UserStatus
-  emailVerified?: boolean
-  emailVerificationCodeHash?: string | null
-  emailVerificationCodeExpiresAt?: Date | string | null
-  resetPasswordCodeHash?: string | null
-  resetPasswordCodeExpiresAt?: Date | string | null
   passwordHash: string
   passwordVersion?: number
   createdAt?: Date | string
   updatedAt?: Date | string
+  emailVerificationCodeExpiresAt?: Date | string | null
+  emailVerificationCodeHash?: string | null
+  emailVerified?: boolean
+  resetPasswordCodeExpiresAt?: Date | string | null
+  resetPasswordCodeHash?: string | null
   activitiesAsCoordinator?: Prisma.ActivityUncheckedCreateNestedManyWithoutCoordinatorInput
-  applications?: Prisma.ApplicationUncheckedCreateNestedManyWithoutStudentInput
-  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutRecipientInput
-  attendanceRecords?: Prisma.AttendanceUncheckedCreateNestedManyWithoutStudentInput
   adminProfile?: Prisma.AdminUncheckedCreateNestedOneWithoutUserInput
-  coordinatorProfile?: Prisma.CoordinatorUncheckedCreateNestedOneWithoutUserInput
+  applications?: Prisma.ApplicationUncheckedCreateNestedManyWithoutStudentInput
+  attendanceRecords?: Prisma.AttendanceUncheckedCreateNestedManyWithoutStudentInput
   auditLogsAsActor?: Prisma.AuditLogUncheckedCreateNestedManyWithoutActorInput
   auditLogsAsTarget?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTargetInput
+  coordinatorProfile?: Prisma.CoordinatorUncheckedCreateNestedOneWithoutUserInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutRecipientInput
+  sentMessages?: Prisma.MessageUncheckedCreateNestedManyWithoutSenderInput
+  receivedMessages?: Prisma.MessageUncheckedCreateNestedManyWithoutReceiverInput
 }
 
 export type UserCreateOrConnectWithoutMarkedAttendanceInput = {
@@ -1660,73 +1963,71 @@ export type UserCreateOrConnectWithoutMarkedAttendanceInput = {
   create: Prisma.XOR<Prisma.UserCreateWithoutMarkedAttendanceInput, Prisma.UserUncheckedCreateWithoutMarkedAttendanceInput>
 }
 
-export type UserUpsertWithoutAttendanceRecordsInput = {
-  update: Prisma.XOR<Prisma.UserUpdateWithoutAttendanceRecordsInput, Prisma.UserUncheckedUpdateWithoutAttendanceRecordsInput>
+export type UserCreateWithoutAttendanceRecordsInput = {
+  id?: string
+  name: string
+  email: string
+  role: $Enums.UserRole
+  studentId?: string | null
+  avatar?: string | null
+  department?: string | null
+  joinedAt?: Date | string | null
+  status?: $Enums.UserStatus
+  passwordHash: string
+  passwordVersion?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  emailVerificationCodeExpiresAt?: Date | string | null
+  emailVerificationCodeHash?: string | null
+  emailVerified?: boolean
+  resetPasswordCodeExpiresAt?: Date | string | null
+  resetPasswordCodeHash?: string | null
+  activitiesAsCoordinator?: Prisma.ActivityCreateNestedManyWithoutCoordinatorInput
+  adminProfile?: Prisma.AdminCreateNestedOneWithoutUserInput
+  applications?: Prisma.ApplicationCreateNestedManyWithoutStudentInput
+  markedAttendance?: Prisma.AttendanceCreateNestedManyWithoutMarkedByUserInput
+  auditLogsAsActor?: Prisma.AuditLogCreateNestedManyWithoutActorInput
+  auditLogsAsTarget?: Prisma.AuditLogCreateNestedManyWithoutTargetInput
+  coordinatorProfile?: Prisma.CoordinatorCreateNestedOneWithoutUserInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutRecipientInput
+  sentMessages?: Prisma.MessageCreateNestedManyWithoutSenderInput
+  receivedMessages?: Prisma.MessageCreateNestedManyWithoutReceiverInput
+}
+
+export type UserUncheckedCreateWithoutAttendanceRecordsInput = {
+  id?: string
+  name: string
+  email: string
+  role: $Enums.UserRole
+  studentId?: string | null
+  avatar?: string | null
+  department?: string | null
+  joinedAt?: Date | string | null
+  status?: $Enums.UserStatus
+  passwordHash: string
+  passwordVersion?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  emailVerificationCodeExpiresAt?: Date | string | null
+  emailVerificationCodeHash?: string | null
+  emailVerified?: boolean
+  resetPasswordCodeExpiresAt?: Date | string | null
+  resetPasswordCodeHash?: string | null
+  activitiesAsCoordinator?: Prisma.ActivityUncheckedCreateNestedManyWithoutCoordinatorInput
+  adminProfile?: Prisma.AdminUncheckedCreateNestedOneWithoutUserInput
+  applications?: Prisma.ApplicationUncheckedCreateNestedManyWithoutStudentInput
+  markedAttendance?: Prisma.AttendanceUncheckedCreateNestedManyWithoutMarkedByUserInput
+  auditLogsAsActor?: Prisma.AuditLogUncheckedCreateNestedManyWithoutActorInput
+  auditLogsAsTarget?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTargetInput
+  coordinatorProfile?: Prisma.CoordinatorUncheckedCreateNestedOneWithoutUserInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutRecipientInput
+  sentMessages?: Prisma.MessageUncheckedCreateNestedManyWithoutSenderInput
+  receivedMessages?: Prisma.MessageUncheckedCreateNestedManyWithoutReceiverInput
+}
+
+export type UserCreateOrConnectWithoutAttendanceRecordsInput = {
+  where: Prisma.UserWhereUniqueInput
   create: Prisma.XOR<Prisma.UserCreateWithoutAttendanceRecordsInput, Prisma.UserUncheckedCreateWithoutAttendanceRecordsInput>
-  where?: Prisma.UserWhereInput
-}
-
-export type UserUpdateToOneWithWhereWithoutAttendanceRecordsInput = {
-  where?: Prisma.UserWhereInput
-  data: Prisma.XOR<Prisma.UserUpdateWithoutAttendanceRecordsInput, Prisma.UserUncheckedUpdateWithoutAttendanceRecordsInput>
-}
-
-export type UserUpdateWithoutAttendanceRecordsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  email?: Prisma.StringFieldUpdateOperationsInput | string
-  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
-  studentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  avatar?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  department?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  joinedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
-  passwordVersion?: Prisma.IntFieldUpdateOperationsInput | number
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  activitiesAsCoordinator?: Prisma.ActivityUpdateManyWithoutCoordinatorNestedInput
-  applications?: Prisma.ApplicationUpdateManyWithoutStudentNestedInput
-  notifications?: Prisma.NotificationUpdateManyWithoutRecipientNestedInput
-  markedAttendance?: Prisma.AttendanceUpdateManyWithoutMarkedByUserNestedInput
-  adminProfile?: Prisma.AdminUpdateOneWithoutUserNestedInput
-  coordinatorProfile?: Prisma.CoordinatorUpdateOneWithoutUserNestedInput
-  auditLogsAsActor?: Prisma.AuditLogUpdateManyWithoutActorNestedInput
-  auditLogsAsTarget?: Prisma.AuditLogUpdateManyWithoutTargetNestedInput
-}
-
-export type UserUncheckedUpdateWithoutAttendanceRecordsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  email?: Prisma.StringFieldUpdateOperationsInput | string
-  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
-  studentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  avatar?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  department?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  joinedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
-  passwordVersion?: Prisma.IntFieldUpdateOperationsInput | number
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  activitiesAsCoordinator?: Prisma.ActivityUncheckedUpdateManyWithoutCoordinatorNestedInput
-  applications?: Prisma.ApplicationUncheckedUpdateManyWithoutStudentNestedInput
-  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutRecipientNestedInput
-  markedAttendance?: Prisma.AttendanceUncheckedUpdateManyWithoutMarkedByUserNestedInput
-  adminProfile?: Prisma.AdminUncheckedUpdateOneWithoutUserNestedInput
-  coordinatorProfile?: Prisma.CoordinatorUncheckedUpdateOneWithoutUserNestedInput
-  auditLogsAsActor?: Prisma.AuditLogUncheckedUpdateManyWithoutActorNestedInput
-  auditLogsAsTarget?: Prisma.AuditLogUncheckedUpdateManyWithoutTargetNestedInput
 }
 
 export type UserUpsertWithoutMarkedAttendanceInput = {
@@ -1750,23 +2051,25 @@ export type UserUpdateWithoutMarkedAttendanceInput = {
   department?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   joinedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   passwordVersion?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   activitiesAsCoordinator?: Prisma.ActivityUpdateManyWithoutCoordinatorNestedInput
-  applications?: Prisma.ApplicationUpdateManyWithoutStudentNestedInput
-  notifications?: Prisma.NotificationUpdateManyWithoutRecipientNestedInput
-  attendanceRecords?: Prisma.AttendanceUpdateManyWithoutStudentNestedInput
   adminProfile?: Prisma.AdminUpdateOneWithoutUserNestedInput
-  coordinatorProfile?: Prisma.CoordinatorUpdateOneWithoutUserNestedInput
+  applications?: Prisma.ApplicationUpdateManyWithoutStudentNestedInput
+  attendanceRecords?: Prisma.AttendanceUpdateManyWithoutStudentNestedInput
   auditLogsAsActor?: Prisma.AuditLogUpdateManyWithoutActorNestedInput
   auditLogsAsTarget?: Prisma.AuditLogUpdateManyWithoutTargetNestedInput
+  coordinatorProfile?: Prisma.CoordinatorUpdateOneWithoutUserNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutRecipientNestedInput
+  sentMessages?: Prisma.MessageUpdateManyWithoutSenderNestedInput
+  receivedMessages?: Prisma.MessageUpdateManyWithoutReceiverNestedInput
 }
 
 export type UserUncheckedUpdateWithoutMarkedAttendanceInput = {
@@ -1779,23 +2082,98 @@ export type UserUncheckedUpdateWithoutMarkedAttendanceInput = {
   department?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   joinedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   passwordVersion?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   activitiesAsCoordinator?: Prisma.ActivityUncheckedUpdateManyWithoutCoordinatorNestedInput
-  applications?: Prisma.ApplicationUncheckedUpdateManyWithoutStudentNestedInput
-  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutRecipientNestedInput
-  attendanceRecords?: Prisma.AttendanceUncheckedUpdateManyWithoutStudentNestedInput
   adminProfile?: Prisma.AdminUncheckedUpdateOneWithoutUserNestedInput
-  coordinatorProfile?: Prisma.CoordinatorUncheckedUpdateOneWithoutUserNestedInput
+  applications?: Prisma.ApplicationUncheckedUpdateManyWithoutStudentNestedInput
+  attendanceRecords?: Prisma.AttendanceUncheckedUpdateManyWithoutStudentNestedInput
   auditLogsAsActor?: Prisma.AuditLogUncheckedUpdateManyWithoutActorNestedInput
   auditLogsAsTarget?: Prisma.AuditLogUncheckedUpdateManyWithoutTargetNestedInput
+  coordinatorProfile?: Prisma.CoordinatorUncheckedUpdateOneWithoutUserNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutRecipientNestedInput
+  sentMessages?: Prisma.MessageUncheckedUpdateManyWithoutSenderNestedInput
+  receivedMessages?: Prisma.MessageUncheckedUpdateManyWithoutReceiverNestedInput
+}
+
+export type UserUpsertWithoutAttendanceRecordsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutAttendanceRecordsInput, Prisma.UserUncheckedUpdateWithoutAttendanceRecordsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutAttendanceRecordsInput, Prisma.UserUncheckedCreateWithoutAttendanceRecordsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutAttendanceRecordsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutAttendanceRecordsInput, Prisma.UserUncheckedUpdateWithoutAttendanceRecordsInput>
+}
+
+export type UserUpdateWithoutAttendanceRecordsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  studentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatar?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  department?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  joinedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activitiesAsCoordinator?: Prisma.ActivityUpdateManyWithoutCoordinatorNestedInput
+  adminProfile?: Prisma.AdminUpdateOneWithoutUserNestedInput
+  applications?: Prisma.ApplicationUpdateManyWithoutStudentNestedInput
+  markedAttendance?: Prisma.AttendanceUpdateManyWithoutMarkedByUserNestedInput
+  auditLogsAsActor?: Prisma.AuditLogUpdateManyWithoutActorNestedInput
+  auditLogsAsTarget?: Prisma.AuditLogUpdateManyWithoutTargetNestedInput
+  coordinatorProfile?: Prisma.CoordinatorUpdateOneWithoutUserNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutRecipientNestedInput
+  sentMessages?: Prisma.MessageUpdateManyWithoutSenderNestedInput
+  receivedMessages?: Prisma.MessageUpdateManyWithoutReceiverNestedInput
+}
+
+export type UserUncheckedUpdateWithoutAttendanceRecordsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  studentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatar?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  department?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  joinedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activitiesAsCoordinator?: Prisma.ActivityUncheckedUpdateManyWithoutCoordinatorNestedInput
+  adminProfile?: Prisma.AdminUncheckedUpdateOneWithoutUserNestedInput
+  applications?: Prisma.ApplicationUncheckedUpdateManyWithoutStudentNestedInput
+  markedAttendance?: Prisma.AttendanceUncheckedUpdateManyWithoutMarkedByUserNestedInput
+  auditLogsAsActor?: Prisma.AuditLogUncheckedUpdateManyWithoutActorNestedInput
+  auditLogsAsTarget?: Prisma.AuditLogUncheckedUpdateManyWithoutTargetNestedInput
+  coordinatorProfile?: Prisma.CoordinatorUncheckedUpdateOneWithoutUserNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutRecipientNestedInput
+  sentMessages?: Prisma.MessageUncheckedUpdateManyWithoutSenderNestedInput
+  receivedMessages?: Prisma.MessageUncheckedUpdateManyWithoutReceiverNestedInput
 }
 
 export type UserCreateWithoutAuditLogsAsActorInput = {
@@ -1808,23 +2186,25 @@ export type UserCreateWithoutAuditLogsAsActorInput = {
   department?: string | null
   joinedAt?: Date | string | null
   status?: $Enums.UserStatus
-  emailVerified?: boolean
-  emailVerificationCodeHash?: string | null
-  emailVerificationCodeExpiresAt?: Date | string | null
-  resetPasswordCodeHash?: string | null
-  resetPasswordCodeExpiresAt?: Date | string | null
   passwordHash: string
   passwordVersion?: number
   createdAt?: Date | string
   updatedAt?: Date | string
+  emailVerificationCodeExpiresAt?: Date | string | null
+  emailVerificationCodeHash?: string | null
+  emailVerified?: boolean
+  resetPasswordCodeExpiresAt?: Date | string | null
+  resetPasswordCodeHash?: string | null
   activitiesAsCoordinator?: Prisma.ActivityCreateNestedManyWithoutCoordinatorInput
-  applications?: Prisma.ApplicationCreateNestedManyWithoutStudentInput
-  notifications?: Prisma.NotificationCreateNestedManyWithoutRecipientInput
-  attendanceRecords?: Prisma.AttendanceCreateNestedManyWithoutStudentInput
-  markedAttendance?: Prisma.AttendanceCreateNestedManyWithoutMarkedByUserInput
   adminProfile?: Prisma.AdminCreateNestedOneWithoutUserInput
-  coordinatorProfile?: Prisma.CoordinatorCreateNestedOneWithoutUserInput
+  applications?: Prisma.ApplicationCreateNestedManyWithoutStudentInput
+  markedAttendance?: Prisma.AttendanceCreateNestedManyWithoutMarkedByUserInput
+  attendanceRecords?: Prisma.AttendanceCreateNestedManyWithoutStudentInput
   auditLogsAsTarget?: Prisma.AuditLogCreateNestedManyWithoutTargetInput
+  coordinatorProfile?: Prisma.CoordinatorCreateNestedOneWithoutUserInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutRecipientInput
+  sentMessages?: Prisma.MessageCreateNestedManyWithoutSenderInput
+  receivedMessages?: Prisma.MessageCreateNestedManyWithoutReceiverInput
 }
 
 export type UserUncheckedCreateWithoutAuditLogsAsActorInput = {
@@ -1837,23 +2217,25 @@ export type UserUncheckedCreateWithoutAuditLogsAsActorInput = {
   department?: string | null
   joinedAt?: Date | string | null
   status?: $Enums.UserStatus
-  emailVerified?: boolean
-  emailVerificationCodeHash?: string | null
-  emailVerificationCodeExpiresAt?: Date | string | null
-  resetPasswordCodeHash?: string | null
-  resetPasswordCodeExpiresAt?: Date | string | null
   passwordHash: string
   passwordVersion?: number
   createdAt?: Date | string
   updatedAt?: Date | string
+  emailVerificationCodeExpiresAt?: Date | string | null
+  emailVerificationCodeHash?: string | null
+  emailVerified?: boolean
+  resetPasswordCodeExpiresAt?: Date | string | null
+  resetPasswordCodeHash?: string | null
   activitiesAsCoordinator?: Prisma.ActivityUncheckedCreateNestedManyWithoutCoordinatorInput
-  applications?: Prisma.ApplicationUncheckedCreateNestedManyWithoutStudentInput
-  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutRecipientInput
-  attendanceRecords?: Prisma.AttendanceUncheckedCreateNestedManyWithoutStudentInput
-  markedAttendance?: Prisma.AttendanceUncheckedCreateNestedManyWithoutMarkedByUserInput
   adminProfile?: Prisma.AdminUncheckedCreateNestedOneWithoutUserInput
-  coordinatorProfile?: Prisma.CoordinatorUncheckedCreateNestedOneWithoutUserInput
+  applications?: Prisma.ApplicationUncheckedCreateNestedManyWithoutStudentInput
+  markedAttendance?: Prisma.AttendanceUncheckedCreateNestedManyWithoutMarkedByUserInput
+  attendanceRecords?: Prisma.AttendanceUncheckedCreateNestedManyWithoutStudentInput
   auditLogsAsTarget?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTargetInput
+  coordinatorProfile?: Prisma.CoordinatorUncheckedCreateNestedOneWithoutUserInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutRecipientInput
+  sentMessages?: Prisma.MessageUncheckedCreateNestedManyWithoutSenderInput
+  receivedMessages?: Prisma.MessageUncheckedCreateNestedManyWithoutReceiverInput
 }
 
 export type UserCreateOrConnectWithoutAuditLogsAsActorInput = {
@@ -1871,23 +2253,25 @@ export type UserCreateWithoutAuditLogsAsTargetInput = {
   department?: string | null
   joinedAt?: Date | string | null
   status?: $Enums.UserStatus
-  emailVerified?: boolean
-  emailVerificationCodeHash?: string | null
-  emailVerificationCodeExpiresAt?: Date | string | null
-  resetPasswordCodeHash?: string | null
-  resetPasswordCodeExpiresAt?: Date | string | null
   passwordHash: string
   passwordVersion?: number
   createdAt?: Date | string
   updatedAt?: Date | string
+  emailVerificationCodeExpiresAt?: Date | string | null
+  emailVerificationCodeHash?: string | null
+  emailVerified?: boolean
+  resetPasswordCodeExpiresAt?: Date | string | null
+  resetPasswordCodeHash?: string | null
   activitiesAsCoordinator?: Prisma.ActivityCreateNestedManyWithoutCoordinatorInput
-  applications?: Prisma.ApplicationCreateNestedManyWithoutStudentInput
-  notifications?: Prisma.NotificationCreateNestedManyWithoutRecipientInput
-  attendanceRecords?: Prisma.AttendanceCreateNestedManyWithoutStudentInput
-  markedAttendance?: Prisma.AttendanceCreateNestedManyWithoutMarkedByUserInput
   adminProfile?: Prisma.AdminCreateNestedOneWithoutUserInput
-  coordinatorProfile?: Prisma.CoordinatorCreateNestedOneWithoutUserInput
+  applications?: Prisma.ApplicationCreateNestedManyWithoutStudentInput
+  markedAttendance?: Prisma.AttendanceCreateNestedManyWithoutMarkedByUserInput
+  attendanceRecords?: Prisma.AttendanceCreateNestedManyWithoutStudentInput
   auditLogsAsActor?: Prisma.AuditLogCreateNestedManyWithoutActorInput
+  coordinatorProfile?: Prisma.CoordinatorCreateNestedOneWithoutUserInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutRecipientInput
+  sentMessages?: Prisma.MessageCreateNestedManyWithoutSenderInput
+  receivedMessages?: Prisma.MessageCreateNestedManyWithoutReceiverInput
 }
 
 export type UserUncheckedCreateWithoutAuditLogsAsTargetInput = {
@@ -1900,23 +2284,25 @@ export type UserUncheckedCreateWithoutAuditLogsAsTargetInput = {
   department?: string | null
   joinedAt?: Date | string | null
   status?: $Enums.UserStatus
-  emailVerified?: boolean
-  emailVerificationCodeHash?: string | null
-  emailVerificationCodeExpiresAt?: Date | string | null
-  resetPasswordCodeHash?: string | null
-  resetPasswordCodeExpiresAt?: Date | string | null
   passwordHash: string
   passwordVersion?: number
   createdAt?: Date | string
   updatedAt?: Date | string
+  emailVerificationCodeExpiresAt?: Date | string | null
+  emailVerificationCodeHash?: string | null
+  emailVerified?: boolean
+  resetPasswordCodeExpiresAt?: Date | string | null
+  resetPasswordCodeHash?: string | null
   activitiesAsCoordinator?: Prisma.ActivityUncheckedCreateNestedManyWithoutCoordinatorInput
-  applications?: Prisma.ApplicationUncheckedCreateNestedManyWithoutStudentInput
-  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutRecipientInput
-  attendanceRecords?: Prisma.AttendanceUncheckedCreateNestedManyWithoutStudentInput
-  markedAttendance?: Prisma.AttendanceUncheckedCreateNestedManyWithoutMarkedByUserInput
   adminProfile?: Prisma.AdminUncheckedCreateNestedOneWithoutUserInput
-  coordinatorProfile?: Prisma.CoordinatorUncheckedCreateNestedOneWithoutUserInput
+  applications?: Prisma.ApplicationUncheckedCreateNestedManyWithoutStudentInput
+  markedAttendance?: Prisma.AttendanceUncheckedCreateNestedManyWithoutMarkedByUserInput
+  attendanceRecords?: Prisma.AttendanceUncheckedCreateNestedManyWithoutStudentInput
   auditLogsAsActor?: Prisma.AuditLogUncheckedCreateNestedManyWithoutActorInput
+  coordinatorProfile?: Prisma.CoordinatorUncheckedCreateNestedOneWithoutUserInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutRecipientInput
+  sentMessages?: Prisma.MessageUncheckedCreateNestedManyWithoutSenderInput
+  receivedMessages?: Prisma.MessageUncheckedCreateNestedManyWithoutReceiverInput
 }
 
 export type UserCreateOrConnectWithoutAuditLogsAsTargetInput = {
@@ -1945,23 +2331,25 @@ export type UserUpdateWithoutAuditLogsAsActorInput = {
   department?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   joinedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   passwordVersion?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   activitiesAsCoordinator?: Prisma.ActivityUpdateManyWithoutCoordinatorNestedInput
-  applications?: Prisma.ApplicationUpdateManyWithoutStudentNestedInput
-  notifications?: Prisma.NotificationUpdateManyWithoutRecipientNestedInput
-  attendanceRecords?: Prisma.AttendanceUpdateManyWithoutStudentNestedInput
-  markedAttendance?: Prisma.AttendanceUpdateManyWithoutMarkedByUserNestedInput
   adminProfile?: Prisma.AdminUpdateOneWithoutUserNestedInput
-  coordinatorProfile?: Prisma.CoordinatorUpdateOneWithoutUserNestedInput
+  applications?: Prisma.ApplicationUpdateManyWithoutStudentNestedInput
+  markedAttendance?: Prisma.AttendanceUpdateManyWithoutMarkedByUserNestedInput
+  attendanceRecords?: Prisma.AttendanceUpdateManyWithoutStudentNestedInput
   auditLogsAsTarget?: Prisma.AuditLogUpdateManyWithoutTargetNestedInput
+  coordinatorProfile?: Prisma.CoordinatorUpdateOneWithoutUserNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutRecipientNestedInput
+  sentMessages?: Prisma.MessageUpdateManyWithoutSenderNestedInput
+  receivedMessages?: Prisma.MessageUpdateManyWithoutReceiverNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAuditLogsAsActorInput = {
@@ -1974,23 +2362,25 @@ export type UserUncheckedUpdateWithoutAuditLogsAsActorInput = {
   department?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   joinedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   passwordVersion?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   activitiesAsCoordinator?: Prisma.ActivityUncheckedUpdateManyWithoutCoordinatorNestedInput
-  applications?: Prisma.ApplicationUncheckedUpdateManyWithoutStudentNestedInput
-  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutRecipientNestedInput
-  attendanceRecords?: Prisma.AttendanceUncheckedUpdateManyWithoutStudentNestedInput
-  markedAttendance?: Prisma.AttendanceUncheckedUpdateManyWithoutMarkedByUserNestedInput
   adminProfile?: Prisma.AdminUncheckedUpdateOneWithoutUserNestedInput
-  coordinatorProfile?: Prisma.CoordinatorUncheckedUpdateOneWithoutUserNestedInput
+  applications?: Prisma.ApplicationUncheckedUpdateManyWithoutStudentNestedInput
+  markedAttendance?: Prisma.AttendanceUncheckedUpdateManyWithoutMarkedByUserNestedInput
+  attendanceRecords?: Prisma.AttendanceUncheckedUpdateManyWithoutStudentNestedInput
   auditLogsAsTarget?: Prisma.AuditLogUncheckedUpdateManyWithoutTargetNestedInput
+  coordinatorProfile?: Prisma.CoordinatorUncheckedUpdateOneWithoutUserNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutRecipientNestedInput
+  sentMessages?: Prisma.MessageUncheckedUpdateManyWithoutSenderNestedInput
+  receivedMessages?: Prisma.MessageUncheckedUpdateManyWithoutReceiverNestedInput
 }
 
 export type UserUpsertWithoutAuditLogsAsTargetInput = {
@@ -2014,23 +2404,25 @@ export type UserUpdateWithoutAuditLogsAsTargetInput = {
   department?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   joinedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   passwordVersion?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   activitiesAsCoordinator?: Prisma.ActivityUpdateManyWithoutCoordinatorNestedInput
-  applications?: Prisma.ApplicationUpdateManyWithoutStudentNestedInput
-  notifications?: Prisma.NotificationUpdateManyWithoutRecipientNestedInput
-  attendanceRecords?: Prisma.AttendanceUpdateManyWithoutStudentNestedInput
-  markedAttendance?: Prisma.AttendanceUpdateManyWithoutMarkedByUserNestedInput
   adminProfile?: Prisma.AdminUpdateOneWithoutUserNestedInput
-  coordinatorProfile?: Prisma.CoordinatorUpdateOneWithoutUserNestedInput
+  applications?: Prisma.ApplicationUpdateManyWithoutStudentNestedInput
+  markedAttendance?: Prisma.AttendanceUpdateManyWithoutMarkedByUserNestedInput
+  attendanceRecords?: Prisma.AttendanceUpdateManyWithoutStudentNestedInput
   auditLogsAsActor?: Prisma.AuditLogUpdateManyWithoutActorNestedInput
+  coordinatorProfile?: Prisma.CoordinatorUpdateOneWithoutUserNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutRecipientNestedInput
+  sentMessages?: Prisma.MessageUpdateManyWithoutSenderNestedInput
+  receivedMessages?: Prisma.MessageUpdateManyWithoutReceiverNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAuditLogsAsTargetInput = {
@@ -2043,23 +2435,25 @@ export type UserUncheckedUpdateWithoutAuditLogsAsTargetInput = {
   department?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   joinedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
-  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   passwordVersion?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  emailVerificationCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerificationCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  resetPasswordCodeExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  resetPasswordCodeHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   activitiesAsCoordinator?: Prisma.ActivityUncheckedUpdateManyWithoutCoordinatorNestedInput
-  applications?: Prisma.ApplicationUncheckedUpdateManyWithoutStudentNestedInput
-  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutRecipientNestedInput
-  attendanceRecords?: Prisma.AttendanceUncheckedUpdateManyWithoutStudentNestedInput
-  markedAttendance?: Prisma.AttendanceUncheckedUpdateManyWithoutMarkedByUserNestedInput
   adminProfile?: Prisma.AdminUncheckedUpdateOneWithoutUserNestedInput
-  coordinatorProfile?: Prisma.CoordinatorUncheckedUpdateOneWithoutUserNestedInput
+  applications?: Prisma.ApplicationUncheckedUpdateManyWithoutStudentNestedInput
+  markedAttendance?: Prisma.AttendanceUncheckedUpdateManyWithoutMarkedByUserNestedInput
+  attendanceRecords?: Prisma.AttendanceUncheckedUpdateManyWithoutStudentNestedInput
   auditLogsAsActor?: Prisma.AuditLogUncheckedUpdateManyWithoutActorNestedInput
+  coordinatorProfile?: Prisma.CoordinatorUncheckedUpdateOneWithoutUserNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutRecipientNestedInput
+  sentMessages?: Prisma.MessageUncheckedUpdateManyWithoutSenderNestedInput
+  receivedMessages?: Prisma.MessageUncheckedUpdateManyWithoutReceiverNestedInput
 }
 
 
@@ -2070,21 +2464,25 @@ export type UserUncheckedUpdateWithoutAuditLogsAsTargetInput = {
 export type UserCountOutputType = {
   activitiesAsCoordinator: number
   applications: number
-  notifications: number
-  attendanceRecords: number
   markedAttendance: number
+  attendanceRecords: number
   auditLogsAsActor: number
   auditLogsAsTarget: number
+  notifications: number
+  sentMessages: number
+  receivedMessages: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   activitiesAsCoordinator?: boolean | UserCountOutputTypeCountActivitiesAsCoordinatorArgs
   applications?: boolean | UserCountOutputTypeCountApplicationsArgs
-  notifications?: boolean | UserCountOutputTypeCountNotificationsArgs
-  attendanceRecords?: boolean | UserCountOutputTypeCountAttendanceRecordsArgs
   markedAttendance?: boolean | UserCountOutputTypeCountMarkedAttendanceArgs
+  attendanceRecords?: boolean | UserCountOutputTypeCountAttendanceRecordsArgs
   auditLogsAsActor?: boolean | UserCountOutputTypeCountAuditLogsAsActorArgs
   auditLogsAsTarget?: boolean | UserCountOutputTypeCountAuditLogsAsTargetArgs
+  notifications?: boolean | UserCountOutputTypeCountNotificationsArgs
+  sentMessages?: boolean | UserCountOutputTypeCountSentMessagesArgs
+  receivedMessages?: boolean | UserCountOutputTypeCountReceivedMessagesArgs
 }
 
 /**
@@ -2114,21 +2512,14 @@ export type UserCountOutputTypeCountApplicationsArgs<ExtArgs extends runtime.Typ
 /**
  * UserCountOutputType without action
  */
-export type UserCountOutputTypeCountNotificationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.NotificationWhereInput
-}
-
-/**
- * UserCountOutputType without action
- */
-export type UserCountOutputTypeCountAttendanceRecordsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type UserCountOutputTypeCountMarkedAttendanceArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.AttendanceWhereInput
 }
 
 /**
  * UserCountOutputType without action
  */
-export type UserCountOutputTypeCountMarkedAttendanceArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type UserCountOutputTypeCountAttendanceRecordsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.AttendanceWhereInput
 }
 
@@ -2146,6 +2537,27 @@ export type UserCountOutputTypeCountAuditLogsAsTargetArgs<ExtArgs extends runtim
   where?: Prisma.AuditLogWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountNotificationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.NotificationWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountSentMessagesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.MessageWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountReceivedMessagesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.MessageWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -2157,24 +2569,26 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   department?: boolean
   joinedAt?: boolean
   status?: boolean
-  emailVerified?: boolean
-  emailVerificationCodeHash?: boolean
-  emailVerificationCodeExpiresAt?: boolean
-  resetPasswordCodeHash?: boolean
-  resetPasswordCodeExpiresAt?: boolean
   passwordHash?: boolean
   passwordVersion?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  emailVerificationCodeExpiresAt?: boolean
+  emailVerificationCodeHash?: boolean
+  emailVerified?: boolean
+  resetPasswordCodeExpiresAt?: boolean
+  resetPasswordCodeHash?: boolean
   activitiesAsCoordinator?: boolean | Prisma.User$activitiesAsCoordinatorArgs<ExtArgs>
-  applications?: boolean | Prisma.User$applicationsArgs<ExtArgs>
-  notifications?: boolean | Prisma.User$notificationsArgs<ExtArgs>
-  attendanceRecords?: boolean | Prisma.User$attendanceRecordsArgs<ExtArgs>
-  markedAttendance?: boolean | Prisma.User$markedAttendanceArgs<ExtArgs>
   adminProfile?: boolean | Prisma.User$adminProfileArgs<ExtArgs>
-  coordinatorProfile?: boolean | Prisma.User$coordinatorProfileArgs<ExtArgs>
+  applications?: boolean | Prisma.User$applicationsArgs<ExtArgs>
+  markedAttendance?: boolean | Prisma.User$markedAttendanceArgs<ExtArgs>
+  attendanceRecords?: boolean | Prisma.User$attendanceRecordsArgs<ExtArgs>
   auditLogsAsActor?: boolean | Prisma.User$auditLogsAsActorArgs<ExtArgs>
   auditLogsAsTarget?: boolean | Prisma.User$auditLogsAsTargetArgs<ExtArgs>
+  coordinatorProfile?: boolean | Prisma.User$coordinatorProfileArgs<ExtArgs>
+  notifications?: boolean | Prisma.User$notificationsArgs<ExtArgs>
+  sentMessages?: boolean | Prisma.User$sentMessagesArgs<ExtArgs>
+  receivedMessages?: boolean | Prisma.User$receivedMessagesArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -2188,15 +2602,15 @@ export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   department?: boolean
   joinedAt?: boolean
   status?: boolean
-  emailVerified?: boolean
-  emailVerificationCodeHash?: boolean
-  emailVerificationCodeExpiresAt?: boolean
-  resetPasswordCodeHash?: boolean
-  resetPasswordCodeExpiresAt?: boolean
   passwordHash?: boolean
   passwordVersion?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  emailVerificationCodeExpiresAt?: boolean
+  emailVerificationCodeHash?: boolean
+  emailVerified?: boolean
+  resetPasswordCodeExpiresAt?: boolean
+  resetPasswordCodeHash?: boolean
 }, ExtArgs["result"]["user"]>
 
 export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -2209,15 +2623,15 @@ export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   department?: boolean
   joinedAt?: boolean
   status?: boolean
-  emailVerified?: boolean
-  emailVerificationCodeHash?: boolean
-  emailVerificationCodeExpiresAt?: boolean
-  resetPasswordCodeHash?: boolean
-  resetPasswordCodeExpiresAt?: boolean
   passwordHash?: boolean
   passwordVersion?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  emailVerificationCodeExpiresAt?: boolean
+  emailVerificationCodeHash?: boolean
+  emailVerified?: boolean
+  resetPasswordCodeExpiresAt?: boolean
+  resetPasswordCodeHash?: boolean
 }, ExtArgs["result"]["user"]>
 
 export type UserSelectScalar = {
@@ -2230,28 +2644,30 @@ export type UserSelectScalar = {
   department?: boolean
   joinedAt?: boolean
   status?: boolean
-  emailVerified?: boolean
-  emailVerificationCodeHash?: boolean
-  emailVerificationCodeExpiresAt?: boolean
-  resetPasswordCodeHash?: boolean
-  resetPasswordCodeExpiresAt?: boolean
   passwordHash?: boolean
   passwordVersion?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  emailVerificationCodeExpiresAt?: boolean
+  emailVerificationCodeHash?: boolean
+  emailVerified?: boolean
+  resetPasswordCodeExpiresAt?: boolean
+  resetPasswordCodeHash?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "email" | "role" | "studentId" | "avatar" | "department" | "joinedAt" | "status" | "emailVerified" | "emailVerificationCodeHash" | "emailVerificationCodeExpiresAt" | "resetPasswordCodeHash" | "resetPasswordCodeExpiresAt" | "passwordHash" | "passwordVersion" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "email" | "role" | "studentId" | "avatar" | "department" | "joinedAt" | "status" | "passwordHash" | "passwordVersion" | "createdAt" | "updatedAt" | "emailVerificationCodeExpiresAt" | "emailVerificationCodeHash" | "emailVerified" | "resetPasswordCodeExpiresAt" | "resetPasswordCodeHash", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   activitiesAsCoordinator?: boolean | Prisma.User$activitiesAsCoordinatorArgs<ExtArgs>
-  applications?: boolean | Prisma.User$applicationsArgs<ExtArgs>
-  notifications?: boolean | Prisma.User$notificationsArgs<ExtArgs>
-  attendanceRecords?: boolean | Prisma.User$attendanceRecordsArgs<ExtArgs>
-  markedAttendance?: boolean | Prisma.User$markedAttendanceArgs<ExtArgs>
   adminProfile?: boolean | Prisma.User$adminProfileArgs<ExtArgs>
-  coordinatorProfile?: boolean | Prisma.User$coordinatorProfileArgs<ExtArgs>
+  applications?: boolean | Prisma.User$applicationsArgs<ExtArgs>
+  markedAttendance?: boolean | Prisma.User$markedAttendanceArgs<ExtArgs>
+  attendanceRecords?: boolean | Prisma.User$attendanceRecordsArgs<ExtArgs>
   auditLogsAsActor?: boolean | Prisma.User$auditLogsAsActorArgs<ExtArgs>
   auditLogsAsTarget?: boolean | Prisma.User$auditLogsAsTargetArgs<ExtArgs>
+  coordinatorProfile?: boolean | Prisma.User$coordinatorProfileArgs<ExtArgs>
+  notifications?: boolean | Prisma.User$notificationsArgs<ExtArgs>
+  sentMessages?: boolean | Prisma.User$sentMessagesArgs<ExtArgs>
+  receivedMessages?: boolean | Prisma.User$receivedMessagesArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -2261,14 +2677,16 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   name: "User"
   objects: {
     activitiesAsCoordinator: Prisma.$ActivityPayload<ExtArgs>[]
-    applications: Prisma.$ApplicationPayload<ExtArgs>[]
-    notifications: Prisma.$NotificationPayload<ExtArgs>[]
-    attendanceRecords: Prisma.$AttendancePayload<ExtArgs>[]
-    markedAttendance: Prisma.$AttendancePayload<ExtArgs>[]
     adminProfile: Prisma.$AdminPayload<ExtArgs> | null
-    coordinatorProfile: Prisma.$CoordinatorPayload<ExtArgs> | null
+    applications: Prisma.$ApplicationPayload<ExtArgs>[]
+    markedAttendance: Prisma.$AttendancePayload<ExtArgs>[]
+    attendanceRecords: Prisma.$AttendancePayload<ExtArgs>[]
     auditLogsAsActor: Prisma.$AuditLogPayload<ExtArgs>[]
     auditLogsAsTarget: Prisma.$AuditLogPayload<ExtArgs>[]
+    coordinatorProfile: Prisma.$CoordinatorPayload<ExtArgs> | null
+    notifications: Prisma.$NotificationPayload<ExtArgs>[]
+    sentMessages: Prisma.$MessagePayload<ExtArgs>[]
+    receivedMessages: Prisma.$MessagePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -2280,15 +2698,15 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     department: string | null
     joinedAt: Date | null
     status: $Enums.UserStatus
-    emailVerified: boolean
-    emailVerificationCodeHash: string | null
-    emailVerificationCodeExpiresAt: Date | null
-    resetPasswordCodeHash: string | null
-    resetPasswordCodeExpiresAt: Date | null
     passwordHash: string
     passwordVersion: number
     createdAt: Date
     updatedAt: Date
+    emailVerificationCodeExpiresAt: Date | null
+    emailVerificationCodeHash: string | null
+    emailVerified: boolean
+    resetPasswordCodeExpiresAt: Date | null
+    resetPasswordCodeHash: string | null
   }, ExtArgs["result"]["user"]>
   composites: {}
 }
@@ -2684,14 +3102,16 @@ readonly fields: UserFieldRefs;
 export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   activitiesAsCoordinator<T extends Prisma.User$activitiesAsCoordinatorArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$activitiesAsCoordinatorArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ActivityPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  applications<T extends Prisma.User$applicationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$applicationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ApplicationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  notifications<T extends Prisma.User$notificationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$notificationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  attendanceRecords<T extends Prisma.User$attendanceRecordsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$attendanceRecordsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AttendancePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  markedAttendance<T extends Prisma.User$markedAttendanceArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$markedAttendanceArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AttendancePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   adminProfile<T extends Prisma.User$adminProfileArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$adminProfileArgs<ExtArgs>>): Prisma.Prisma__AdminClient<runtime.Types.Result.GetResult<Prisma.$AdminPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-  coordinatorProfile<T extends Prisma.User$coordinatorProfileArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$coordinatorProfileArgs<ExtArgs>>): Prisma.Prisma__CoordinatorClient<runtime.Types.Result.GetResult<Prisma.$CoordinatorPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  applications<T extends Prisma.User$applicationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$applicationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ApplicationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  markedAttendance<T extends Prisma.User$markedAttendanceArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$markedAttendanceArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AttendancePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  attendanceRecords<T extends Prisma.User$attendanceRecordsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$attendanceRecordsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AttendancePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   auditLogsAsActor<T extends Prisma.User$auditLogsAsActorArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$auditLogsAsActorArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AuditLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   auditLogsAsTarget<T extends Prisma.User$auditLogsAsTargetArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$auditLogsAsTargetArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AuditLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  coordinatorProfile<T extends Prisma.User$coordinatorProfileArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$coordinatorProfileArgs<ExtArgs>>): Prisma.Prisma__CoordinatorClient<runtime.Types.Result.GetResult<Prisma.$CoordinatorPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  notifications<T extends Prisma.User$notificationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$notificationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  sentMessages<T extends Prisma.User$sentMessagesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$sentMessagesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MessagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  receivedMessages<T extends Prisma.User$receivedMessagesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$receivedMessagesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MessagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2730,15 +3150,15 @@ export interface UserFieldRefs {
   readonly department: Prisma.FieldRef<"User", 'String'>
   readonly joinedAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly status: Prisma.FieldRef<"User", 'UserStatus'>
-  readonly emailVerified: Prisma.FieldRef<"User", 'Boolean'>
-  readonly emailVerificationCodeHash: Prisma.FieldRef<"User", 'String'>
-  readonly emailVerificationCodeExpiresAt: Prisma.FieldRef<"User", 'DateTime'>
-  readonly resetPasswordCodeHash: Prisma.FieldRef<"User", 'String'>
-  readonly resetPasswordCodeExpiresAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly passwordHash: Prisma.FieldRef<"User", 'String'>
   readonly passwordVersion: Prisma.FieldRef<"User", 'Int'>
   readonly createdAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"User", 'DateTime'>
+  readonly emailVerificationCodeExpiresAt: Prisma.FieldRef<"User", 'DateTime'>
+  readonly emailVerificationCodeHash: Prisma.FieldRef<"User", 'String'>
+  readonly emailVerified: Prisma.FieldRef<"User", 'Boolean'>
+  readonly resetPasswordCodeExpiresAt: Prisma.FieldRef<"User", 'DateTime'>
+  readonly resetPasswordCodeHash: Prisma.FieldRef<"User", 'String'>
 }
     
 
@@ -3151,6 +3571,25 @@ export type User$activitiesAsCoordinatorArgs<ExtArgs extends runtime.Types.Exten
 }
 
 /**
+ * User.adminProfile
+ */
+export type User$adminProfileArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Admin
+   */
+  select?: Prisma.AdminSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Admin
+   */
+  omit?: Prisma.AdminOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AdminInclude<ExtArgs> | null
+  where?: Prisma.AdminWhereInput
+}
+
+/**
  * User.applications
  */
 export type User$applicationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -3172,54 +3611,6 @@ export type User$applicationsArgs<ExtArgs extends runtime.Types.Extensions.Inter
   take?: number
   skip?: number
   distinct?: Prisma.ApplicationScalarFieldEnum | Prisma.ApplicationScalarFieldEnum[]
-}
-
-/**
- * User.notifications
- */
-export type User$notificationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the Notification
-   */
-  select?: Prisma.NotificationSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the Notification
-   */
-  omit?: Prisma.NotificationOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.NotificationInclude<ExtArgs> | null
-  where?: Prisma.NotificationWhereInput
-  orderBy?: Prisma.NotificationOrderByWithRelationInput | Prisma.NotificationOrderByWithRelationInput[]
-  cursor?: Prisma.NotificationWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.NotificationScalarFieldEnum | Prisma.NotificationScalarFieldEnum[]
-}
-
-/**
- * User.attendanceRecords
- */
-export type User$attendanceRecordsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the Attendance
-   */
-  select?: Prisma.AttendanceSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the Attendance
-   */
-  omit?: Prisma.AttendanceOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.AttendanceInclude<ExtArgs> | null
-  where?: Prisma.AttendanceWhereInput
-  orderBy?: Prisma.AttendanceOrderByWithRelationInput | Prisma.AttendanceOrderByWithRelationInput[]
-  cursor?: Prisma.AttendanceWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.AttendanceScalarFieldEnum | Prisma.AttendanceScalarFieldEnum[]
 }
 
 /**
@@ -3247,41 +3638,27 @@ export type User$markedAttendanceArgs<ExtArgs extends runtime.Types.Extensions.I
 }
 
 /**
- * User.adminProfile
+ * User.attendanceRecords
  */
-export type User$adminProfileArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type User$attendanceRecordsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Admin
+   * Select specific fields to fetch from the Attendance
    */
-  select?: Prisma.AdminSelect<ExtArgs> | null
+  select?: Prisma.AttendanceSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Admin
+   * Omit specific fields from the Attendance
    */
-  omit?: Prisma.AdminOmit<ExtArgs> | null
+  omit?: Prisma.AttendanceOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.AdminInclude<ExtArgs> | null
-  where?: Prisma.AdminWhereInput
-}
-
-/**
- * User.coordinatorProfile
- */
-export type User$coordinatorProfileArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the Coordinator
-   */
-  select?: Prisma.CoordinatorSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the Coordinator
-   */
-  omit?: Prisma.CoordinatorOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.CoordinatorInclude<ExtArgs> | null
-  where?: Prisma.CoordinatorWhereInput
+  include?: Prisma.AttendanceInclude<ExtArgs> | null
+  where?: Prisma.AttendanceWhereInput
+  orderBy?: Prisma.AttendanceOrderByWithRelationInput | Prisma.AttendanceOrderByWithRelationInput[]
+  cursor?: Prisma.AttendanceWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.AttendanceScalarFieldEnum | Prisma.AttendanceScalarFieldEnum[]
 }
 
 /**
@@ -3330,6 +3707,97 @@ export type User$auditLogsAsTargetArgs<ExtArgs extends runtime.Types.Extensions.
   take?: number
   skip?: number
   distinct?: Prisma.AuditLogScalarFieldEnum | Prisma.AuditLogScalarFieldEnum[]
+}
+
+/**
+ * User.coordinatorProfile
+ */
+export type User$coordinatorProfileArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Coordinator
+   */
+  select?: Prisma.CoordinatorSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Coordinator
+   */
+  omit?: Prisma.CoordinatorOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CoordinatorInclude<ExtArgs> | null
+  where?: Prisma.CoordinatorWhereInput
+}
+
+/**
+ * User.notifications
+ */
+export type User$notificationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Notification
+   */
+  select?: Prisma.NotificationSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Notification
+   */
+  omit?: Prisma.NotificationOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.NotificationInclude<ExtArgs> | null
+  where?: Prisma.NotificationWhereInput
+  orderBy?: Prisma.NotificationOrderByWithRelationInput | Prisma.NotificationOrderByWithRelationInput[]
+  cursor?: Prisma.NotificationWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.NotificationScalarFieldEnum | Prisma.NotificationScalarFieldEnum[]
+}
+
+/**
+ * User.sentMessages
+ */
+export type User$sentMessagesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Message
+   */
+  select?: Prisma.MessageSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Message
+   */
+  omit?: Prisma.MessageOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.MessageInclude<ExtArgs> | null
+  where?: Prisma.MessageWhereInput
+  orderBy?: Prisma.MessageOrderByWithRelationInput | Prisma.MessageOrderByWithRelationInput[]
+  cursor?: Prisma.MessageWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.MessageScalarFieldEnum | Prisma.MessageScalarFieldEnum[]
+}
+
+/**
+ * User.receivedMessages
+ */
+export type User$receivedMessagesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Message
+   */
+  select?: Prisma.MessageSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Message
+   */
+  omit?: Prisma.MessageOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.MessageInclude<ExtArgs> | null
+  where?: Prisma.MessageWhereInput
+  orderBy?: Prisma.MessageOrderByWithRelationInput | Prisma.MessageOrderByWithRelationInput[]
+  cursor?: Prisma.MessageWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.MessageScalarFieldEnum | Prisma.MessageScalarFieldEnum[]
 }
 
 /**
