@@ -22,13 +22,7 @@ import { GradientBackground } from '@/src/components/GradientBackground';
 import { ThemedText } from '@/src/components/themed-text';
 import * as Haptics from 'expo-haptics';
 import { client } from '@/src/lib/api';
-import { IMAGE_BASE } from '@/src/lib/config';
-
-const getAvatarUrl = (path?: string) => {
-  if (!path) return 'https://github.com/shadcn.png';
-  if (path.startsWith('http')) return path;
-  return `${IMAGE_BASE}${path.startsWith('/') ? path : `/${path}`}`;
-};
+import { getAvatarUrl } from '@/src/lib/media';
 
 interface User {
   id: string;
@@ -175,7 +169,7 @@ export default function UserDirectoryScreen() {
                 <ExpoBlurView intensity={20} style={StyleSheet.absoluteFill} tint={colorScheme === 'dark' ? 'dark' : 'light'} />
                 <View style={styles.cardContent}>
                   <View style={styles.avatarWrapper}>
-                    <Image source={{ uri: getAvatarUrl(item.avatar) }} style={styles.avatar} />
+                    <Image source={getAvatarUrl(item.avatar)} style={styles.avatar} />
                   </View>
                   <View style={styles.userInfo}>
                     <Text style={[styles.userName, { color: theme.text }]}>{item.name}</Text>

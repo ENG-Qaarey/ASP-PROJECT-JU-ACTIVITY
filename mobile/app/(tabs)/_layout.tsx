@@ -6,6 +6,7 @@ import { LayoutDashboard, Calendar, FileText, Bell, User, Search, Menu, Folders,
 import { useColorScheme } from '@/src/hooks/use-color-scheme';
 import { Colors } from '@/src/data/theme';
 import { Image } from 'expo-image';
+import { getAvatarUrl } from '@/src/lib/media';
 
 export default function HybridLayout() {
   const router = useRouter();
@@ -63,7 +64,7 @@ export default function HybridLayout() {
       <View style={styles.drawerFooter}>
         <View style={styles.profileBox}>
           <Image 
-            source={{ uri: 'https://github.com/shadcn.png' }} 
+            source={getAvatarUrl()} 
             style={styles.avatar} 
           />
           <View style={styles.profileInfo}>
@@ -113,7 +114,7 @@ export default function HybridLayout() {
                 <Search size={20} color="#64748B" />
               </TouchableOpacity>
               <Image 
-                source={{ uri: 'https://github.com/shadcn.png' }} 
+                source={getAvatarUrl()} 
                 style={styles.headerAvatar} 
               />
             </View>

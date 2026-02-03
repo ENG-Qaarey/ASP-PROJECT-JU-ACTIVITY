@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
   description: { fontSize: 15, lineHeight: 24 },
   benefitItem: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
   benefitText: { fontSize: 15, fontWeight: '600' },
-  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 24, paddingTop: 16, paddingBottom: 32, borderTopWidth: 1, flexDirection: 'row', alignItems: 'center', gap: 20 },
+  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 24, paddingTop: 16, paddingBottom: 32, borderTopWidth: 1, flexDirection: 'row', alignItems: 'center', gap: 20, zIndex: 10 },
   footerInfo: { flex: 0.8 },
   footerLabel: { fontSize: 12, fontWeight: '600', marginBottom: 4 },
   statusRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },

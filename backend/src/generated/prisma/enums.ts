@@ -9,6 +9,17 @@
 * 🟢 You can import this file directly.
 */
 
+export const MessageType = {
+  text: 'text',
+  audio: 'audio',
+  image: 'image',
+  video: 'video',
+  file: 'file'
+} as const
+
+export type MessageType = (typeof MessageType)[keyof typeof MessageType]
+
+
 export const UserRole = {
   student: 'student',
   coordinator: 'coordinator',

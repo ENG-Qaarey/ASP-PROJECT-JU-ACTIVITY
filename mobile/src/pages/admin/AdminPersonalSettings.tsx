@@ -13,7 +13,8 @@ import { useRouter } from 'expo-router';
 import { useColorScheme } from '@/src/hooks/use-color-scheme';
 import { Colors } from '@/src/data/theme';
 import { client } from '@/src/lib/api';
-import { ENDPOINTS, BASE_URL, IMAGE_BASE } from '@/src/lib/config';
+import { ENDPOINTS, BASE_URL } from '@/src/lib/config';
+import { getAvatarUrl } from '@/src/lib/media';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/src/context/AuthContext';
 
@@ -155,9 +156,7 @@ export default function AdminPersonalSettings() {
     }
   };
 
-  const fullAvatarUrl = formData.avatar?.startsWith('http') 
-    ? formData.avatar 
-    : `${IMAGE_BASE}${formData.avatar}`;
+  const fullAvatarUrl = getAvatarUrl(formData.avatar);
 
   if (fetching) {
       return (
@@ -185,7 +184,7 @@ export default function AdminPersonalSettings() {
           <View style={styles.avatarSection}>
             <View style={styles.avatarContainer}>
               <Image 
-                source={{ uri: fullAvatarUrl }} 
+                source={fullAvatarUrl} 
                 style={[styles.avatar, { borderColor: theme.card }]} 
               />
               <TouchableOpacity style={[styles.cameraBtn, { borderColor: theme.card }]} onPress={pickImage}>

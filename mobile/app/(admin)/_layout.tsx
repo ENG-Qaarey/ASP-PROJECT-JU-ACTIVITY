@@ -13,6 +13,7 @@ import { Image } from 'expo-image';
 import { usePathname } from 'expo-router';
 import { useAuth } from '@/src/context/AuthContext';
 import { IMAGE_BASE } from '@/src/lib/config';
+import { getAvatarUrl } from '@/src/lib/media';
 import { ShakingBellIcon } from '@/src/components/ShakingBellIcon';
 import { ChatIcon } from '@/src/components/ChatIcon';
 
@@ -26,9 +27,7 @@ export default function AdminLayout() {
   const isActive = (path: string) => pathname === path;
   const theme = Colors[colorScheme];
 
-  const fullAvatarUrl = user?.avatar 
-    ? (user.avatar.startsWith('http') ? user.avatar : `${IMAGE_BASE}${user.avatar}`) 
-    : 'https://github.com/shadcn.png';
+  const fullAvatarUrl = getAvatarUrl(user?.avatar);
 
   const renderDrawerContent = () => (
     <View style={[styles.drawerContainer, { backgroundColor: theme.card }]}>
@@ -125,7 +124,7 @@ export default function AdminLayout() {
       <View style={[styles.drawerFooter, { borderTopColor: theme.border }]}>
         <View style={[styles.profileBox, { backgroundColor: theme.background }]}>
           <Image 
-            source={{ uri: fullAvatarUrl }} 
+            source={fullAvatarUrl} 
             style={styles.avatar} 
           />
           <View style={styles.profileInfo}>
@@ -177,7 +176,7 @@ export default function AdminLayout() {
                 backgroundColor={theme.background}
               />
               <Image 
-                source={{ uri: fullAvatarUrl }} 
+                source={fullAvatarUrl} 
                 style={[styles.headerAvatar, { borderColor: theme.border }]} 
               />
             </View>

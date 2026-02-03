@@ -15,6 +15,7 @@ import { Colors } from '@/src/data/theme';
 import { useAuth } from '@/src/context/AuthContext';
 import { client } from '@/src/lib/api';
 import { IMAGE_BASE } from '@/src/lib/config';
+import { getAvatarUrl } from '@/src/lib/media';
 import * as ImagePicker from 'expo-image-picker';
 
 export default function CoordinatorPersonalSettings() {
@@ -130,9 +131,7 @@ export default function CoordinatorPersonalSettings() {
     }
   };
 
-  const fullAvatarUrl = user?.avatar 
-    ? (user.avatar.startsWith('http') ? user.avatar : `${IMAGE_BASE}${user.avatar}`) 
-    : 'https://github.com/shadcn.png';
+  const fullAvatarUrl = getAvatarUrl(user?.avatar);
 
   return (
     <GradientBackground>
@@ -152,7 +151,7 @@ export default function CoordinatorPersonalSettings() {
           <View style={styles.avatarSection}>
             <View style={styles.avatarContainer}>
               <Image 
-                source={{ uri: fullAvatarUrl }} 
+                source={fullAvatarUrl} 
                 style={[styles.avatar, { borderColor: theme.card }]} 
               />
               <TouchableOpacity style={[styles.cameraBtn, { borderColor: theme.card }]} onPress={pickImage}>

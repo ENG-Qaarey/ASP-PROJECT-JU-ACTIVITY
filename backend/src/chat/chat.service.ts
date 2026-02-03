@@ -6,12 +6,13 @@ import { PrismaService } from '../prisma/prisma.service';
 export class ChatService {
     constructor(private prisma: PrismaService) { }
 
-    async saveMessage(senderId: string, receiverId: string, content: string) {
+    async saveMessage(senderId: string, receiverId: string, content: string, type: string = 'text') {
         return this.prisma.message.create({
             data: {
                 senderId,
                 receiverId,
                 content,
+                type: type as any,
             },
             include: {
                 sender: {
@@ -57,6 +58,7 @@ export class ChatService {
             select: {
                 id: true,
                 content: true,
+                type: true,
                 createdAt: true,
                 senderId: true,
                 receiverId: true,

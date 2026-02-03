@@ -20,6 +20,7 @@ import { useTheme } from '@/src/context/ThemeContext';
 import { useAuth } from '@/src/context/AuthContext';
 
 import { IMAGE_BASE } from '@/src/lib/config';
+import { getAvatarUrl } from '@/src/lib/media';
 
 export default function StudentProfile() {
   const router = useRouter();
@@ -64,7 +65,7 @@ export default function StudentProfile() {
             activeOpacity={0.9}
           >
             <Image 
-              source={{ uri: user?.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${IMAGE_BASE}${user.avatar}`) : 'https://github.com/shadcn.png' }} 
+              source={getAvatarUrl(user?.avatar)} 
               style={[styles.avatar, { borderColor: theme.card }]} 
             />
             <View style={[styles.studentBadge, { borderColor: theme.card }]}>

@@ -11,6 +11,7 @@ import { Colors } from '@/src/data/theme';
 import { useAuth } from '@/src/context/AuthContext';
 import { client } from '@/src/lib/api';
 import { IMAGE_BASE } from '@/src/lib/config';
+import { getAvatarUrl } from '@/src/lib/media';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
 import { ActivityIndicator, Alert, Platform } from 'react-native';
@@ -160,7 +161,7 @@ export default function PersonalInformation() {
         <View style={styles.avatarSection}>
             <View style={styles.avatarContainer}>
                 <Image 
-                    source={{ uri: user?.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${IMAGE_BASE}${user.avatar}`) : 'https://github.com/shadcn.png' }} 
+                    source={getAvatarUrl(user?.avatar)} 
                     style={[styles.avatar, { borderColor: theme.card }]} 
                 />
                 <TouchableOpacity 

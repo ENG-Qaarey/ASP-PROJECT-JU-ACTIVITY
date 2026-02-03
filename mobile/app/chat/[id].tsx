@@ -17,22 +17,139 @@ import {
 } from 'react-native';
 import { BlurView as ExpoBlurView } from 'expo-blur';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
-import { ArrowLeft, Send, Paperclip, Smile, Camera, Mic, Info, MoreVertical } from 'lucide-react-native';
+import { ArrowLeft, Send, Paperclip, Smile, Camera, Mic, Info, MoreVertical, Play, Pause, Square, Trash2, Clock } from 'lucide-react-native';
 import { useColorScheme } from '@/src/hooks/use-color-scheme';
 import { Colors } from '@/src/data/theme';
 import { Image } from 'expo-image';
+import { Audio } from 'expo-av';
+import * as FileSystem from 'expo-file-system';
 import { GradientBackground } from '@/src/components/GradientBackground';
 import * as Haptics from 'expo-haptics';
 import { client } from '@/src/lib/api';
 import { useAuth } from '@/src/context/AuthContext';
 import { useChat } from '@/src/context/ChatContext';
+import { getAvatarUrl } from '@/src/lib/media';
 import { IMAGE_BASE } from '@/src/lib/config';
 import dayjs from 'dayjs';
 
-const getAvatarUrl = (path?: string) => {
-  if (!path) return 'https://github.com/shadcn.png';
-  if (path.startsWith('http')) return path;
-  return `${IMAGE_BASE}${path.startsWith('/') ? path : `/${path}`}`;
+const VoiceMessage = ({ url, isMe, theme, avatar, colorScheme }: { url: string; isMe: boolean; theme: any, avatar?: string, colorScheme: 'light' | 'dark' }) => {
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [duration, setDuration] = useState<number | null>(null);
+  const [position, setPosition] = useState(0);
+
+  useEffect(() => {
+    return () => {
+      if (sound) {
+        sound.unloadAsync();
+      }
+    };
+  }, [sound]);
+
+  const playPause = async () => {
+    try {
+      // Ensure audio plays through speaker
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: false,
+        shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false,
+      });
+
+      if (sound) {
+        if (isPlaying) {
+          await sound.pauseAsync();
+          setIsPlaying(false);
+        } else {
+          await sound.playAsync();
+          setIsPlaying(true);
+        }
+      } else {
+        const fullUrl = url.startsWith('http') ? url : `${IMAGE_BASE}${url}`;
+        const { sound: newSound } = await Audio.Sound.createAsync(
+          { uri: fullUrl },
+          { shouldPlay: true },
+          onPlaybackStatusUpdate
+        );
+        setSound(newSound);
+        setIsPlaying(true);
+      }
+    } catch (error) {
+      console.error('Failed to play audio', error);
+    }
+  };
+
+  const onPlaybackStatusUpdate = (status: any) => {
+    if (status.isLoaded) {
+      setDuration(status.durationMillis);
+      setPosition(status.positionMillis);
+      if (status.didJustFinish) {
+        setIsPlaying(false);
+        setPosition(0);
+      }
+    }
+  };
+
+  const formatDuration = (millis: number) => {
+    const totalSeconds = millis / 1000;
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = Math.floor(totalSeconds % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  return (
+    <View style={styles.voicePlayerContainer}>
+      {/* Avatar with Mic Badge */}
+      <View style={styles.voiceAvatarContainer}>
+        <Image 
+          source={getAvatarUrl(avatar || '')} 
+          style={styles.voiceAvatar} 
+          contentFit="cover"
+        />
+        <View style={[styles.voiceMicIcon, { backgroundColor: isMe ? '#056162' : theme.textSecondary }]}>
+          <Mic size={8} color="#FFF" />
+        </View>
+      </View>
+
+      {/* Play/Pause Button */}
+      <TouchableOpacity onPress={playPause} style={styles.voicePlayBtn}>
+        {isPlaying ? (
+          <Pause size={20} color={isMe ? '#E5E7EB' : theme.text} fill={isMe ? '#E5E7EB' : theme.text} />
+        ) : (
+          <Play size={20} color={isMe ? '#E5E7EB' : theme.text} fill={isMe ? '#E5E7EB' : theme.text} />
+        )}
+      </TouchableOpacity>
+      
+      {/* Slider & Duration */}
+      <View style={styles.voiceSliderContainer}>
+        <View style={styles.voiceSliderTrackOutter}>
+           {/* Dotted Line Background */}
+           <View style={[
+             styles.voiceSliderTrackDotted, 
+             { 
+               borderColor: isMe 
+                ? 'rgba(255,255,255,0.5)' 
+                : (colorScheme === 'dark' ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)') 
+             }
+           ]} />
+           {/* Progress Thumb */}
+           <View 
+             style={[
+               styles.voiceSliderThumb, 
+               { 
+                 backgroundColor: isMe ? '#FFF' : theme.primary,
+                 left: duration ? `${Math.min(100, (position / duration) * 100)}%` : '0%' 
+               }
+             ]} 
+           />
+        </View>
+        <Text style={[styles.voiceDurationText, { color: isMe ? 'rgba(255,255,255,0.9)' : theme.textSecondary }]}>
+          {duration ? formatDuration(duration) : '0:00'}
+        </Text>
+      </View>
+    </View>
+  );
 };
 
 interface Message {
@@ -40,7 +157,8 @@ interface Message {
   text: string;
   sender: 'me' | 'them';
   timestamp: Date;
-  status?: 'sending' | 'sent' | 'delivered' | 'read';
+  status: 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
+  type: 'text' | 'audio' | 'image' | 'video' | 'file';
   localId?: string;
   forwarded?: boolean;
   replyTo?: {
@@ -60,7 +178,7 @@ interface Contact {
 const mockContact: Contact = {
   id: '1',
   name: 'Amin Daahir',
-  avatar: 'https://github.com/shadcn.png',
+  avatar: '', 
   isOnline: true,
   isTyping: false,
 };
@@ -87,6 +205,16 @@ export default function ChatScreen() {
   });
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  const [showOptionsMenu, setShowOptionsMenu] = useState(false);
+  
+  // Voice Recording state
+  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const [isUploadingVoice, setIsUploadingVoice] = useState(false);
+  const [waveData, setWaveData] = useState<number[]>(new Array(25).fill(4));
+
   const scrollAnim = useRef(new Animated.Value(0)).current;
   const typingOpacity = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -151,6 +279,7 @@ export default function ChatScreen() {
         sender: msg.senderId === user?.id ? 'me' : 'them',
         timestamp: new Date(msg.createdAt),
         status: 'read',
+        type: msg.type || 'text',
       }));
       setMessages(transformed);
       
@@ -283,6 +412,7 @@ export default function ChatScreen() {
       sender: 'me',
       timestamp: new Date(),
       status: 'sending',
+      type: 'text',
     };
 
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -291,7 +421,7 @@ export default function ChatScreen() {
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    sendMessage(id, content);
+    sendMessage(id, content, 'text');
     emitStopTyping(id);
   };
 
@@ -316,6 +446,7 @@ export default function ChatScreen() {
     flatListRef.current?.scrollToEnd({ animated: true });
   };
 
+  // Handle input changes
   const handleInputChange = (text: string) => {
     setInputText(text);
     if (!id) return;
@@ -324,6 +455,163 @@ export default function ChatScreen() {
       emitTyping(id);
     } else {
       emitStopTyping(id);
+    }
+
+  };
+
+  // Waveform Animation Logic
+  useEffect(() => {
+    let interval: any;
+    if (isRecording && !isPaused) {
+      interval = setInterval(() => {
+        setWaveData(new Array(25).fill(0).map(() => Math.max(4, Math.random() * 24 + 4)));
+      }, 100);
+    } else if (!isRecording) {
+      setWaveData(new Array(25).fill(4));
+    }
+    return () => clearInterval(interval);
+  }, [isRecording, isPaused]);
+
+  // Voice Recording functions
+  useEffect(() => {
+    return () => {
+      if (recording) {
+        recording.stopAndUnloadAsync().catch(() => {
+          // Ignore error if already unloaded or if it fails during cleanup
+        });
+      }
+    };
+  }, [recording]);
+
+  const startRecording = async () => {
+    try {
+      const permission = await Audio.requestPermissionsAsync();
+      if (permission.status !== 'granted') return;
+
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+      
+      setRecording(recording);
+      setIsRecording(true);
+      setRecordingDuration(0);
+      
+      // Vibrate on start
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+      // Simple duration timer is now handled by useEffect
+      (recording as any)._interval = null; // No longer manually managing interval on object
+    } catch (err) {
+      console.error('Failed to start recording', err);
+    }
+  };
+
+  // We need a ref to track paused state for the interval
+  const isPausedRef = useRef(false);
+
+  // Update ref when state changes
+  useEffect(() => {
+    isPausedRef.current = isPaused;
+  }, [isPaused]);
+
+  // Timer logic
+  useEffect(() => {
+      let interval: any;
+      if (isRecording) {
+          interval = setInterval(() => {
+              if (!isPausedRef.current) {
+                  setRecordingDuration(prev => prev + 1);
+              }
+          }, 1000);
+      }
+      return () => clearInterval(interval);
+  }, [isRecording]);
+
+  const togglePause = async () => {
+      if (!recording) return;
+      try {
+          if (isPaused) {
+              await recording.startAsync(); // Resume
+              setIsPaused(false);
+          } else {
+              await recording.pauseAsync(); // Pause
+              setIsPaused(true);
+          }
+      } catch (err) {
+          console.error('Failed to toggle pause', err);
+      }
+  };
+
+
+  const stopRecording = async (shouldSend = true) => {
+    if (!recording) return;
+    
+    setIsRecording(false);
+    setIsPaused(false);
+    // Interval cleared by useEffect
+
+    try {
+      await recording.stopAndUnloadAsync();
+      const uri = recording.getURI();
+      setRecording(null);
+
+      if (shouldSend && uri) {
+        uploadAndSendVoice(uri);
+      }
+    } catch (err) {
+      console.error('Failed to stop recording', err);
+    }
+  };
+
+  const uploadAndSendVoice = async (uri: string) => {
+    if (!id || !connected) return;
+    
+    setIsUploadingVoice(true);
+    try {
+      // 1. Prepare form data for upload
+      const formData = new FormData();
+      const filename = uri.split('/').pop() || 'voice.m4a';
+      const type = 'audio/m4a';
+      
+      formData.append('file', {
+        uri,
+        name: filename,
+        type,
+      } as any);
+
+      // 2. Upload to server
+      const response = await client.post('/chat/upload', formData);
+
+      const audioUrl = response.url;
+      const localId = Date.now().toString();
+
+      // 3. Optimistic update
+      const newMessage: Message = {
+        id: localId,
+        localId: localId,
+        text: audioUrl, // Store URL in text for audio messages
+        sender: 'me',
+        timestamp: new Date(),
+        status: 'sending',
+        type: 'audio',
+      };
+
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setMessages(prev => [...prev, newMessage]);
+      
+      // 4. Send via socket
+      sendMessage(id, audioUrl, 'audio');
+      
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } catch (err) {
+      console.error('Voice upload failed', err);
+    } finally {
+      setIsUploadingVoice(false);
     }
   };
 
@@ -394,7 +682,7 @@ export default function ChatScreen() {
           {!isMe && (
             <View style={styles.avatarContainer}>
               {isLastInGroup && (
-                <Image source={{ uri: getAvatarUrl(contact.avatar) }} style={styles.avatarMini} />
+                <Image source={getAvatarUrl(contact.avatar)} style={styles.avatarMini} />
               )}
             </View>
           )}
@@ -425,27 +713,22 @@ export default function ChatScreen() {
                 </View>
               )}
               
-              {msgItem.replyTo && (
-                <View style={[
-                  styles.replyContainer,
-                  { backgroundColor: isMe ? '#C9E9B0' : '#F0F0F0' }
+              {msgItem.type === 'audio' ? (
+                <VoiceMessage 
+                   url={msgItem.text} 
+                   isMe={isMe} 
+                   theme={theme} 
+                   avatar={isMe ? user?.avatar : contact.avatar}
+                   colorScheme={colorScheme}
+                />
+              ) : (
+                <Text style={[
+                  styles.messageText,
+                  { color: isMe ? (colorScheme === 'dark' ? '#000' : '#000') : theme.text }
                 ]}>
-                  <View style={styles.replyBar} />
-                  <View style={styles.replyContent}>
-                    <Text style={styles.replySender}>{msgItem.replyTo.senderName}</Text>
-                    <Text style={styles.replyText} numberOfLines={2}>
-                      {msgItem.replyTo.text}
-                    </Text>
-                  </View>
-                </View>
+                  {msgItem.text}
+                </Text>
               )}
-
-              <Text style={[
-                styles.messageText,
-                { color: isMe ? (colorScheme === 'dark' ? '#000' : '#000') : theme.text }
-              ]}>
-                {msgItem.text}
-              </Text>
               
               <View style={styles.timestampRow}>
                 <Text style={[styles.inlineTimestamp, { color: isMe ? (colorScheme === 'dark' ? '#075E54' : '#667788') : theme.textSecondary }]}>
@@ -523,7 +806,7 @@ export default function ChatScreen() {
                   <View style={styles.pillMainInfo}>
                     <View style={styles.avatarWrapperMini}>
                       <Image 
-                        source={{ uri: getAvatarUrl(contact.avatar) }} 
+                        source={getAvatarUrl(contact.avatar)} 
                         style={styles.headerAvatar} 
                       />
                       <Animated.View 
@@ -546,7 +829,7 @@ export default function ChatScreen() {
                     </View>
                   </View>
 
-                  <TouchableOpacity style={styles.pillIconBtn}>
+                  <TouchableOpacity style={styles.pillIconBtn} onPress={() => setShowOptionsMenu(!showOptionsMenu)}>
                     <MoreVertical size={26} color={theme.primary} />
                   </TouchableOpacity>
                 </View>
@@ -611,37 +894,141 @@ export default function ChatScreen() {
             <Text style={styles.plusIcon}>+</Text>
           </TouchableOpacity>
 
-          <View style={[styles.whatsappInputFrame, { backgroundColor: colorScheme === 'dark' ? '#0F172A' : '#FFF', borderColor: colorScheme === 'dark' ? '#334155' : '#CCC' }]}>
-            <TextInput
-              style={[styles.chatInput, { color: theme.text }]}
-              placeholder="Message..."
-              placeholderTextColor={theme.textSecondary}
-              value={inputText}
-              onChangeText={handleInputChange}
-              multiline
-              keyboardAppearance={colorScheme === 'dark' ? 'dark' : 'light'}
-            />
-            <TouchableOpacity style={styles.stickerBtn}>
-              <Smile size={24} color="#666" />
-            </TouchableOpacity>
-          </View>
+          {isRecording ? (
+            <View style={[styles.recordingPanel, { backgroundColor: theme.card }]}>
+               {/* Top Row: Timer + Waveform */}
+              <View style={styles.recordingTopRow}>
+                <Text style={[styles.recordingTimerText, { color: theme.text }]}>
+                   {Math.floor(recordingDuration / 60)}:{(recordingDuration % 60).toString().padStart(2, '0')}
+                </Text>
+                
+                 {/* Live Waveform Visualization */}
+                <View style={styles.liveWaveform}>
+                    {waveData.map((height, i) => (
+                        <View 
+                          key={i} 
+                          style={[
+                            styles.liveWaveBar, 
+                            { 
+                              height: isPaused ? 4 : height,
+                              backgroundColor: theme.textSecondary 
+                            }
+                          ]} 
+                        />
+                    ))}
+                </View>
+              </View>
 
-          {!inputText.trim() ? (
-            <View style={styles.inputRightActions}>
-              <TouchableOpacity style={styles.inputActionBtn}>
-                <Camera size={24} color="#555" />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.inputActionBtn}>
-                <Mic size={24} color="#555" />
-              </TouchableOpacity>
+              {/* Bottom Row: Controls */}
+              <View style={styles.recordingBottomRow}>
+                  <TouchableOpacity onPress={() => stopRecording(false)} style={styles.recordActionBtn}>
+                    <Trash2 size={24} color={theme.text} />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity onPress={togglePause} style={styles.recordPauseBtn}>
+                     {isPaused ? (
+                        <View style={styles.resumeCircle}>
+                           <View style={styles.resumeTriangle} />
+                        </View>
+                     ) : (
+                        <View style={styles.pauseCircle}>
+                           <Pause size={18} color="#EF4444" fill="#EF4444" />
+                        </View>
+                     )}
+                  </TouchableOpacity>
+
+                  <TouchableOpacity onPress={() => stopRecording(true)} style={styles.recordSendBtn}>
+                    <Send size={20} color="#FFF" />
+                  </TouchableOpacity>
+              </View>
             </View>
           ) : (
-            <TouchableOpacity style={styles.whatsappSendBtn} onPress={handleSend}>
-              <Send size={20} color={theme.primary} />
-            </TouchableOpacity>
+            <>
+              <View style={[styles.whatsappInputFrame, { backgroundColor: colorScheme === 'dark' ? '#0F172A' : '#FFF', borderColor: theme.border }]}>
+                <TextInput
+                  style={[styles.chatInput, { color: theme.text }]}
+                  placeholder="Message..."
+                  placeholderTextColor={theme.textSecondary}
+                  value={inputText}
+                  onChangeText={handleInputChange}
+                  multiline
+                  keyboardAppearance={colorScheme === 'dark' ? 'dark' : 'light'}
+                />
+                <TouchableOpacity style={styles.stickerBtn}>
+                  <Smile size={24} color={theme.textSecondary} />
+                </TouchableOpacity>
+              </View>
+
+              {!inputText.trim() ? (
+                <View style={styles.inputRightActions}>
+                  <TouchableOpacity style={styles.inputActionBtn}>
+                    <Camera size={24} color={theme.primary} />
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[styles.inputActionBtn, { backgroundColor: theme.primary + '20', borderRadius: 20 }]} 
+                    onPress={startRecording}
+                  >
+                    <Mic size={24} color={theme.primary} />
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity style={styles.whatsappSendBtn} onPress={handleSend}>
+                  <Send size={20} color={theme.primary} />
+                </TouchableOpacity>
+              )}
+            </>
           )}
         </View>
       </KeyboardAvoidingView>
+
+      {/* Options Menu Dropdown */}
+      {showOptionsMenu && (
+        <>
+          <TouchableOpacity 
+            style={styles.menuOverlay} 
+            activeOpacity={1} 
+            onPress={() => setShowOptionsMenu(false)}
+          />
+          <View style={[styles.optionsMenu, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <TouchableOpacity 
+              style={styles.menuItem} 
+              onPress={() => {
+                setShowOptionsMenu(false);
+                // TODO: Navigate to chat settings
+              }}
+            >
+              <Info size={18} color={theme.text} />
+              <Text style={[styles.menuItemText, { color: theme.text }]}>Chat Settings</Text>
+            </TouchableOpacity>
+            
+            <View style={[styles.menuDivider, { backgroundColor: theme.border }]} />
+            
+            <TouchableOpacity 
+              style={styles.menuItem}
+              onPress={() => {
+                setShowOptionsMenu(false);
+                // TODO: Implement mute
+              }}
+            >
+              <Clock size={18} color={theme.text} />
+              <Text style={[styles.menuItemText, { color: theme.text }]}>Mute Notifications</Text>
+            </TouchableOpacity>
+            
+            <View style={[styles.menuDivider, { backgroundColor: theme.border }]} />
+            
+            <TouchableOpacity 
+              style={styles.menuItem}
+              onPress={() => {
+                setShowOptionsMenu(false);
+                // TODO: Implement block
+              }}
+            >
+              <Trash2 size={18} color={theme.text} />
+              <Text style={[styles.menuItemText, { color: theme.text }]}>Clear Chat</Text>
+            </TouchableOpacity>
+          </View>
+        </>
+      )}
     </GradientBackground>
   );
 }
@@ -984,5 +1371,281 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: '#DDD',
     opacity: 0.5,
+  },
+  recordingOverlay: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 8,
+  },
+  recordingInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  recordingIndicator: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#EF4444',
+  },
+  recordingDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#EF4444',
+    // We could add animation here if desired
+  },
+  recordingDuration: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  deleteRecordingBtn: {
+    padding: 8,
+  },
+  voiceMessageContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    minWidth: 200,
+    gap: 10,
+  },
+  playPauseBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  waveformContainer: {
+    flex: 1,
+    height: 30,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    borderRadius: 4,
+    overflow: 'hidden',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  progressBar: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    opacity: 0.3,
+  },
+  waveformPlaceholder: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+    paddingHorizontal: 4,
+  },
+  waveBar: {
+    width: 2,
+    borderRadius: 1,
+  },
+  durationText: {
+    fontSize: 11,
+    marginLeft: 10,
+  },
+  
+  // New Recording UI Styles
+  recordingPanel: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+  },
+  recordingTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingHorizontal: 10,
+  },
+  recordingTimerText: {
+    fontSize: 24,
+    fontWeight: '300',
+    marginRight: 20,
+    fontVariant: ['tabular-nums'],
+  },
+  liveWaveform: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    height: 30,
+    justifyContent: 'center',
+  },
+  liveWaveBar: {
+    width: 3,
+    borderRadius: 1.5,
+  },
+  recordingBottomRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+  },
+  recordActionBtn: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  recordPauseBtn: {
+    width: 56,
+    height: 56,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pauseCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: '#EF4444',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  resumeCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: '#EF4444',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+  },
+  resumeTriangle: {
+    width: 0,
+    height: 0,
+    backgroundColor: 'transparent',
+    borderStyle: 'solid',
+    borderLeftWidth: 14,
+    borderRightWidth: 0,
+    borderBottomWidth: 10,
+    borderTopWidth: 10,
+    borderLeftColor: '#EF4444',
+    borderRightColor: 'transparent',
+    borderBottomColor: 'transparent',
+    borderTopColor: 'transparent',
+    marginLeft: 4, 
+  },
+
+  recordSendBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#0F172A', // Dark/Black color
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // Voice Player Styles
+  voicePlayerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minWidth: 200,
+    paddingVertical: 2,
+  },
+  voiceAvatarContainer: {
+    position: 'relative',
+    marginRight: 8,
+  },
+  voiceAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#CCC',
+  },
+  voiceMicIcon: {
+    position: 'absolute',
+    bottom: -1,
+    right: -1,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#FFF',
+  },
+  voicePlayBtn: {
+    marginRight: 10,
+  },
+  voiceSliderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  voiceSliderTrackOutter: {
+    height: 18,
+    justifyContent: 'center',
+    marginBottom: 3,
+  },
+  voiceSliderTrackDotted: {
+    height: 1,
+    borderWidth: 1,
+    borderStyle: 'dotted',
+    borderRadius: 1,
+    width: '100%',
+  },
+  voiceSliderThumb: {
+    position: 'absolute',
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1,
+    marginLeft: -6,
+  },
+  voiceDurationText: {
+    fontSize: 10,
+    marginTop: -2,
+  },
+
+  // Options Menu Styles
+  menuOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 999,
+  },
+  optionsMenu: {
+    position: 'absolute',
+    top: 100,
+    right: 20,
+    width: 180,
+    borderRadius: 12,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+    zIndex: 1000,
+    overflow: 'hidden',
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    gap: 10,
+  },
+  menuItemText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  menuDivider: {
+    height: 1,
+    marginHorizontal: 8,
   },
 });

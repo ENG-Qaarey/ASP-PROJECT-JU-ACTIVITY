@@ -17,6 +17,7 @@ import { Colors } from '@/src/data/theme';
 import { useTheme } from '@/src/context/ThemeContext';
 import { useAuth } from '@/src/context/AuthContext';
 import { IMAGE_BASE } from '@/src/lib/config';
+import { getAvatarUrl } from '@/src/lib/media';
 
 export default function AdminProfile() {
   const router = useRouter();
@@ -39,9 +40,7 @@ export default function AdminProfile() {
     router.replace('/login');
   };
 
-  const fullAvatarUrl = user?.avatar 
-    ? (user.avatar.startsWith('http') ? user.avatar : `${IMAGE_BASE}${user.avatar}`) 
-    : 'https://github.com/shadcn.png';
+  const fullAvatarUrl = getAvatarUrl(user?.avatar);
 
   return (
     <GradientBackground>
@@ -65,7 +64,7 @@ export default function AdminProfile() {
             activeOpacity={0.9}
           >
             <Image 
-              source={{ uri: fullAvatarUrl }} 
+              source={fullAvatarUrl} 
               style={[styles.avatar, { borderColor: theme.card }]} 
             />
             <View style={[styles.adminBadge, { borderColor: theme.card }]}>
@@ -150,7 +149,7 @@ export default function AdminProfile() {
           >
             <View style={styles.viewerContent}>
               <Image 
-                source={{ uri: fullAvatarUrl }}
+                source={fullAvatarUrl}
                 style={styles.fullImage}
                 contentFit="contain"
               />

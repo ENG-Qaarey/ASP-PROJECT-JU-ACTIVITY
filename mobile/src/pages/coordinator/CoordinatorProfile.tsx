@@ -18,6 +18,7 @@ import { Colors } from '@/src/data/theme';
 import { useTheme } from '@/src/context/ThemeContext';
 import { useAuth } from '@/src/context/AuthContext';
 import { IMAGE_BASE } from '@/src/lib/config';
+import { getAvatarUrl } from '@/src/lib/media';
 
 export default function CoordinatorProfile() {
   const router = useRouter();
@@ -62,7 +63,7 @@ export default function CoordinatorProfile() {
             activeOpacity={0.9}
           >
             <Image 
-              source={{ uri: user?.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${IMAGE_BASE}${user.avatar}`) : 'https://github.com/shadcn.png' }} 
+              source={getAvatarUrl(user?.avatar)} 
               style={[styles.avatar, { borderColor: theme.card }]} 
             />
             <View style={[styles.coordBadge, { borderColor: theme.card }]}>
@@ -147,7 +148,7 @@ export default function CoordinatorProfile() {
           >
             <View style={styles.viewerContent}>
               <Image 
-                source={{ uri: user?.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${IMAGE_BASE}${user.avatar}`) : 'https://github.com/shadcn.png' }}
+                source={getAvatarUrl(user?.avatar)}
                 style={styles.fullImage}
                 contentFit="contain"
               />

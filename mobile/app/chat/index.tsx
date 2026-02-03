@@ -21,6 +21,7 @@ import { useAuth } from '@/src/context/AuthContext';
 import { ActivityIndicator, RefreshControl } from 'react-native';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import { getAvatarUrl } from '@/src/lib/media';
 
 dayjs.extend(relativeTime);
 
@@ -183,7 +184,7 @@ export default function ChatListScreen() {
               <Text style={styles.avatarText}>{item.avatar}</Text>
             </View>
           ) : (
-            <Image source={{ uri: item.avatar }} style={styles.avatar} />
+            <Image source={getAvatarUrl(item.avatar)} style={styles.avatar} />
           )}
           {item.isOnline && <View style={styles.onlineIndicator} />}
         </View>

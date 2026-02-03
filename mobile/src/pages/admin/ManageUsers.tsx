@@ -10,6 +10,7 @@ import { useColorScheme } from '@/src/hooks/use-color-scheme';
 import { Colors } from '@/src/data/theme';
 
 import { client } from '@/src/lib/api';
+import { getAvatarUrl } from '@/src/lib/media';
 
 export default function ManageUsers() {
   const colorScheme = useColorScheme() ?? 'light';
@@ -196,8 +197,8 @@ export default function ManageUsers() {
                 onDelete={() => handleDelete(user.id, user.name)}
                 onToggleStatus={() => handleToggleStatus(user.id, isActive, user.name)}
                 onPressImage={() => {
-                  const avatarUrl = user.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${IMAGE_BASE}${user.avatar}`) : 'https://github.com/shadcn.png';
-                  setSelectedImage(avatarUrl);
+                  const avatarUrl = getAvatarUrl(user.avatar);
+                  setSelectedImage(typeof avatarUrl === 'object' ? avatarUrl.uri : null);
                   setSelectedUserName(user.name || 'User');
                   setViewerVisible(true);
                 }}
@@ -343,7 +344,7 @@ function UserCard({ user, isMe, isActive, theme, onDelete, onToggleStatus, onPre
   const statusColor = isActive ? '#22C55E' : '#EF4444';
   const statusBg = isActive ? '#22C55E15' : '#EF444415';
 
-  const avatarUrl = user.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${IMAGE_BASE}${user.avatar}`) : 'https://github.com/shadcn.png';
+  const avatarUrl = getAvatarUrl(user.avatar);
 
   return (
     <GlassCard style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
@@ -354,7 +355,7 @@ function UserCard({ user, isMe, isActive, theme, onDelete, onToggleStatus, onPre
         style={[styles.iconBlock, { backgroundColor: theme.background, borderColor: theme.border, overflow: 'hidden' }]}
       >
         <Image 
-          source={{ uri: avatarUrl }} 
+          source={avatarUrl} 
           style={styles.cardAvatar}
         />
       </TouchableOpacity>

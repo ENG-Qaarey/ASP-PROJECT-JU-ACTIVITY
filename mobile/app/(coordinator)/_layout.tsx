@@ -12,6 +12,7 @@ import { Colors } from '@/src/data/theme';
 import { Image } from 'expo-image';
 import { useAuth } from '@/src/context/AuthContext';
 import { IMAGE_BASE } from '@/src/lib/config';
+import { getAvatarUrl } from '@/src/lib/media';
 import { ShakingBellIcon } from '@/src/components/ShakingBellIcon';
 import { ChatIcon } from '@/src/components/ChatIcon';
 
@@ -90,7 +91,7 @@ export default function CoordinatorLayout() {
       <View style={[styles.drawerFooter, { borderTopColor: theme.border }]}>
         <View style={[styles.profileBox, { backgroundColor: theme.background }]}>
           <Image 
-            source={{ uri: user?.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${IMAGE_BASE}${user.avatar}`) : 'https://github.com/shadcn.png' }} 
+            source={getAvatarUrl(user?.avatar)} 
             style={styles.avatar} 
           />
           <View style={styles.profileInfo}>
@@ -142,7 +143,7 @@ export default function CoordinatorLayout() {
                 backgroundColor={theme.background}
               />
               <Image 
-                source={{ uri: user?.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${IMAGE_BASE}${user.avatar}`) : 'https://github.com/shadcn.png' }} 
+                source={getAvatarUrl(user?.avatar)} 
                 style={[styles.headerAvatar, { borderColor: theme.border }]} 
               />
             </View>

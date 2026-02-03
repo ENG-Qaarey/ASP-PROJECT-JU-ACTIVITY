@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
+import io from 'socket.io-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SOCKET_URL } from '@/src/lib/config';
 import { useAuth } from './AuthContext';
@@ -7,7 +7,7 @@ import { useAuth } from './AuthContext';
 interface ChatContextType {
   socket: any | null;
   connected: boolean;
-  sendMessage: (receiverId: string, content: string) => void;
+  sendMessage: (receiverId: string, content: string, type?: string) => void;
   emitTyping: (receiverId: string) => void;
   emitStopTyping: (receiverId: string) => void;
   onlineUsers: string[];
@@ -78,9 +78,9 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, [user]);
 
-  const sendMessage = (receiverId: string, content: string) => {
+  const sendMessage = (receiverId: string, content: string, type: string = 'text') => {
     if (socket && connected) {
-      socket.emit('sendMessage', { receiverId, content });
+      socket.emit('sendMessage', { receiverId, content, type });
     }
   };
 
