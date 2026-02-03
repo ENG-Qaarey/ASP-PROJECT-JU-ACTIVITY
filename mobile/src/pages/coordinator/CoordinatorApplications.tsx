@@ -10,6 +10,7 @@ import { Colors } from '@/src/data/theme';
 import { client } from '@/src/lib/api';
 import { useAuth } from '@/src/context/AuthContext';
 import { ActivityIndicator, RefreshControl } from 'react-native';
+import { getAvatarUrl } from '@/src/lib/media';
 
 export default function CoordinatorApplications() {
   const router = useRouter();
@@ -154,7 +155,7 @@ export default function CoordinatorApplications() {
                         activity={app.activity?.title || 'Unknown Activity'} 
                         time={formatTime(app.appliedAt)} 
                         status={app.status.charAt(0).toUpperCase() + app.status.slice(1)} 
-                        avatar={app.student?.avatar || `https://i.pravatar.cc/150?u=${app.studentId}`}
+                        avatar={getAvatarUrl(app.student?.avatar)}
                         theme={theme}
                         onApprove={() => handleUpdateStatus(app.id, 'approved')}
                         onReject={() => handleUpdateStatus(app.id, 'rejected')}
@@ -196,7 +197,7 @@ function StatCard({ icon: Icon, label, value, color, theme }: any) {
       <View style={styles.cardHeader}>
         <View style={styles.studentInfo}>
             <View style={[styles.avatarBox, { borderColor: theme.border }]}>
-                <Image source={{ uri: avatar }} style={styles.avatar} />
+                <Image source={avatar} style={styles.avatar} contentFit="cover" />
             </View>
             <View>
                 <Text style={[styles.studentName, { color: theme.text }]}>{student}</Text>

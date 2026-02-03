@@ -8,16 +8,33 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
-  Animated,
+  Modal,
+  Alert,
+  Linking,
+  Dimensions,
+  Animated as RNAnimated,
   StatusBar,
   Keyboard,
   ActivityIndicator,
   LayoutAnimation,
   UIManager,
+  PanResponder,
 } from 'react-native';
+import { 
+  GestureHandlerRootView, 
+  GestureDetector, 
+  Gesture,
+} from 'react-native-gesture-handler';
+import Reanimated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import { BlurView as ExpoBlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
-import { ArrowLeft, Send, Paperclip, Smile, Camera, Mic, Info, MoreVertical, Play, Pause, Square, Trash2, Clock } from 'lucide-react-native';
+import { ArrowLeft, Send, Paperclip, Smile, Camera, Mic, Info, MoreVertical, Play, Pause, Square, Trash2, Clock, Reply, X, Star, Pin, Share2, FilePlus, Image as ImageIcon, FileText, Download, File, User, Search, Ban, Settings, Bell, BellOff } from 'lucide-react-native';
 import { useColorScheme } from '@/src/hooks/use-color-scheme';
 import { Colors } from '@/src/data/theme';
 import { Image } from 'expo-image';
@@ -25,14 +42,18 @@ import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 import { GradientBackground } from '@/src/components/GradientBackground';
 import * as Haptics from 'expo-haptics';
+import * as DocumentPicker from 'expo-document-picker';
+import * as ImagePicker from 'expo-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { client } from '@/src/lib/api';
 import { useAuth } from '@/src/context/AuthContext';
 import { useChat } from '@/src/context/ChatContext';
 import { getAvatarUrl } from '@/src/lib/media';
 import { IMAGE_BASE } from '@/src/lib/config';
 import dayjs from 'dayjs';
+import { SwipeableMessage } from '@/src/components/SwipeableMessage';
 
-const VoiceMessage = ({ url, isMe, theme, avatar, colorScheme }: { url: string; isMe: boolean; theme: any, avatar?: string, colorScheme: 'light' | 'dark' }) => {
+const VoiceMessage = ({ messageId, url, isMe, theme, avatar, colorScheme, activeId, onPlay }: { messageId: string; url: string; isMe: boolean; theme: any, avatar?: string, colorScheme: 'light' | 'dark', activeId: string | null, onPlay: (id: string | null) => void }) => {
   const [sound, setSound] = useState<Audio.Sound | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [duration, setDuration] = useState<number | null>(null);
@@ -46,9 +67,18 @@ const VoiceMessage = ({ url, isMe, theme, avatar, colorScheme }: { url: string; 
     };
   }, [sound]);
 
+  // Stop playback if another message becomes active
+  useEffect(() => {
+    if (activeId !== messageId && isPlaying) {
+      if (sound) {
+        sound.pauseAsync();
+      }
+      setIsPlaying(false);
+    }
+  }, [activeId]);
+
   const playPause = async () => {
     try {
-      // Ensure audio plays through speaker
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: false,
         playsInSilentModeIOS: true,
@@ -61,11 +91,14 @@ const VoiceMessage = ({ url, isMe, theme, avatar, colorScheme }: { url: string; 
         if (isPlaying) {
           await sound.pauseAsync();
           setIsPlaying(false);
+          onPlay(null);
         } else {
+          onPlay(messageId);
           await sound.playAsync();
           setIsPlaying(true);
         }
       } else {
+        onPlay(messageId);
         const fullUrl = url.startsWith('http') ? url : `${IMAGE_BASE}${url}`;
         const { sound: newSound } = await Audio.Sound.createAsync(
           { uri: fullUrl },
@@ -87,6 +120,7 @@ const VoiceMessage = ({ url, isMe, theme, avatar, colorScheme }: { url: string; 
       if (status.didJustFinish) {
         setIsPlaying(false);
         setPosition(0);
+        onPlay(null);
       }
     }
   };
@@ -98,57 +132,107 @@ const VoiceMessage = ({ url, isMe, theme, avatar, colorScheme }: { url: string; 
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
+  const accentColor = isMe ? '#FFF' : (colorScheme === 'dark' ? theme.primary : theme.primary);
+
   return (
     <View style={styles.voicePlayerContainer}>
-      {/* Avatar with Mic Badge */}
-      <View style={styles.voiceAvatarContainer}>
-        <Image 
-          source={getAvatarUrl(avatar || '')} 
-          style={styles.voiceAvatar} 
-          contentFit="cover"
-        />
-        <View style={[styles.voiceMicIcon, { backgroundColor: isMe ? '#056162' : theme.textSecondary }]}>
-          <Mic size={8} color="#FFF" />
-        </View>
-      </View>
-
       {/* Play/Pause Button */}
-      <TouchableOpacity onPress={playPause} style={styles.voicePlayBtn}>
+      <TouchableOpacity 
+        onPress={playPause} 
+        style={[
+          styles.voicePlayBtn, 
+          { backgroundColor: isMe ? 'rgba(255,255,255,0.2)' : (colorScheme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)') }
+        ]}
+      >
         {isPlaying ? (
-          <Pause size={20} color={isMe ? '#E5E7EB' : theme.text} fill={isMe ? '#E5E7EB' : theme.text} />
+          <Pause size={18} color={accentColor} fill={accentColor} />
         ) : (
-          <Play size={20} color={isMe ? '#E5E7EB' : theme.text} fill={isMe ? '#E5E7EB' : theme.text} />
+          <Play size={18} color={accentColor} fill={accentColor} style={{ marginLeft: 2 }} />
         )}
       </TouchableOpacity>
       
       {/* Slider & Duration */}
       <View style={styles.voiceSliderContainer}>
         <View style={styles.voiceSliderTrackOutter}>
-           {/* Dotted Line Background */}
            <View style={[
              styles.voiceSliderTrackDotted, 
              { 
                borderColor: isMe 
-                ? 'rgba(255,255,255,0.5)' 
-                : (colorScheme === 'dark' ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)') 
+                ? 'rgba(255,255,255,0.3)' 
+                : (colorScheme === 'dark' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)') 
              }
            ]} />
-           {/* Progress Thumb */}
            <View 
              style={[
                styles.voiceSliderThumb, 
                { 
-                 backgroundColor: isMe ? '#FFF' : theme.primary,
-                 left: duration ? `${Math.min(100, (position / duration) * 100)}%` : '0%' 
+                 backgroundColor: accentColor,
+                 left: duration ? `${Math.min(100, (position / duration) * 100)}%` : '0%',
+                 width: 8, height: 8, borderRadius: 4, marginLeft: -4
                }
              ]} 
            />
         </View>
-        <Text style={[styles.voiceDurationText, { color: isMe ? 'rgba(255,255,255,0.9)' : theme.textSecondary }]}>
-          {duration ? formatDuration(duration) : '0:00'}
-        </Text>
+        <View style={styles.voiceMetaRow}>
+            <Text style={[styles.voiceDurationText, { color: isMe ? 'rgba(255,255,255,0.7)' : theme.textSecondary }]}>
+                {isPlaying ? formatDuration(position) : (duration ? formatDuration(duration) : '0:00')}
+            </Text>
+        </View>
+      </View>
+
+      {/* Avatar Mini */}
+      <View style={styles.voiceAvatarContainer}>
+        <Image 
+          source={getAvatarUrl(avatar || '')} 
+          style={styles.voiceAvatar} 
+          contentFit="cover"
+        />
+        <View style={[styles.voiceMicIcon, { backgroundColor: isMe ? '#22C55E' : '#3B82F6', borderColor: isMe ? '#10B98100' : '#FFF0' }]}>
+          <Mic size={7} color="#FFF" />
+        </View>
       </View>
     </View>
+  );
+};
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+const ZoomableImage = ({ uri }: { uri: string }) => {
+  const scale = useSharedValue(1);
+  const savedScale = useSharedValue(1);
+
+  const pinchGesture = Gesture.Pinch()
+    .onUpdate((event) => {
+      scale.value = savedScale.value * event.scale;
+    })
+    .onEnd(() => {
+      if (scale.value < 1) {
+        scale.value = withSpring(1);
+        savedScale.value = 1;
+      } else if (scale.value > 5) {
+        scale.value = withSpring(5);
+        savedScale.value = 5;
+      } else {
+        savedScale.value = scale.value;
+      }
+    });
+
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: scale.value }],
+    };
+  });
+
+  return (
+    <GestureDetector gesture={pinchGesture}>
+      <Reanimated.View style={[{ width: '100%', height: '80%', justifyContent: 'center', alignItems: 'center' }, animatedStyle]}>
+        <Image 
+          source={{ uri }} 
+          style={{ width: SCREEN_WIDTH, height: '100%' }}
+          contentFit="contain"
+        />
+      </Reanimated.View>
+    </GestureDetector>
   );
 };
 
@@ -161,10 +245,19 @@ interface Message {
   type: 'text' | 'audio' | 'image' | 'video' | 'file';
   localId?: string;
   forwarded?: boolean;
+  fileName?: string;
   replyTo?: {
     senderName: string;
     text: string;
+    type?: 'text' | 'audio' | 'image' | 'video' | 'file';
+    fileName?: string;
   };
+  starred?: boolean;
+  pinned?: boolean;
+  reactions?: string[];
+  fileSize?: string;
+  fileExt?: string;
+  pdfPages?: number;
 }
 
 interface Contact {
@@ -206,6 +299,42 @@ export default function ChatScreen() {
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const [showOptionsMenu, setShowOptionsMenu] = useState(false);
+  const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
+  const [replyTo, setReplyTo] = useState<Message | null>(null);
+  const [selectedMessages, setSelectedMessages] = useState<Set<string>>(new Set());
+  const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
+  const [activeMessageId, setActiveMessageId] = useState<string | null>(null);
+  const [isMuted, setIsMuted] = useState(false);
+
+  // Quick Actions
+  const handleMute = () => {
+    setIsMuted(!isMuted);
+    setShowOptionsMenu(false);
+    // Here you would typically sync with backend
+  };
+
+  const handleClearChat = () => {
+    setShowOptionsMenu(false);
+    Alert.alert(
+      "Clear Chat",
+      "Are you sure you want to clear this chat?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Clear", 
+          style: "destructive", 
+          onPress: async () => {
+            setMessages([]);
+            // Save cleared state locally
+            if (id) {
+              await AsyncStorage.setItem(`chat_cleared_${id}`, Date.now().toString());
+            }
+          } 
+        }
+      ]
+    );
+  };
+  const [isContextMenuVisible, setIsContextMenuVisible] = useState(false);
   
   // Voice Recording state
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
@@ -214,22 +343,99 @@ export default function ChatScreen() {
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [isUploadingVoice, setIsUploadingVoice] = useState(false);
   const [waveData, setWaveData] = useState<number[]>(new Array(25).fill(4));
+  const [viewerImageUrl, setViewerImageUrl] = useState<string | null>(null);
 
-  const scrollAnim = useRef(new Animated.Value(0)).current;
-  const typingOpacity = useRef(new Animated.Value(0)).current;
-  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const handleDeleteMessage = (msgId: string) => {
+    const msg = messages.find(m => m.id === msgId);
+    if (!msg) return;
+
+    setIsContextMenuVisible(false);
+
+    const options = [
+      {
+        text: 'Delete for Me',
+        style: 'destructive' as const,
+        onPress: () => {
+          setMessages(prev => prev.filter(m => m.id !== msgId));
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        }
+      }
+    ];
+
+    // Only allow "Delete for Everyone" if I am the sender
+    if (msg.sender === 'me') {
+      options.push({
+        text: 'Delete for Everyone',
+        style: 'destructive' as const,
+        onPress: () => {
+          // TODO: Socket emit 'deleteMessage' to handle everyone
+          setMessages(prev => prev.filter(m => m.id !== msgId));
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+        }
+      });
+    }
+
+    options.push({
+      text: 'Cancel',
+      style: 'cancel' as const,
+      onPress: () => {}
+    });
+
+    Alert.alert(
+      'Delete Message?',
+      'Choose how you want to delete this message.',
+      options,
+      { cancelable: true }
+    );
+  };
+
+  const toggleStarMessage = (msgId: string) => {
+    setMessages(prev => prev.map(m => 
+      m.id === msgId ? { ...m, starred: !m.starred } : m
+    ));
+    setIsContextMenuVisible(false);
+  };
+
+  const togglePinMessage = (msgId: string) => {
+    setMessages(prev => prev.map(m => 
+      m.id === msgId ? { ...m, pinned: !m.pinned } : m
+    ));
+    setIsContextMenuVisible(false);
+  };
+
+  const addReaction = (msgId: string, emoji: string) => {
+    setMessages(prev => prev.map(m => {
+      if (m.id === msgId) {
+        const reactionsArr = m.reactions || [];
+        // If the same emoji is clicked, remove it. Otherwise, set it as the only reaction.
+        if (reactionsArr.includes(emoji)) {
+          return { ...m, reactions: [] };
+        }
+        return { ...m, reactions: [emoji] };
+      }
+      return m;
+    }));
+    setIsContextMenuVisible(false);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
+  const activeMessage = messages.find(m => m.id === activeMessageId);
+
+  const scrollAnim = useRef(new RNAnimated.Value(0)).current;
+  const typingOpacity = useRef(new RNAnimated.Value(0)).current;
+  const pulseAnim = useRef(new RNAnimated.Value(1)).current;
 
   // Simulate typing indicator
   useEffect(() => {
     if (contact.isTyping) {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(typingOpacity, {
+      RNAnimated.loop(
+        RNAnimated.sequence([
+          RNAnimated.timing(typingOpacity, {
             toValue: 1,
             duration: 500,
             useNativeDriver: true,
           }),
-          Animated.timing(typingOpacity, {
+          RNAnimated.timing(typingOpacity, {
             toValue: 0.3,
             duration: 500,
             useNativeDriver: true,
@@ -244,14 +450,14 @@ export default function ChatScreen() {
   // Pulse animation for online dot
   useEffect(() => {
     if (contact.isOnline) {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, {
+      RNAnimated.loop(
+        RNAnimated.sequence([
+          RNAnimated.timing(pulseAnim, {
             toValue: 0.5,
             duration: 1500,
             useNativeDriver: true,
           }),
-          Animated.timing(pulseAnim, {
+          RNAnimated.timing(pulseAnim, {
             toValue: 1,
             duration: 1500,
             useNativeDriver: true,
@@ -262,7 +468,6 @@ export default function ChatScreen() {
       pulseAnim.setValue(1);
     }
   }, [contact.isOnline]);
-
   useEffect(() => {
     if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
       UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -273,13 +478,24 @@ export default function ChatScreen() {
     if (!id) return;
     try {
       const data = await client.get(`/chat/history/${id}`);
-      const transformed: Message[] = data.map((msg: any) => ({
+      
+      // Check if chat was cleared locally
+      const clearedTimeStr = await AsyncStorage.getItem(`chat_cleared_${id}`);
+      const clearedTime = clearedTimeStr ? parseInt(clearedTimeStr) : 0;
+
+      const transformed: Message[] = data
+        .filter((msg: any) => new Date(msg.createdAt).getTime() > clearedTime)
+        .map((msg: any) => ({
         id: msg.id,
         text: msg.content,
         sender: msg.senderId === user?.id ? 'me' : 'them',
         timestamp: new Date(msg.createdAt),
         status: 'read',
         type: msg.type || 'text',
+        fileSize: msg.metadata?.fileSize,
+        fileExt: msg.metadata?.fileExt,
+        pdfPages: msg.metadata?.pdfPages,
+        replyTo: msg.replyTo,
       }));
       setMessages(transformed);
       
@@ -358,6 +574,12 @@ export default function ChatScreen() {
             sender: isMe ? 'me' : 'them',
             timestamp: new Date(msg.createdAt),
             status: 'read',
+            type: msg.type || 'text',
+            fileName: msg.metadata?.fileName,
+            fileSize: msg.metadata?.fileSize,
+            fileExt: msg.metadata?.fileExt,
+            pdfPages: msg.metadata?.pdfPages,
+            replyTo: msg.replyTo,
           };
           return [...prev, newMsg];
         });
@@ -413,15 +635,23 @@ export default function ChatScreen() {
       timestamp: new Date(),
       status: 'sending',
       type: 'text',
+      ...(replyTo ? { 
+        replyTo: { 
+          senderName: replyTo.sender === 'me' ? 'You' : contact.name, 
+          text: replyTo.text,
+          type: replyTo.type 
+        } 
+      } : {}),
     };
 
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setMessages(prev => [...prev, newMessage]);
     setInputText('');
+    setReplyTo(null);
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    sendMessage(id, content, 'text');
+    sendMessage(id, content, 'text', newMessage.replyTo);
     emitStopTyping(id);
   };
 
@@ -434,7 +664,7 @@ export default function ChatScreen() {
     setShowScrollToBottom(!isNearBottom);
     
     // Animate the button visibility
-    Animated.spring(scrollAnim, {
+    RNAnimated.spring(scrollAnim, {
       toValue: !isNearBottom ? 1 : 0,
       useNativeDriver: true,
       tension: 50,
@@ -615,6 +845,143 @@ export default function ChatScreen() {
     }
   };
 
+  const uploadAndSendMessage = async (uri: string, type: 'image' | 'file' | 'audio', originalName?: string, size?: number) => {
+    if (!id || !connected) return;
+    
+    try {
+      // 1. Prepare form data for upload
+      const formData = new FormData();
+      const filename = originalName || uri.split('/').pop() || `file.${type === 'image' ? 'jpg' : 'bin'}`;
+      
+      let mimeType = 'application/octet-stream';
+      if (type === 'image') mimeType = 'image/jpeg';
+      else if (type === 'audio') mimeType = 'audio/m4a';
+      else {
+        const ext = filename.split('.').pop()?.toLowerCase();
+        const mimes: { [key: string]: string } = {
+          'pdf': 'application/pdf',
+          'doc': 'application/msword',
+          'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'xls': 'application/vnd.ms-excel',
+          'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'ppt': 'application/vnd.ms-powerpoint',
+          'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+          'txt': 'text/plain',
+          'zip': 'application/zip',
+        };
+        if (ext && mimes[ext]) mimeType = mimes[ext];
+      }
+
+      formData.append('file', {
+        uri,
+        name: filename,
+        type: mimeType,
+      } as any);
+
+      const formatSize = (bytes?: number) => {
+        if (!bytes) return '0 KB';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+      };
+
+      // 2. Upload to server
+      const response = await client.post('/chat/upload', formData);
+      const fileUrl = response.url;
+      const localId = Date.now().toString();
+
+      // 3. Optimistic update
+      const newMessage: Message = {
+        id: localId,
+        localId: localId,
+        text: fileUrl, 
+        fileName: type === 'file' ? filename : undefined,
+        fileSize: formatSize(size),
+        fileExt: filename.split('.').pop()?.toLowerCase(),
+        pdfPages: filename.endsWith('.pdf') ? 72 : undefined, // Mocking pages for demo
+        sender: 'me',
+        timestamp: new Date(),
+        status: 'sending',
+        type: type,
+        ...(replyTo ? {
+          replyTo: {
+            senderName: replyTo.sender === 'me' ? 'You' : contact.name,
+            text: replyTo.text,
+            type: replyTo.type,
+            fileName: replyTo.fileName
+          }
+        } : {}),
+      };
+
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setMessages(prev => [...prev, newMessage]);
+      
+      // 4. Send via socket
+      sendMessage(id, fileUrl, type, newMessage.replyTo, { 
+        fileName: newMessage.fileName, 
+        fileSize: newMessage.fileSize,
+        fileExt: newMessage.fileExt,
+        pdfPages: newMessage.pdfPages
+      });
+     
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } catch (err) {
+      console.error('File upload failed', err);
+      Alert.alert('Upload Failed', 'There was an error uploading your file. Please try again.');
+    }
+  };
+
+  const handlePickImage = async () => {
+    try {
+      setShowAttachmentMenu(false);
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images', 'videos'],
+        allowsEditing: false,
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        uploadAndSendMessage(asset.uri, asset.type === 'video' ? 'video' as any : 'image');
+      }
+    } catch (err) {
+      console.error('Image picking failed', err);
+    }
+  };
+
+  const handleOpenFile = async (url: string) => {
+    try {
+      const fullUrl = url.startsWith('http') ? url : `${IMAGE_BASE}${url}`;
+      const supported = await Linking.canOpenURL(fullUrl);
+      if (supported) {
+        await Linking.openURL(fullUrl);
+      } else {
+        Alert.alert('Error', "Don't know how to open this URL: " + fullUrl);
+      }
+    } catch (error) {
+      console.error('Error opening file:', error);
+      Alert.alert('Error', 'Failed to open file');
+    }
+  };
+
+  const handlePickDocument = async () => {
+    try {
+      setShowAttachmentMenu(false);
+      const result = await DocumentPicker.getDocumentAsync({
+        type: '*/*',
+        copyToCacheDirectory: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        uploadAndSendMessage(asset.uri, 'file', asset.name, asset.size);
+      }
+    } catch (err) {
+      console.error('Document picking failed', err);
+    }
+  };
+
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString('en-US', {
       hour: '2-digit',
@@ -642,6 +1009,15 @@ export default function ChatScreen() {
     });
 
     return groups;
+  };
+
+  const getFormattedReplyText = (replyTo: any) => {
+    if (!replyTo) return '';
+    if (replyTo.type === 'image') return '📸 Photo';
+    if (replyTo.type === 'audio') return '🎤 Voice Message';
+    if (replyTo.type === 'video') return '🎥 Video';
+    if (replyTo.type === 'file') return '📁 File';
+    return replyTo.text;
   };
 
   const renderMessage = ({ item, index }: { item: any; index: number }) => {
@@ -672,78 +1048,289 @@ export default function ChatScreen() {
     const isLastInGroup = !nextMsg || (nextMsg.type === 'date') || nextMsg.sender !== msgItem.sender;
     
     return (
-      <View style={[
-        styles.messageRow, 
-        isMe ? styles.myRow : styles.theirRow,
-        isLastInGroup ? { marginBottom: 12 } : { marginBottom: 2 }
-      ]}>
-        <View style={[styles.messageContainer, isMe ? styles.myMessage : styles.theirMessage]}>
-          {/* Avatar for received messages - only show for the last message in a block */}
-          {!isMe && (
-            <View style={styles.avatarContainer}>
-              {isLastInGroup && (
-                <Image source={getAvatarUrl(contact.avatar)} style={styles.avatarMini} />
-              )}
-            </View>
-          )}
-          
-          {/* Message bubble */}
-          <View style={[styles.messageContent, isMe && { alignItems: 'flex-end' }]}>
-            <View style={[
-              styles.messageBubble,
-              isMe 
-                ? [
-                    styles.myMessageBubble, 
-                    { backgroundColor: colorScheme === 'dark' ? theme.primary + 'D9' : '#DCF8C6' },
-                  ] 
-                : [
-                    styles.theirMessageBubble, 
-                    { 
-                      backgroundColor: colorScheme === 'dark' ? 'rgba(30, 41, 59, 0.7)' : '#FFFFFF', 
-                      borderColor: colorScheme === 'dark' ? theme.border : '#EEE', 
-                      borderWidth: 1 
-                    },
-                  ]
-            ]}>
-              {msgItem.forwarded && (
-                <View style={styles.forwardedRow}>
-                  <Text style={styles.forwardedText}>
-                    <Text style={{ fontStyle: 'italic' }}>➦ Forwarded</Text>
-                  </Text>
-                </View>
-              )}
-              
-              {msgItem.type === 'audio' ? (
-                <VoiceMessage 
-                   url={msgItem.text} 
-                   isMe={isMe} 
-                   theme={theme} 
-                   avatar={isMe ? user?.avatar : contact.avatar}
-                   colorScheme={colorScheme}
-                />
-              ) : (
-                <Text style={[
-                  styles.messageText,
-                  { color: isMe ? (colorScheme === 'dark' ? '#000' : '#000') : theme.text }
-                ]}>
-                  {msgItem.text}
-                </Text>
-              )}
-              
-              <View style={styles.timestampRow}>
-                <Text style={[styles.inlineTimestamp, { color: isMe ? (colorScheme === 'dark' ? '#075E54' : '#667788') : theme.textSecondary }]}>
-                  {formatTime(msgItem.timestamp)}
-                </Text>
-                {isMe && (
-                  <Text style={[styles.checkmark, { color: msgItem.status === 'read' ? '#007AFF' : (colorScheme === 'dark' ? '#075E54' : '#999') }]}>
-                    ✓✓
-                  </Text>
+      <SwipeableMessage
+        onSwipeReply={() => setReplyTo(msgItem)}
+        theme={theme}
+        isMe={isMe}
+      >
+        <View style={[
+          styles.messageRow, 
+          isMe ? styles.myRow : styles.theirRow,
+          isLastInGroup ? { marginBottom: 12 } : { marginBottom: 2 }
+        ]}>
+          <TouchableOpacity 
+            activeOpacity={0.9}
+            onLongPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+              setActiveMessageId(msgItem.id);
+              setIsContextMenuVisible(true);
+            }}
+            delayLongPress={500}
+            style={[
+              styles.messageContainer, 
+              isMe ? styles.myMessage : styles.theirMessage,
+              selectedMessages.has(msgItem.id) && { opacity: 0.7 }
+            ]}
+          >
+            {/* Avatar for received messages - only show for the last message in a block */}
+            {!isMe && (
+              <View style={styles.avatarContainer}>
+                {isLastInGroup && (
+                  <Image source={getAvatarUrl(contact.avatar)} style={styles.avatarMini} />
                 )}
               </View>
+            )}
+            
+            {/* Message bubble */}
+            <View style={[styles.messageContent, isMe && { alignItems: 'flex-end' }]}>
+               {/* Use LinearGradient for sender if not selecting, or flat color if selected */}
+               {isMe ? (
+                   <View style={{ alignItems: 'flex-end' }}>
+                     <LinearGradient
+                       colors={[theme.primary, theme.primary]}
+                       start={{ x: 0, y: 0 }}
+                       end={{ x: 1, y: 1 }}
+                       style={[
+                         styles.messageBubble,
+                         styles.myMessageBubble,
+                         !isFirstInGroup && { borderTopRightRadius: 20 },
+                         selectedMessages.has(msgItem.id) && { borderColor: '#FFF', borderWidth: 2 }
+                       ]}
+                     >
+                      {msgItem.replyTo && (
+                        <View style={[styles.replyPreview, { backgroundColor: 'rgba(0,0,0,0.15)', borderLeftColor: '#FFF', borderLeftWidth: 3, flexDirection: 'row', alignItems: 'center' }]}>
+                          <View style={{ flex: 1 }}>
+                            <Text style={[styles.replyName, { color: '#FFF' }]}>{msgItem.replyTo.senderName}</Text>
+                            <Text style={[styles.replyText, { color: 'rgba(255,255,255,0.7)' }]} numberOfLines={1}>{getFormattedReplyText(msgItem.replyTo)}</Text>
+                          </View>
+                          {msgItem.replyTo.type === 'image' && (
+                            <TouchableOpacity 
+                              onPress={() => setViewerImageUrl(msgItem.replyTo!.text.startsWith('http') ? msgItem.replyTo!.text : `${IMAGE_BASE}${msgItem.replyTo!.text}`)}
+                            >
+                              <Image 
+                                source={{ uri: msgItem.replyTo.text.startsWith('http') ? msgItem.replyTo.text : `${IMAGE_BASE}${msgItem.replyTo.text}` }} 
+                                style={styles.replyThumbnail}
+                                contentFit="cover"
+                              />
+                            </TouchableOpacity>
+                          )}
+                        </View>
+                      )}
+
+                      {msgItem.type === 'audio' ? (
+                        <VoiceMessage 
+                           messageId={msgItem.id}
+                           url={msgItem.text} 
+                           isMe={isMe} 
+                           theme={theme} 
+                           avatar={user?.avatar}
+                           colorScheme={colorScheme}
+                           activeId={playingAudioId}
+                           onPlay={setPlayingAudioId}
+                        />
+                      ) : msgItem.type === 'file' ? (
+                        <View style={styles.fileCardRow}>
+                          <TouchableOpacity 
+                            onPress={() => handleOpenFile(msgItem.text)}
+                            activeOpacity={0.9}
+                          >
+                             <LinearGradient
+                                colors={[theme.primary, theme.primary]} 
+                                style={[
+                                  styles.fileCard, 
+                                  { borderBottomRightRadius: 4 }
+                                ]}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                              >
+                            <View style={styles.fileCardContent}>
+                              <View style={[styles.fileCardIconContainer, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+                                <FileText size={24} color="#FFF" />
+                              </View>
+                              <View style={styles.fileCardInfo}>
+                                <Text style={[styles.fileCardName, { color: '#FFF' }]} numberOfLines={1}>
+                                  {msgItem.fileName || 'Document'}
+                                </Text>
+                                <Text style={[styles.fileCardMeta, { color: 'rgba(255,255,255,0.7)' }]}>
+                                  {msgItem.fileSize || 'Unknown size'} • {msgItem.fileExt?.toUpperCase() || 'FILE'}
+                                </Text>
+                              </View>
+                            </View>
+                            
+                            <View style={styles.fileCardFooter}>
+                               <Text style={[styles.fileCardTime, { color: 'rgba(255,255,255,0.7)' }]}>{formatTime(msgItem.timestamp)}</Text>
+                               <Text style={[styles.fileCardCheckmark, { color: '#FFF' }]}>✓✓</Text>
+                            </View>
+
+                            <View style={styles.downloadIconContainer}>
+                              <Download size={20} color="#FFF" />
+                            </View>
+                            </LinearGradient>
+                          </TouchableOpacity>
+                        </View>
+                      ) : msgItem.type === 'image' ? (
+                        <TouchableOpacity 
+                          style={styles.imageBubbleContainer}
+                          onPress={() => setViewerImageUrl(msgItem.text.startsWith('http') ? msgItem.text : `${IMAGE_BASE}${msgItem.text}`)}
+                        >
+                          <Image 
+                            source={{ uri: msgItem.text.startsWith('http') ? msgItem.text : `${IMAGE_BASE}${msgItem.text}` }} 
+                            style={styles.messageImage}
+                            contentFit="cover"
+                          />
+                        </TouchableOpacity>
+                      ) : (
+                        <Text style={[styles.messageText, { color: '#FFF' }]}>
+                          {msgItem.text}
+                        </Text>
+                      )}
+
+                      <View style={styles.timestampRow}>
+                        {msgItem.pinned && <Pin size={10} color="rgba(255,255,255,0.7)" style={{ marginRight: 4 }} fill="rgba(255,255,255,0.7)" />}
+                        {msgItem.starred && <Star size={10} color="rgba(255,255,255,0.7)" style={{ marginRight: 4 }} fill="rgba(255,255,255,0.7)" />}
+                        <Text style={[styles.inlineTimestamp, { color: 'rgba(255,255,255,0.7)' }]}>
+                          {formatTime(msgItem.timestamp)}
+                        </Text>
+                        <Text style={[styles.checkmark, { color: msgItem.status === 'read' ? '#38BDF8' : 'rgba(255,255,255,0.5)' }]}>
+                          ✓✓
+                        </Text>
+                      </View>
+                   </LinearGradient>
+                   
+                   {msgItem.reactions && msgItem.reactions.length > 0 && (
+                     <View style={[styles.bubbleReactions, { alignSelf: 'flex-end', marginRight: 4 }]}>
+                       {msgItem.reactions.map((emoji, i) => (
+                         <Text key={i} style={styles.bubbleReactionEmoji}>{emoji}</Text>
+                       ))}
+                     </View>
+                   )}
+                 </View>
+               ) : (
+                 <View style={{ alignItems: 'flex-start' }}>
+                   <View style={[
+                     styles.messageBubble,
+                     styles.theirMessageBubble,
+                     { 
+                       backgroundColor: colorScheme === 'dark' ? '#1E293B' : '#FFFFFF', 
+                       borderWidth: 0, // Removed border for cleaner look
+                       shadowColor: "#000",
+                       shadowOffset: { width: 0, height: 1 },
+                       shadowOpacity: 0.1,
+                       shadowRadius: 2,
+                       elevation: 2
+                     },
+                     !isFirstInGroup && { borderTopLeftRadius: 16 },
+                     selectedMessages.has(msgItem.id) && { borderColor: theme.primary, borderWidth: 2 }
+                   ]}>
+                      {msgItem.replyTo && (
+                        <View style={[styles.replyPreview, { backgroundColor: colorScheme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', borderLeftColor: theme.primary, flexDirection: 'row', alignItems: 'center' }]}>
+                          <View style={{ flex: 1 }}>
+                            <Text style={[styles.replyName, { color: theme.primary }]}>{msgItem.replyTo.senderName}</Text>
+                            <Text style={[styles.replyText, { color: theme.textSecondary }]} numberOfLines={1}>{getFormattedReplyText(msgItem.replyTo)}</Text>
+                          </View>
+                          {msgItem.replyTo.type === 'image' && (
+                            <TouchableOpacity 
+                              onPress={() => setViewerImageUrl(msgItem.replyTo!.text.startsWith('http') ? msgItem.replyTo!.text : `${IMAGE_BASE}${msgItem.replyTo!.text}`)}
+                            >
+                              <Image 
+                                source={{ uri: msgItem.replyTo.text.startsWith('http') ? msgItem.replyTo.text : `${IMAGE_BASE}${msgItem.replyTo.text}` }} 
+                                style={styles.replyThumbnail}
+                                contentFit="cover"
+                              />
+                            </TouchableOpacity>
+                          )}
+                        </View>
+                      )}
+
+                      {msgItem.type === 'audio' ? (
+                        <VoiceMessage 
+                           messageId={msgItem.id}
+                           url={msgItem.text} 
+                           isMe={isMe} 
+                           theme={theme} 
+                           avatar={contact.avatar}
+                           colorScheme={colorScheme}
+                           activeId={playingAudioId}
+                           onPlay={setPlayingAudioId}
+                        />
+                      ) : msgItem.type === 'image' ? (
+                        <TouchableOpacity 
+                          style={styles.imageBubbleContainer}
+                          onPress={() => setViewerImageUrl(msgItem.text.startsWith('http') ? msgItem.text : `${IMAGE_BASE}${msgItem.text}`)}
+                        >
+                          <Image 
+                            source={{ uri: msgItem.text.startsWith('http') ? msgItem.text : `${IMAGE_BASE}${msgItem.text}` }} 
+                            style={styles.messageImage}
+                            contentFit="cover"
+                          />
+                        </TouchableOpacity>
+                      ) : msgItem.type === 'file' ? (
+                        <View style={styles.fileCardRow}>
+                          <TouchableOpacity 
+                            style={[
+                              styles.fileCard, 
+                              { 
+                                backgroundColor: colorScheme === 'dark' ? '#1E293B' : '#FFFFFF',
+                                borderTopLeftRadius: 4,
+                                borderWidth: 1,
+                                borderColor: colorScheme === 'dark' ? 'rgba(255,255,255,0.1)' : '#E2E8F0'
+                              }
+                            ]}
+                            onPress={() => handleOpenFile(msgItem.text)}
+                            activeOpacity={0.9}
+                          >
+                            <View style={styles.fileCardContent}>
+                              <View style={[styles.fileCardIconContainer, { backgroundColor: theme.primary + '15' }]}>
+                                <FileText size={24} color={theme.primary} />
+                              </View>
+                              <View style={styles.fileCardInfo}>
+                                <Text style={[styles.fileCardName, { color: theme.text }]} numberOfLines={1}>
+                                  {msgItem.fileName || 'Document'}
+                                </Text>
+                                <Text style={[styles.fileCardMeta, { color: theme.textSecondary }]}>
+                                  {msgItem.fileSize || 'Unknown size'} • {msgItem.fileExt?.toUpperCase() || 'FILE'}
+                                </Text>
+                              </View>
+                            </View>
+                            
+                            <View style={styles.fileCardFooter}>
+                               <Text style={[styles.fileCardTime, { color: theme.textSecondary }]}>{formatTime(msgItem.timestamp)}</Text>
+                               <Text style={[styles.fileCardCheckmark, { color: msgItem.status === 'read' ? theme.primary : theme.textSecondary }]}>✓✓</Text>
+                            </View>
+
+                            <View style={styles.downloadIconContainer}>
+                              <Download size={20} color={theme.textSecondary} />
+                            </View>
+                          </TouchableOpacity>
+                        </View>
+                      ) : (
+                        <Text style={[styles.messageText, { color: theme.text }]}>
+                          {msgItem.text}
+                        </Text>
+                      )}
+
+                      <View style={styles.timestampRow}>
+                        {msgItem.pinned && <Pin size={10} color={theme.textSecondary} style={{ marginRight: 4 }} fill={theme.textSecondary} />}
+                        {msgItem.starred && <Star size={10} color="#EAB308" style={{ marginRight: 4 }} fill="#EAB308" />}
+                        <Text style={[styles.inlineTimestamp, { color: theme.textSecondary }]}>
+                          {formatTime(msgItem.timestamp)}
+                        </Text>
+                      </View>
+                   </View>
+
+                   {msgItem.reactions && msgItem.reactions.length > 0 && (
+                     <View style={[styles.bubbleReactions, { alignSelf: 'flex-start', marginLeft: 4 }]}>
+                       {msgItem.reactions.map((emoji, i) => (
+                         <Text key={i} style={styles.bubbleReactionEmoji}>{emoji}</Text>
+                       ))}
+                     </View>
+                   )}
+                 </View>
+               )}
             </View>
-          </View>
+          </TouchableOpacity>
         </View>
-      </View>
+      </SwipeableMessage>
     );
   };
 
@@ -759,7 +1346,7 @@ export default function ChatScreen() {
             </Text>
           </View>
         </View>
-        <Animated.View 
+        <RNAnimated.View 
           style={[
             styles.typingBubble,
             { 
@@ -778,7 +1365,7 @@ export default function ChatScreen() {
             <View style={[styles.typingDot, { backgroundColor: theme.icon }]} />
             <View style={[styles.typingDot, { backgroundColor: theme.icon }]} />
           </View>
-        </Animated.View>
+        </RNAnimated.View>
       </View>
     );
   };
@@ -809,7 +1396,7 @@ export default function ChatScreen() {
                         source={getAvatarUrl(contact.avatar)} 
                         style={styles.headerAvatar} 
                       />
-                      <Animated.View 
+                      <RNAnimated.View 
                         style={[
                           styles.headerPulseDot, 
                           { 
@@ -868,7 +1455,7 @@ export default function ChatScreen() {
         )}
 
         {/* Scroll to Bottom Button */}
-        <Animated.View style={[
+        <RNAnimated.View style={[
           styles.scrollToBottom,
           { 
             transform: [{ translateY: scrollAnim.interpolate({ inputRange: [0, 1], outputRange: [100, 0] }) }],
@@ -881,8 +1468,7 @@ export default function ChatScreen() {
           >
             <ArrowLeft size={20} color="white" style={{ transform: [{ rotate: '-90deg' }] }} />
           </TouchableOpacity>
-        </Animated.View>
-
+        </RNAnimated.View>
         <View style={[
           styles.whatsappInputWrapper, 
           { 
@@ -890,96 +1476,325 @@ export default function ChatScreen() {
             borderTopColor: theme.border
           }
         ]}>
-          <TouchableOpacity style={styles.plusBtn}>
-            <Text style={styles.plusIcon}>+</Text>
-          </TouchableOpacity>
-
-          {isRecording ? (
-            <View style={[styles.recordingPanel, { backgroundColor: theme.card }]}>
-               {/* Top Row: Timer + Waveform */}
-              <View style={styles.recordingTopRow}>
-                <Text style={[styles.recordingTimerText, { color: theme.text }]}>
-                   {Math.floor(recordingDuration / 60)}:{(recordingDuration % 60).toString().padStart(2, '0')}
+          {/* Reply Preview - Now outside the actions row to stay on top */}
+          {!isRecording && replyTo && (
+            <View style={[styles.replyToContainer, { backgroundColor: colorScheme === 'dark' ? 'rgba(30, 41, 59, 0.9)' : '#f8f9fa', borderLeftColor: theme.primary }]}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.replyToName, { color: theme.primary }]}>
+                  {replyTo.sender === 'me' ? 'You' : contact.name}
                 </Text>
-                
-                 {/* Live Waveform Visualization */}
-                <View style={styles.liveWaveform}>
-                    {waveData.map((height, i) => (
-                        <View 
-                          key={i} 
-                          style={[
-                            styles.liveWaveBar, 
-                            { 
-                              height: isPaused ? 4 : height,
-                              backgroundColor: theme.textSecondary 
-                            }
-                          ]} 
-                        />
-                    ))}
-                </View>
+                <Text style={[styles.replyToText, { color: theme.textSecondary }]} numberOfLines={1}>
+                  {getFormattedReplyText(replyTo)}
+                </Text>
               </View>
-
-              {/* Bottom Row: Controls */}
-              <View style={styles.recordingBottomRow}>
-                  <TouchableOpacity onPress={() => stopRecording(false)} style={styles.recordActionBtn}>
-                    <Trash2 size={24} color={theme.text} />
-                  </TouchableOpacity>
-
-                  <TouchableOpacity onPress={togglePause} style={styles.recordPauseBtn}>
-                     {isPaused ? (
-                        <View style={styles.resumeCircle}>
-                           <View style={styles.resumeTriangle} />
-                        </View>
-                     ) : (
-                        <View style={styles.pauseCircle}>
-                           <Pause size={18} color="#EF4444" fill="#EF4444" />
-                        </View>
-                     )}
-                  </TouchableOpacity>
-
-                  <TouchableOpacity onPress={() => stopRecording(true)} style={styles.recordSendBtn}>
-                    <Send size={20} color="#FFF" />
-                  </TouchableOpacity>
-              </View>
-            </View>
-          ) : (
-            <>
-              <View style={[styles.whatsappInputFrame, { backgroundColor: colorScheme === 'dark' ? '#0F172A' : '#FFF', borderColor: theme.border }]}>
-                <TextInput
-                  style={[styles.chatInput, { color: theme.text }]}
-                  placeholder="Message..."
-                  placeholderTextColor={theme.textSecondary}
-                  value={inputText}
-                  onChangeText={handleInputChange}
-                  multiline
-                  keyboardAppearance={colorScheme === 'dark' ? 'dark' : 'light'}
-                />
-                <TouchableOpacity style={styles.stickerBtn}>
-                  <Smile size={24} color={theme.textSecondary} />
-                </TouchableOpacity>
-              </View>
-
-              {!inputText.trim() ? (
-                <View style={styles.inputRightActions}>
-                  <TouchableOpacity style={styles.inputActionBtn}>
-                    <Camera size={24} color={theme.primary} />
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={[styles.inputActionBtn, { backgroundColor: theme.primary + '20', borderRadius: 20 }]} 
-                    onPress={startRecording}
-                  >
-                    <Mic size={24} color={theme.primary} />
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <TouchableOpacity style={styles.whatsappSendBtn} onPress={handleSend}>
-                  <Send size={20} color={theme.primary} />
+              {replyTo.type === 'image' && (
+                <TouchableOpacity 
+                  onPress={() => setViewerImageUrl(replyTo.text.startsWith('http') ? replyTo.text : `${IMAGE_BASE}${replyTo.text}`)}
+                >
+                  <Image 
+                    source={{ uri: replyTo.text.startsWith('http') ? replyTo.text : `${IMAGE_BASE}${replyTo.text}` }} 
+                    style={styles.replyThumbnail}
+                    contentFit="cover"
+                  />
                 </TouchableOpacity>
               )}
-            </>
+              <TouchableOpacity onPress={() => setReplyTo(null)} style={styles.replyCloseBtn}>
+                <X size={18} color={theme.textSecondary} />
+              </TouchableOpacity>
+            </View>
           )}
+
+          <View style={styles.inputActionsRow}>
+            <TouchableOpacity 
+              style={[
+                styles.plusBtn, 
+                { backgroundColor: colorScheme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }
+              ]}
+              onPress={() => setShowAttachmentMenu(!showAttachmentMenu)}
+            >
+              <Paperclip size={22} color={colorScheme === 'dark' ? '#FFF' : theme.text} />
+            </TouchableOpacity>
+
+            {isRecording ? (
+              <View style={[styles.recordingPanel, { backgroundColor: 'transparent' }]}>
+                {/* Top Row: Timer + Waveform */}
+                <View style={styles.recordingTopRow}>
+                  <Text style={[styles.recordingTimerText, { color: theme.text }]}>
+                    {Math.floor(recordingDuration / 60)}:{(recordingDuration % 60).toString().padStart(2, '0')}
+                  </Text>
+                  
+                  {/* Live Waveform Visualization */}
+                  <View style={styles.liveWaveform}>
+                      {waveData.map((height, i) => (
+                          <View 
+                            key={i} 
+                            style={[
+                              styles.liveWaveBar, 
+                              { 
+                                height: isPaused ? 4 : height,
+                                backgroundColor: theme.textSecondary 
+                              }
+                            ]} 
+                          />
+                      ))}
+                  </View>
+                </View>
+
+                {/* Bottom Row: Controls */}
+                <View style={styles.recordingBottomRow}>
+                    <TouchableOpacity onPress={() => stopRecording(false)} style={styles.recordActionBtn}>
+                      <Trash2 size={24} color={theme.text} />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity onPress={togglePause} style={styles.recordPauseBtn}>
+                       {isPaused ? (
+                          <View style={styles.resumeCircle}>
+                             <View style={styles.resumeTriangle} />
+                          </View>
+                       ) : (
+                          <View style={styles.pauseCircle}>
+                             <Pause size={18} color="#EF4444" fill="#EF4444" />
+                          </View>
+                       )}
+                    </TouchableOpacity>
+
+                    <TouchableOpacity onPress={() => stopRecording(true)} style={styles.recordSendBtn}>
+                      <Send size={20} color="#FFF" />
+                    </TouchableOpacity>
+                </View>
+              </View>
+            ) : (
+              <>
+                <View style={[styles.whatsappInputFrame, { backgroundColor: colorScheme === 'dark' ? '#0F172A' : '#f0f2f5', borderColor: 'transparent' }]}>
+                  <TextInput
+                    style={[styles.chatInput, { color: theme.text }]}
+                    placeholder="Message..."
+                    placeholderTextColor={theme.textSecondary}
+                    value={inputText}
+                    onChangeText={handleInputChange}
+                    multiline
+                    keyboardAppearance={colorScheme === 'dark' ? 'dark' : 'light'}
+                  />
+                  <TouchableOpacity style={styles.stickerBtn}>
+                    <Smile size={24} color={theme.textSecondary} />
+                  </TouchableOpacity>
+                </View>
+
+                {!inputText.trim() ? (
+                  <View style={styles.inputRightActions}>
+                    <TouchableOpacity style={styles.inputActionBtn}>
+                      <Camera size={24} color={theme.primary} />
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={[styles.inputActionBtn, { backgroundColor: theme.primary + '20', borderRadius: 20 }]} 
+                      onPress={startRecording}
+                    >
+                      <Mic size={24} color={theme.primary} />
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <TouchableOpacity style={styles.whatsappSendBtn} onPress={handleSend}>
+                    <Send size={24} color={theme.primary} />
+                  </TouchableOpacity>
+                )}
+              </>
+            )}
+          </View>
         </View>
       </KeyboardAvoidingView>
+
+      {/* Header Options Menu Modal */}
+      <Modal
+        visible={showOptionsMenu}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowOptionsMenu(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1} 
+          onPress={() => setShowOptionsMenu(false)}
+        >
+          <View style={[styles.headerMenuContainer, { backgroundColor: colorScheme === 'dark' ? '#1E293B' : '#FFF' }]}>
+            <TouchableOpacity 
+              style={styles.contextActionItem} 
+              onPress={() => {
+                setShowOptionsMenu(false);
+                router.push({ pathname: '/chat/settings', params: { id } });
+              }}
+            >
+              <Text style={[styles.contextActionText, { color: theme.text }]}>Chat Settings</Text>
+              <Settings size={18} color={theme.textSecondary} />
+            </TouchableOpacity>
+
+            <View style={[styles.contextMenuDivider, { backgroundColor: theme.border }]} />
+
+            <TouchableOpacity style={styles.contextActionItem} onPress={handleMute}>
+              <Text style={[styles.contextActionText, { color: theme.text }]}>
+                {isMuted ? 'Unmute' : 'Mute'}
+              </Text>
+              {isMuted ? <Bell size={18} color={theme.textSecondary} /> : <BellOff size={18} color={theme.textSecondary} />}
+            </TouchableOpacity>
+
+            <View style={[styles.contextMenuDivider, { backgroundColor: theme.border }]} />
+
+            <TouchableOpacity style={styles.contextActionItem} onPress={handleClearChat}>
+              <Text style={[styles.contextActionText, { color: '#EF4444' }]}>Clear Chat</Text>
+              <Trash2 size={18} color="#EF4444" />
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Message Context Menu Modal */}
+      <Modal
+        visible={isContextMenuVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsContextMenuVisible(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1} 
+          onPress={() => setIsContextMenuVisible(false)}
+        >
+          <ExpoBlurView intensity={20} style={StyleSheet.absoluteFill} tint="dark" />
+          
+          <View style={styles.contextMenuContainer}>
+            {/* Reactions Bar */}
+            <View style={[styles.reactionsBar, { backgroundColor: colorScheme === 'dark' ? '#1E293B' : '#FFF' }]}>
+              {['👍', '❤️', '😂', '😮', '😢', '🙏', '🖤'].map((emoji, i) => (
+                <TouchableOpacity 
+                  key={i} 
+                  style={styles.reactionBtn}
+                  onPress={() => activeMessageId && addReaction(activeMessageId, emoji)}
+                >
+                  <Text style={{ fontSize: 24 }}>{emoji}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Context Actions Menu */}
+            <View style={[styles.contextActionsMenu, { backgroundColor: colorScheme === 'dark' ? '#1E293B' : '#FFF' }]}>
+              <TouchableOpacity style={styles.contextActionItem} onPress={() => {
+                 if (activeMessage) setReplyTo(activeMessage);
+                 setIsContextMenuVisible(false);
+              }}>
+                <Text style={[styles.contextActionText, { color: theme.text }]}>Reply</Text>
+                <Reply size={18} color={theme.textSecondary} />
+              </TouchableOpacity>
+
+              <View style={[styles.contextMenuDivider, { backgroundColor: theme.border }]} />
+
+              <TouchableOpacity style={styles.contextActionItem} onPress={() => setIsContextMenuVisible(false)}>
+                <Text style={[styles.contextActionText, { color: theme.text }]}>Forward</Text>
+                <Share2 size={18} color={theme.textSecondary} />
+              </TouchableOpacity>
+
+              <View style={[styles.contextMenuDivider, { backgroundColor: theme.border }]} />
+
+              <TouchableOpacity style={styles.contextActionItem} onPress={() => setIsContextMenuVisible(false)}>
+                <Text style={[styles.contextActionText, { color: theme.text }]}>Info</Text>
+                <Info size={18} color={theme.textSecondary} />
+              </TouchableOpacity>
+
+              <View style={[styles.contextMenuDivider, { backgroundColor: theme.border }]} />
+
+              <TouchableOpacity 
+                style={styles.contextActionItem} 
+                onPress={() => activeMessageId && toggleStarMessage(activeMessageId)}
+              >
+                <Text style={[styles.contextActionText, { color: theme.text }]}>
+                  {activeMessage?.starred ? 'Unstar' : 'Star'}
+                </Text>
+                <Star size={18} color={activeMessage?.starred ? '#EAB308' : theme.textSecondary} fill={activeMessage?.starred ? '#EAB308' : 'none'} />
+              </TouchableOpacity>
+
+              <View style={[styles.contextMenuDivider, { backgroundColor: theme.border }]} />
+
+              <TouchableOpacity 
+                style={styles.contextActionItem} 
+                onPress={() => activeMessageId && togglePinMessage(activeMessageId)}
+              >
+                <Text style={[styles.contextActionText, { color: theme.text }]}>
+                  {activeMessage?.pinned ? 'Unpin' : 'Pin'}
+                </Text>
+                <Pin size={18} color={activeMessage?.pinned ? '#3B82F6' : theme.textSecondary} fill={activeMessage?.pinned ? '#3B82F6' : 'none'} />
+              </TouchableOpacity>
+
+              <View style={[styles.contextMenuDivider, { backgroundColor: theme.border }]} />
+
+              <TouchableOpacity 
+                style={styles.contextActionItem} 
+                onPress={() => activeMessageId && handleDeleteMessage(activeMessageId)}
+              >
+                <Text style={[styles.contextActionText, { color: '#EF4444' }]}>Delete</Text>
+                <Trash2 size={18} color="#EF4444" />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Attachment Menu */}
+      {showAttachmentMenu && (
+        <>
+          <TouchableOpacity 
+            style={styles.menuOverlay} 
+            activeOpacity={1} 
+            onPress={() => setShowAttachmentMenu(false)}
+          />
+          <View style={[styles.attachmentMenu, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <TouchableOpacity 
+              style={styles.menuItem} 
+              onPress={handlePickDocument}
+            >
+              <View style={[styles.menuIconCircle, { backgroundColor: '#3B82F6' }]}>
+                <FilePlus size={20} color="#FFF" />
+              </View>
+              <Text style={[styles.menuItemText, { color: theme.text }]}>Add file</Text>
+            </TouchableOpacity>
+
+            <View style={[styles.menuDivider, { backgroundColor: theme.border }]} />
+
+            <TouchableOpacity 
+              style={styles.menuItem} 
+              onPress={handlePickImage}
+            >
+              <View style={[styles.menuIconCircle, { backgroundColor: '#10B981' }]}>
+                <FileText size={20} color="#FFF" />
+              </View>
+              <View>
+                <Text style={[styles.menuItemText, { color: theme.text }]}>Upload / attach document</Text>
+                <Text style={[styles.menuItemSubtext, { color: theme.textSecondary }]}>Images, PDFs, files, etc.</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </>
+      )}
+
+      {/* Full Screen Image Viewer */}
+      <Modal
+        visible={!!viewerImageUrl}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setViewerImageUrl(null)}
+      >
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <View style={styles.viewerContainer}>
+            <ExpoBlurView intensity={30} style={StyleSheet.absoluteFill} tint="dark" />
+            <TouchableOpacity 
+              style={styles.viewerCloseBtn} 
+              onPress={() => setViewerImageUrl(null)}
+            >
+              <X size={28} color="#FFF" />
+            </TouchableOpacity>
+            {viewerImageUrl && (
+              <ZoomableImage uri={viewerImageUrl} />
+            )}
+          </View>
+        </GestureHandlerRootView>
+      </Modal>
 
       {/* Options Menu Dropdown */}
       {showOptionsMenu && (
@@ -994,11 +1809,24 @@ export default function ChatScreen() {
               style={styles.menuItem} 
               onPress={() => {
                 setShowOptionsMenu(false);
+                // TODO: Open Media picker
+              }}
+            >
+              <Camera size={18} color={theme.text} />
+              <Text style={[styles.menuItemText, { color: theme.text }]}>Media & Files</Text>
+            </TouchableOpacity>
+
+            <View style={[styles.menuDivider, { backgroundColor: theme.border }]} />
+
+            <TouchableOpacity 
+              style={styles.menuItem} 
+              onPress={() => {
+                setShowOptionsMenu(false);
                 // TODO: Navigate to chat settings
               }}
             >
               <Info size={18} color={theme.text} />
-              <Text style={[styles.menuItemText, { color: theme.text }]}>Chat Settings</Text>
+              <Text style={[styles.menuItemText, { color: theme.text }]}>Chat Info</Text>
             </TouchableOpacity>
             
             <View style={[styles.menuDivider, { backgroundColor: theme.border }]} />
@@ -1123,30 +1951,35 @@ const styles = StyleSheet.create({
     zIndex: -2,
   },
   whatsappInputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 12,
+    paddingHorizontal: 12,
+    paddingTop: 6,
+    paddingBottom: 15,
     borderTopWidth: 1,
     zIndex: 100,
   },
-  plusBtn: {
-    padding: 6,
+  inputActionsRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    paddingBottom: 2,
+    marginBottom: 8,
   },
-  plusIcon: {
-    fontSize: 30,
-    color: '#007AFF',
-    fontWeight: '300',
+   plusBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 4,
   },
   whatsappInputFrame: {
     flex: 1,
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     backgroundColor: '#FFF',
-    borderRadius: 18,
-    paddingHorizontal: 12,
-    marginHorizontal: 8,
-    minHeight: 36,
+    borderRadius: 22,
+    paddingHorizontal: 8,
+    marginHorizontal: 7,
+    minHeight: 40,
     borderWidth: 1,
     borderColor: '#CCC',
   },
@@ -1155,7 +1988,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     fontSize: 16,
     color: '#000',
-    maxHeight: 120,
+    maxHeight: 127,
   },
   stickerBtn: {
     padding: 4,
@@ -1163,15 +1996,20 @@ const styles = StyleSheet.create({
   inputRightActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    marginRight: 4,
+    gap: 8,
   },
   inputActionBtn: {
-    padding: 4,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   whatsappSendBtn: {
-    padding: 4,
-    marginRight: 4,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 2,
   },
   whatsappSendIcon: {
     color: '#0EA5E9',
@@ -1266,25 +2104,37 @@ const styles = StyleSheet.create({
   messageBubble: {
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 15,
+    borderRadius: 20,
+    minHeight: 38,
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  imageBubbleContainer: {
+    width: 240,
+    height: 180,
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginVertical: 4,
+  },
+  messageImage: {
+    width: '100%',
+    height: '100%',
   },
   myMessageBubble: {
-    borderTopRightRadius: 5,
-    backgroundColor: '#DCF8C6',
+    borderTopRightRadius: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 1,
-    elevation: 1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 3,
   },
   theirMessageBubble: {
-    borderTopLeftRadius: 5,
-    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
-    shadowRadius: 1,
-    elevation: 1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   messageText: {
     fontSize: 15,
@@ -1544,49 +2394,54 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  // Voice Player Styles
   voicePlayerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    minWidth: 200,
-    paddingVertical: 2,
+    minWidth: 220,
+    paddingVertical: 4,
+    gap: 10,
   },
   voiceAvatarContainer: {
     position: 'relative',
-    marginRight: 8,
   },
   voiceAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#CCC',
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#EEE',
   },
   voiceMicIcon: {
     position: 'absolute',
-    bottom: -1,
-    right: -1,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    bottom: -2,
+    right: -2,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#FFF',
+    borderWidth: 1.5,
+    borderColor: 'transparent',
   },
   voicePlayBtn: {
-    marginRight: 10,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   voiceSliderContainer: {
     flex: 1,
+    height: 34,
     justifyContent: 'center',
   },
   voiceSliderTrackOutter: {
-    height: 18,
+    height: 12,
     justifyContent: 'center',
-    marginBottom: 3,
+    marginBottom: 2,
+    position: 'relative',
   },
   voiceSliderTrackDotted: {
-    height: 1,
+    height: 2,
     borderWidth: 1,
     borderStyle: 'dotted',
     borderRadius: 1,
@@ -1594,19 +2449,21 @@ const styles = StyleSheet.create({
   },
   voiceSliderThumb: {
     position: 'absolute',
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    elevation: 2,
+    elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1,
-    marginLeft: -6,
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+  },
+  voiceMetaRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
   },
   voiceDurationText: {
     fontSize: 10,
-    marginTop: -2,
+    fontWeight: '500',
+    marginTop: 0,
   },
 
   // Options Menu Styles
@@ -1647,5 +2504,303 @@ const styles = StyleSheet.create({
   menuDivider: {
     height: 1,
     marginHorizontal: 8,
+  },
+  replyToContainer: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderLeftWidth: 4,
+    marginBottom: 0,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+    marginHorizontal: 4,
+  },
+  replyToName: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  replyToText: {
+    fontSize: 13,
+  },
+  replyCloseBtn: {
+    padding: 4,
+  },
+  replyPreview: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderLeftWidth: 3,
+    marginBottom: 6,
+    borderRadius: 4,
+  },
+  replyThumbnail: {
+    width: 36,
+    height: 36,
+    borderRadius: 4,
+    marginLeft: 8,
+  },
+  replyName: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  // replyText: { fontSize: 12 }, // Removed duplicate property
+
+  // Context Menu Modal Styles
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  contextMenuContainer: {
+    width: '80%',
+    alignItems: 'center',
+    zIndex: 1001,
+  },
+  reactionsBar: {
+    flexDirection: 'row',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 30,
+    marginBottom: 10,
+    gap: 8,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  reactionBtn: {
+    padding: 4,
+  },
+  addReactionBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 4,
+  },
+  contextActionsMenu: {
+    width: 220,
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  contextActionItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  contextActionText: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  contextMenuDivider: {
+    height: 1,
+    width: '100%',
+  },
+  bubbleReactions: {
+    flexDirection: 'row',
+    // Use a default color, override in component if needed
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 12,
+    marginTop: -8,
+    borderWidth: 2,
+    borderColor: '#FFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+    zIndex: 10,
+  },
+  bubbleReactionEmoji: {
+    fontSize: 12,
+    marginHorizontal: 1,
+  },
+  attachmentMenu: {
+    position: 'absolute',
+    bottom: 90,
+    left: 12,
+    width: 250,
+    borderRadius: 20,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 12,
+    zIndex: 1000,
+    overflow: 'hidden',
+    padding: 8,
+  },
+  menuIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  menuItemSubtext: {
+    fontSize: 11,
+    marginTop: 1,
+  },
+  viewerContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  viewerFullImage: {
+    width: '100%',
+    height: '80%',
+  },
+  viewerCloseBtn: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 60 : 40,
+    right: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  fileBubble: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+    borderRadius: 12,
+    maxWidth: 240,
+  },
+  fileIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  fileInfo: {
+    flex: 1,
+  },
+  fileName: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  fileSize: {
+    fontSize: 12,
+  },
+  fileCardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  fileCard: {
+    width: 260,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  fileCardBanner: {
+    width: '100%',
+    height: 120,
+  },
+  fileCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    gap: 12,
+    paddingBottom: 6,
+  },
+  fileCardIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fileCardExtLabel: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  fileCardInfo: {
+    flex: 1,
+  },
+  fileCardName: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  fileCardMeta: {
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 12,
+  },
+  fileCardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingBottom: 8,
+    gap: 4,
+  },
+  fileCardTime: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.6)',
+  },
+  fileCardCheckmark: {
+    fontSize: 14,
+    color: '#38BDF8',
+  },
+  forwardBtnMini: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  downloadIconContainer: {
+    paddingRight: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  headerMenuContainer: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 100 : 70, // Adjust based on header height + status bar
+    right: 16,
+    width: 180,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 10,
+    zIndex: 1000,
+    overflow: 'hidden',
   },
 });

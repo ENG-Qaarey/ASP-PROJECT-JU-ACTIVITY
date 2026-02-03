@@ -7,7 +7,7 @@ import { useAuth } from './AuthContext';
 interface ChatContextType {
   socket: any | null;
   connected: boolean;
-  sendMessage: (receiverId: string, content: string, type?: string) => void;
+  sendMessage: (receiverId: string, content: string, type?: string, replyTo?: any, metadata?: any) => void;
   emitTyping: (receiverId: string) => void;
   emitStopTyping: (receiverId: string) => void;
   onlineUsers: string[];
@@ -78,9 +78,9 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, [user]);
 
-  const sendMessage = (receiverId: string, content: string, type: string = 'text') => {
+  const sendMessage = (receiverId: string, content: string, type: string = 'text', replyTo?: any, metadata?: any) => {
     if (socket && connected) {
-      socket.emit('sendMessage', { receiverId, content, type });
+      socket.emit('sendMessage', { receiverId, content, type, replyTo, metadata });
     }
   };
 

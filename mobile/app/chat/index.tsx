@@ -124,11 +124,21 @@ export default function ChatListScreen() {
         const otherUser = item.user;
         const lastMsg = item.lastMessage;
         
+        // Format last message preview
+        let previewText = lastMsg.content;
+        if (lastMsg.type === 'image') {
+          previewText = '📷 Photo';
+        } else if (lastMsg.type === 'audio') {
+          previewText = '🎵 Voice message';
+        } else if (lastMsg.type === 'file') {
+          previewText = `📄 ${lastMsg.metadata?.fileName || 'Document'}`;
+        }
+        
         return {
           id: otherUser.id,
           name: otherUser.name,
           avatar: otherUser.avatar || otherUser.name.substring(0, 2).toUpperCase(),
-          lastMessage: lastMsg.content,
+          lastMessage: previewText,
           timestamp: dayjs(lastMsg.createdAt).fromNow(true)
             .replace(' minutes', 'm')
             .replace(' minute', 'm')
@@ -140,9 +150,9 @@ export default function ChatListScreen() {
             .replace(' year', 'y')
             .replace(' seconds', 's')
             .replace(' a ', '1'),
-          isOnline: false, // Backend doesn't provide this yet
-          isRead: true, // Backend doesn't provide this yet
-          unreadCount: 0, // Backend doesn't provide this yet
+          isOnline: false, 
+          isRead: lastMsg.read,
+          unreadCount: 0, 
           isSentByMe: lastMsg.senderId === user?.id,
         };
       });

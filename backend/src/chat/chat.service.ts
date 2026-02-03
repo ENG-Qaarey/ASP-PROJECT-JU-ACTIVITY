@@ -6,13 +6,15 @@ import { PrismaService } from '../prisma/prisma.service';
 export class ChatService {
     constructor(private prisma: PrismaService) { }
 
-    async saveMessage(senderId: string, receiverId: string, content: string, type: string = 'text') {
+    async saveMessage(senderId: string, receiverId: string, content: string, type: string = 'text', replyTo?: any, metadata?: any) {
         return this.prisma.message.create({
             data: {
                 senderId,
                 receiverId,
                 content,
                 type: type as any,
+                replyTo: replyTo || undefined,
+                metadata: metadata || undefined,
             },
             include: {
                 sender: {
@@ -59,6 +61,8 @@ export class ChatService {
                 id: true,
                 content: true,
                 type: true,
+                metadata: true,
+                read: true,
                 createdAt: true,
                 senderId: true,
                 receiverId: true,

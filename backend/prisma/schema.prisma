@@ -48,10 +48,12 @@ model Message {
   id        String   @id @default(uuid())
   content   String
   type      MessageType @default(text)
+  metadata  Json?
   senderId  String
   receiverId String
   createdAt DateTime @default(now())
   read      Boolean  @default(false)
+  replyTo   Json?
 
   sender    User     @relation("SentMessages", fields: [senderId], references: [id])
   receiver  User     @relation("ReceivedMessages", fields: [receiverId], references: [id])

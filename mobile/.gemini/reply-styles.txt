@@ -1,0 +1,44 @@
+// Add these styles to your StyleSheet.create() in [id].tsx
+// Insert before the closing });
+
+  // Reply Styles
+  replyIcon: {
+    position: 'absolute',
+    right: 10,
+    alignSelf: 'center',
+  },
+  replyToContainer: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderLeftWidth: 3,
+    marginBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  replyToName: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  replyToText: {
+    fontSize: 13,
+  },
+  replyCloseBtn: {
+    padding: 4,
+  },
+  replyPreview: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderLeftWidth: 3,
+    marginBottom: 6,
+    borderRadius: 4,
+  },
+  replyName: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  replyText: {
+    fontSize: 12,
+  },
