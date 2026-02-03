@@ -1,6 +1,7 @@
 import React from 'react';
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity, TextInput } from 'react-native';
-import { Eye, Calendar, Clock, MapPin, Users, User, Search, Filter, Edit3, Trash2, ArrowLeft, Plus } from 'lucide-react-native';
+import { StyleSheet, View, Text, ScrollView, TouchableOpacity, TextInput, Modal, Dimensions, ActivityIndicator, RefreshControl, Alert } from 'react-native';
+import { Image } from 'expo-image';
+import { Eye, Calendar, Clock, MapPin, Users, User, Search, Filter, Edit3, Trash2, ArrowLeft, Plus, X, Info, AlignLeft } from 'lucide-react-native';
 import { GradientBackground } from '@/src/components/GradientBackground';
 import { GlassCard } from '@/src/components/GlassCard';
 import { useColorScheme } from '@/src/hooks/use-color-scheme';
@@ -8,7 +9,8 @@ import { Colors } from '@/src/data/theme';
 import { useRouter } from 'expo-router';
 import { client } from '@/src/lib/api';
 import { useAuth } from '@/src/context/AuthContext';
-import { ActivityIndicator, RefreshControl, Alert } from 'react-native';
+
+const { width, height } = Dimensions.get('window');
 
 export default function CoordinatorActivities() {
   const router = useRouter();
@@ -20,6 +22,8 @@ export default function CoordinatorActivities() {
   const [loading, setLoading] = React.useState(true);
   const [refreshing, setRefreshing] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [selectedActivity, setSelectedActivity] = React.useState<any>(null);
+  const [modalVisible, setModalVisible] = React.useState(false);
 
   const fetchActivities = async () => {
     try {
@@ -73,19 +77,13 @@ export default function CoordinatorActivities() {
     return { day, month };
   };
 
+  const handleApply = (activity: any) => {
+    setSelectedActivity(activity);
+    setModalVisible(true);
+  };
+
   return (
     <GradientBackground>
-       {/* High-End Header Navigation */}
-       {/* <View style={styles.navBar}>
-        <TouchableOpacity style={[styles.navIconBtn, { backgroundColor: theme.card }]} onPress={() => router.back()}>
-          <ArrowLeft size={20} color={theme.text} />
-        </TouchableOpacity>
-        <Text style={[styles.navTitle, { color: theme.text }]}>Management Hub</Text>
-        <TouchableOpacity style={[styles.navIconBtn, { backgroundColor: theme.primary }]} onPress={() => router.push('/(coordinator)/propose')}>
-          <Plus size={20} color="#FFFFFF" />
-        </TouchableOpacity>
-      </View> */}
-
       <ScrollView 
         style={styles.scrollView} 
         contentContainerStyle={styles.contentContainer} 
@@ -155,6 +153,7 @@ export default function CoordinatorActivities() {
                             theme={theme}
                             onDelete={() => handleDelete(activity.id, activity.title)}
                             onEdit={() => router.push({ pathname: '/(coordinator)/propose', params: { editId: activity.id } })}
+                            onView={() => handleApply(activity)}
                         />
                      );
                  })
@@ -165,15 +164,94 @@ export default function CoordinatorActivities() {
              )}
          </View>
       </ScrollView>
+
+      {/* Detailed Activity Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <GlassCard style={[styles.modalContent, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <View style={styles.modalHandle} />
+            
+            <View style={styles.modalHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <Info size={20} color={theme.primary} />
+                <Text style={[styles.modalTitle, { color: theme.text }]}>Activity Detail</Text>
+              </View>
+              <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeBtn}>
+                <X size={20} color={theme.text} />
+              </TouchableOpacity>
+            </View>
+
+            {selectedActivity && (
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <View style={{ height: 160, width: '100%', borderRadius: 16, overflow: 'hidden', marginBottom: 20 }}>
+                    <Image 
+                        source={require('../../../assets/images/activity-banner.png')} 
+                        style={StyleSheet.absoluteFillObject}
+                        contentFit="cover"
+                    />
+                    <View style={{ ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center' }}>
+                         <Image 
+                            source={require('../../../assets/images/university-logo.png')} 
+                            style={{ width: 120, height: 40 }}
+                            contentFit="contain"
+                         />
+                    </View>
+                </View>
+                
+                <View style={[styles.detailCategoryBadge, { backgroundColor: theme.primary + '15' }]}>
+                    <Text style={[styles.detailCategoryText, { color: theme.primary }]}>{selectedActivity.category}</Text>
+                </View>
+
+                <Text style={[styles.detailTitle, { color: theme.text }]}>{selectedActivity.title}</Text>
+                
+                <View style={styles.detailGrid}>
+                    <DetailItem icon={Calendar} label="Date" value={new Date(selectedActivity.date).toLocaleDateString()} theme={theme} />
+                    <DetailItem icon={Clock} label="Time" value={selectedActivity.time} theme={theme} />
+                    <DetailItem icon={MapPin} label="Location" value={selectedActivity.location} theme={theme} />
+                    <DetailItem icon={Users} label="Participation" value={`${selectedActivity.enrolled}/${selectedActivity.capacity} Enrolled`} theme={theme} />
+                </View>
+
+                <View style={styles.detailSection}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                        <AlignLeft size={16} color={theme.textSecondary} />
+                        <Text style={[styles.detailSectionLabel, { color: theme.textSecondary }]}>Description</Text>
+                    </View>
+                    <Text style={[styles.detailDesc, { color: theme.text }]}>{selectedActivity.description || 'No additional details provided.'}</Text>
+                </View>
+
+                <View style={{ height: 40 }} />
+              </ScrollView>
+            )}
+          </GlassCard>
+        </View>
+      </Modal>
     </GradientBackground>
   );
 }
 
- function CActivityCard({ month, day, category, title, time, location, attendees, status, theme, onDelete, onEdit }: any) {
+function DetailItem({ icon: Icon, label, value, theme }: any) {
+    return (
+        <View style={styles.detailItem}>
+            <View style={styles.detailIconBox}>
+                <Icon size={18} color={theme.primary} />
+            </View>
+            <View>
+                <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>{label}</Text>
+                <Text style={[styles.detailValue, { color: theme.text }]}>{value}</Text>
+            </View>
+        </View>
+    );
+}
+
+function CActivityCard({ month, day, category, title, time, location, attendees, status, theme, onDelete, onEdit, onView }: any) {
     const isOngoing = status === 'Ongoing';
     const isCompleted = status === 'Completed';
     const isDraft = status === 'Draft';
-    const isUpcoming = status === 'Upcoming';
     
     let statusColor = '#0EA5E9';
     let statusBg = theme.background;
@@ -184,14 +262,12 @@ export default function CoordinatorActivities() {
 
     return (
         <GlassCard style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
-            {/* Left: Date Block */}
             <View style={[styles.dateBlock, { backgroundColor: theme.background, borderColor: theme.border }]}>
                 <Text style={[styles.dateMonth, { color: theme.textSecondary }]}>{month}</Text>
                 <Text style={[styles.dateDay, { color: theme.text }]}>{day}</Text>
                 <View style={styles.dateLine} />
             </View>
 
-            {/* Middle: Content */}
             <View style={styles.cardMain}>
                 <View style={styles.tagRow}>
                     <View style={[styles.categoryBadge, { backgroundColor: theme.border }]}>
@@ -205,39 +281,32 @@ export default function CoordinatorActivities() {
 
                 <Text style={[styles.activityTitle, { color: theme.text }]} numberOfLines={1}>{title}</Text>
                 
-                <View style={styles.metaGrid}>
-                    <View style={styles.metaItem}>
+                <View style={styles.metaGridCard}>
+                    <View style={styles.metaItemCard}>
                         <Clock size={12} color={theme.textSecondary} />
-                        <Text style={[styles.metaText, { color: theme.textSecondary }]}>{time}</Text>
+                        <Text style={[styles.metaTextCard, { color: theme.textSecondary }]}>{time}</Text>
                     </View>
-                    <View style={styles.metaItem}>
+                    <View style={styles.metaItemCard}>
                         <MapPin size={12} color={theme.textSecondary} />
-                        <Text style={[styles.metaText, { color: theme.textSecondary }]} numberOfLines={1}>{location}</Text>
+                        <Text style={[styles.metaTextCard, { color: theme.textSecondary }]} numberOfLines={1}>{location}</Text>
                     </View>
-                    <View style={styles.metaItem}>
+                    <View style={styles.metaItemCard}>
                         <Users size={12} color={theme.textSecondary} />
-                        <Text style={[styles.metaText, { color: theme.textSecondary }]}>{attendees}</Text>
+                        <Text style={[styles.metaTextCard, { color: theme.textSecondary }]}>{attendees}</Text>
                     </View>
                 </View>
             </View>
 
-            {/* Right: Actions */}
             <View style={[styles.actionsColumn, { borderLeftColor: theme.border }]}>
-                <TouchableOpacity style={[styles.actionBtn, { backgroundColor: theme.primary + '15', borderColor: theme.primary + '30' }]}>
+                <TouchableOpacity onPress={onView} style={[styles.actionBtn, { backgroundColor: theme.primary + '15', borderColor: theme.primary + '30' }]}>
                     <Eye size={12} color={theme.primary} />
-                    <Text style={[styles.actionBtnText, { color: theme.primary }]}>View</Text>
+                    <Text style={[styles.actionBtnText, { color: theme.primary }]}>VIEW</Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
-                    style={[styles.actionBtn, { backgroundColor: '#8B5CF615', borderColor: '#8B5CF630' }]}
-                    onPress={onEdit}
-                >
+                <TouchableOpacity onPress={onEdit} style={[styles.actionBtn, { backgroundColor: '#8B5CF615', borderColor: '#8B5CF630' }]}>
                     <Edit3 size={12} color="#8B5CF6" />
-                    <Text style={[styles.actionBtnText, { color: '#8B5CF6' }]}>Edit</Text>
+                    <Text style={[styles.actionBtnText, { color: '#8B5CF6' }]}>EDIT</Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
-                    style={[styles.actionBtn, { backgroundColor: '#EF444415', borderColor: '#EF444430' }]}
-                    onPress={onDelete}
-                >
+                <TouchableOpacity onPress={onDelete} style={[styles.actionBtn, { backgroundColor: '#EF444415', borderColor: '#EF444430' }]}>
                     <Trash2 size={12} color="#EF4444" />
                     <Text style={[styles.actionBtnText, { color: '#EF4444' }]}>Del</Text>
                 </TouchableOpacity>
@@ -248,28 +317,7 @@ export default function CoordinatorActivities() {
 
 const styles = StyleSheet.create({
   scrollView: { flex: 1 },
-  contentContainer: { paddingHorizontal: 12, paddingBottom: 60 },
-  navBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 50,
-    paddingBottom: 15,
-  },
-  navIconBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  navTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    opacity: 0.9,
-    letterSpacing: 0.5,
-  },
+  contentContainer: { paddingHorizontal: 12, paddingBottom: 60, paddingTop: 10 },
   headerBanner: { 
     backgroundColor: '#0EA5E9', 
     padding: 20, 
@@ -310,7 +358,7 @@ const styles = StyleSheet.create({
   },
   sectionHeader: { marginBottom: 16, paddingHorizontal: 4 },
   sectionTitle: { fontSize: 18, fontWeight: '900' },
-  sectionSubtitle: { fontSize: 12, marginTop: 2 },
+  sectionSubtitle: { fontSize: 12, marginTop: 2, fontWeight: '500' },
   list: { gap: 12 },
   card: { 
     flexDirection: 'row', 
@@ -338,9 +386,9 @@ const styles = StyleSheet.create({
   statusDot: { width: 4, height: 4, borderRadius: 2 },
   statusText: { fontSize: 9, fontWeight: '800', textTransform: 'uppercase' },
   activityTitle: { fontSize: 16, fontWeight: '800', marginBottom: 8 },
-  metaGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 8 },
-  metaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  metaText: { fontSize: 11, fontWeight: '600' },
+  metaGridCard: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 8 },
+  metaItemCard: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  metaTextCard: { fontSize: 11, fontWeight: '600' },
   actionsColumn: { paddingLeft: 12, borderLeftWidth: 1, gap: 6, justifyContent: 'center' },
   actionBtn: { 
     flexDirection: 'row', 
@@ -353,4 +401,27 @@ const styles = StyleSheet.create({
     minWidth: 58,
   },
   actionBtnText: { fontSize: 10, fontWeight: '800' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
+  modalContent: { 
+    height: height * 0.75, 
+    borderTopLeftRadius: 40, 
+    borderTopRightRadius: 40, 
+    padding: 24, 
+    borderWidth: 1 
+  },
+  modalHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: '#CBD5E1', alignSelf: 'center', marginBottom: 20 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
+  modalTitle: { fontSize: 18, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 1 },
+  closeBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#F1F5F9', justifyContent: 'center', alignItems: 'center' },
+  detailCategoryBadge: { alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, marginBottom: 12 },
+  detailCategoryText: { fontSize: 11, fontWeight: '800', textTransform: 'uppercase' },
+  detailTitle: { fontSize: 24, fontWeight: '900', marginBottom: 20, letterSpacing: -0.5 },
+  detailGrid: { gap: 14, marginBottom: 28 },
+  detailItem: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  detailIconBox: { width: 44, height: 44, borderRadius: 14, backgroundColor: '#F8FAFC', justifyContent: 'center', alignItems: 'center' },
+  detailLabel: { fontSize: 11, fontWeight: '600', marginBottom: 1 },
+  detailValue: { fontSize: 15, fontWeight: '700' },
+  detailSection: { marginBottom: 24 },
+  detailSectionLabel: { fontSize: 12, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1 },
+  detailDesc: { fontSize: 15, lineHeight: 24, fontWeight: '500' },
 });

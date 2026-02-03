@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, View, Text, ScrollView, TouchableOpacity, TextInput, Alert, RefreshControl, Modal, Dimensions } from 'react-native';
+import { Image } from 'expo-image';
 import { Eye, Calendar, Clock, MapPin, Users, User, Search, Filter, Edit3, Trash2, X, Info, AlignLeft, ShieldCheck } from 'lucide-react-native';
 import { GradientBackground } from '@/src/components/GradientBackground';
 import { GlassCard } from '@/src/components/GlassCard';
@@ -177,6 +178,20 @@ export default function AdminActivities() {
 
             {selectedActivity && (
               <ScrollView showsVerticalScrollIndicator={false} style={styles.modalScroll}>
+                <View style={{ height: 160, width: '100%', borderRadius: 16, overflow: 'hidden', marginBottom: 20 }}>
+                    <Image 
+                        source={require('../../../assets/images/activity-banner.png')} 
+                        style={StyleSheet.absoluteFillObject}
+                        contentFit="cover"
+                    />
+                    <View style={{ ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center' }}>
+                         <Image 
+                            source={require('../../../assets/images/university-logo.png')} 
+                            style={{ width: 120, height: 40 }}
+                            contentFit="contain"
+                         />
+                    </View>
+                </View>
                 <View style={[styles.detailCategoryBadge, { backgroundColor: theme.primary + '15' }]}>
                     <Text style={[styles.detailCategoryText, { color: theme.primary }]}>{selectedActivity.category}</Text>
                 </View>

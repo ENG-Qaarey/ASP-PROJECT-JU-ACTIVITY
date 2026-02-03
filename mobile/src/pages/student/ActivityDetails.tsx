@@ -113,10 +113,37 @@ export default function ActivityDetails() {
             </View>
         </View>
 
-        <Image 
-            source={{ uri: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800' }} 
-            style={styles.headerImage}
-        />
+        <View style={{ height: 320, width: '100%', overflow: 'hidden' }}>
+            <Image 
+                source={require('../../../assets/images/activity-banner.png')} 
+                style={StyleSheet.absoluteFillObject}
+                contentFit="cover"
+            />
+            <View style={{ 
+                ...StyleSheet.absoluteFillObject, 
+                backgroundColor: 'rgba(0,0,0,0.35)',
+                justifyContent: 'center',
+                alignItems: 'center'
+            }}>
+                <View style={{
+                    width: 140,
+                    height: 140,
+                    borderRadius: 70,
+                    backgroundColor: 'rgba(255,255,255,0.15)',
+                    borderWidth: 1,
+                    borderColor: 'rgba(255,255,255,0.3)',
+                    padding: 20,
+                    justifyContent: 'center',
+                    alignItems: 'center'
+                }}>
+                    <Image 
+                        source={require('../../../assets/images/university-logo.png')}
+                        style={{ width: '100%', height: '100%' }}
+                        contentFit="contain"
+                    />
+                </View>
+            </View>
+        </View>
 
         {/* Content */}
         <View style={[styles.content, { backgroundColor: theme.background }]}>
