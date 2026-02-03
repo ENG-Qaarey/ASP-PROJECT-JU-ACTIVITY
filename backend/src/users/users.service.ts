@@ -291,19 +291,78 @@ export class UsersService {
     if (user.role === 'admin') {
       throw new ConflictException('Cannot delete admin user');
     }
-    await this.prisma.user.delete({ where: { id } });
 
-    await this.auditLogs.create({
-      action: 'USER_DELETE',
-      actorId: actorId ?? null,
-      targetId: id,
-      entity: 'user',
-      entityId: id,
-      message: `Deleted user: ${user.email}`,
-      metadata: { role: user.role },
-    });
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        // 1. If user is a coordinator, delete their activities and related data
+        if (user.role === 'coordinator') {
+          const activities = await tx.activity.findMany({
+            where: { coordinatorId: id },
+            select: { id: true },
+          });
 
-    return { success: true };
+          if (activities.length > 0) {
+            const activityIds = activities.map((a) => a.id);
+
+            // Delete attendance for these activities
+            await tx.attendance.deleteMany({
+              where: { activityId: { in: activityIds } },
+            });
+
+            // Delete applications for these activities
+            await tx.application.deleteMany({
+              where: { activityId: { in: activityIds } },
+            });
+
+            // Delete the activities
+            await tx.activity.deleteMany({
+              where: { id: { in: activityIds } },
+            });
+          }
+        }
+
+        // 2. Delete applications made by this user
+        await tx.application.deleteMany({ where: { studentId: id } });
+
+        // 3. Delete attendance records for this user (as student)
+        await tx.attendance.deleteMany({ where: { studentId: id } });
+
+        // 4. Delete attendance records marked by this user
+        await tx.attendance.deleteMany({ where: { markedBy: id } });
+
+        // 5. Delete notifications for this user
+        await tx.notification.deleteMany({ where: { recipientId: id } });
+
+        // 6. Nullify audit logs where user is actor or target
+        await tx.auditLog.updateMany({
+          where: { actorId: id },
+          data: { actorId: null },
+        });
+
+        await tx.auditLog.updateMany({
+          where: { targetId: id },
+          data: { targetId: null },
+        });
+
+        // 7. Finally delete the user
+        await tx.user.delete({ where: { id } });
+      });
+
+      await this.auditLogs.create({
+        action: 'USER_DELETE',
+        actorId: actorId ?? null,
+        targetId: null,
+        entity: 'user',
+        entityId: id,
+        message: `Deleted user: ${user.email}`,
+        metadata: { role: user.role },
+      });
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      throw new ConflictException('Failed to delete user: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    }
   }
 }
 
