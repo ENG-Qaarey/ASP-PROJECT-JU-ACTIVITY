@@ -347,3 +347,14 @@ export const auditLogsApi = {
   },
 };
 
+// Categories API
+export const categoriesApi = {
+  getAll: () => fetchApi<{ id: string; name: string }[]>('/categories'),
+
+  create: (name: string) =>
+    fetchApi<{ id: string; name: string }>('/categories', {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    }),
+};
+

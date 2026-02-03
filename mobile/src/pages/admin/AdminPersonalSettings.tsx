@@ -13,7 +13,7 @@ import { useRouter } from 'expo-router';
 import { useColorScheme } from '@/src/hooks/use-color-scheme';
 import { Colors } from '@/src/data/theme';
 import { client } from '@/src/lib/api';
-import { ENDPOINTS, BASE_URL } from '@/src/lib/config';
+import { ENDPOINTS, BASE_URL, IMAGE_BASE } from '@/src/lib/config';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/src/context/AuthContext';
 
@@ -75,22 +75,58 @@ export default function AdminPersonalSettings() {
   };
 
   const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    
-    if (status !== 'granted') {
-      Alert.alert('Permission Denied', 'Sorry, we need camera roll permissions to change your photo.');
-      return;
-    }
+    try {
+      const [libraryStatus, cameraStatus] = await Promise.all([
+        ImagePicker.requestMediaLibraryPermissionsAsync(),
+        ImagePicker.requestCameraPermissionsAsync(),
+      ]);
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.7,
-    });
+      if (libraryStatus.status !== 'granted') {
+        Alert.alert(
+          'Permission Denied', 
+          'Gallery access is required to change your photo. Please enable it in Settings.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
 
-    if (!result.canceled) {
-      uploadImage(result.assets[0].uri);
+      Alert.alert(
+        'Update Profile Photo',
+        'Select a source for your new photo:',
+        [
+          {
+            text: 'Camera',
+            onPress: async () => {
+              if (cameraStatus.status !== 'granted') {
+                Alert.alert('Permission Error', 'Camera access is not granted.');
+                return;
+              }
+              const result = await ImagePicker.launchCameraAsync({
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.7,
+              });
+              if (!result.canceled) uploadImage(result.assets[0].uri);
+            }
+          },
+          {
+            text: 'Gallery',
+            onPress: async () => {
+              const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ['images'],
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.7,
+              });
+              if (!result.canceled) uploadImage(result.assets[0].uri);
+            }
+          },
+          { text: 'Cancel', style: 'cancel' }
+        ]
+      );
+    } catch (e) {
+      console.error('Pick image error:', e);
+      Alert.alert('Error', 'Failed to open image picker.');
     }
   };
 
@@ -98,22 +134,22 @@ export default function AdminPersonalSettings() {
     setLoading(true);
     try {
       const formData = new FormData();
-      const filename = uri.split('/').pop();
+      const filename = uri.split('/').pop() || 'profile.jpg';
       const match = /\.(\w+)$/.exec(filename || '');
       const type = match ? `image/${match[1]}` : `image`;
 
       // @ts-ignore
-      formData.append('file', { uri, name: filename, type });
+      formData.append('file', { uri: Platform.OS === 'ios' ? uri.replace('file://', '') : uri, name: filename, type });
 
       const response = await client.post('/users/me/avatar', formData);
       if (response && response.avatar) {
           setFormData(prev => ({ ...prev, avatar: response.avatar }));
           await refreshProfile();
-          Alert.alert('Terminal Sync', 'Profile photo updated successfully.');
+          Alert.alert('Success', 'Profile photo updated successfully.');
       }
     } catch (e: any) {
       console.error('Photo upload failed:', e);
-      Alert.alert('Sync Error', 'Failed to upload photo to terminal.');
+      Alert.alert('Error', 'Failed to upload photo: ' + (e.message || 'Unknown error'));
     } finally {
       setLoading(false);
     }
@@ -121,7 +157,7 @@ export default function AdminPersonalSettings() {
 
   const fullAvatarUrl = formData.avatar?.startsWith('http') 
     ? formData.avatar 
-    : `${BASE_URL.replace('/api', '')}${formData.avatar}`;
+    : `${IMAGE_BASE}${formData.avatar}`;
 
   if (fetching) {
       return (

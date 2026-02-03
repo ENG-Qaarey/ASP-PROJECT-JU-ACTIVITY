@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity, TextInput, Modal, FlatList, KeyboardAvoidingView, Platform } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, TouchableOpacity, TextInput, Modal, FlatList, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { ShieldCheck, FileText, Calendar, Clock, MapPin, Users, ChevronDown, Rocket, X, Check, Trash2, RefreshCw } from 'lucide-react-native';
 import { GradientBackground } from '@/src/components/GradientBackground';
 import { GlassCard } from '@/src/components/GlassCard';
@@ -45,13 +45,69 @@ export default function AdminCreateActivity() {
     capacity: ''
   });
 
+  // Calendar & Modal State
+  const [viewingDate, setViewingDate] = React.useState(new Date());
+  const [showYearPicker, setShowYearPicker] = React.useState(false);
+  const [modalType, setModalType] = React.useState<'category' | 'coordinator' | 'date' | 'time' | null>(null);
+
+  const updateField = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleCapacityChange = (text: string) => {
+    const cleanText = text.replace(/[^0-9]/g, '');
+    updateField('capacity', cleanText);
+  };
+
+  const handleSubmit = async () => {
+    if (!formData.title || !formData.date || !formData.category || !formData.description || !formData.coordinatorId || !formData.location || !formData.capacity) {
+      Alert.alert('Incomplete Form', 'Please fill all required fields');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Convert mm/dd/yyyy to yyyy-mm-dd for backend stability
+      const dateParts = formData.date.split('/');
+      const isoDate = dateParts.length === 3 ? `${dateParts[2]}-${dateParts[0]}-${dateParts[1]}` : formData.date;
+
+      const payload = {
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        date: isoDate,
+        time: formData.time,
+        location: formData.location,
+        capacity: parseInt(formData.capacity, 10),
+        coordinatorId: formData.coordinatorId,
+        coordinatorName: formData.coordinator, // Required by backend
+      };
+
+      if (isEditMode && activityId) {
+        await client.put(`/activities/${activityId}`, payload);
+        Alert.alert('Success', 'Activity updated successfully!');
+      } else {
+        await client.post('/activities', payload);
+        Alert.alert('Success', 'Activity published successfully!');
+      }
+      router.back();
+    } catch (e: any) {
+      console.error('Submit failed:', e);
+      Alert.alert('Error', 'Failed to publish activity: ' + (e.message || 'Unknown error'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const [loading, setLoading] = React.useState(false);
+  const [categories, setCategories] = React.useState<{ label: string; value: string }[]>([]);
+  const [newCategoryName, setNewCategoryName] = React.useState('');
+  const [showNewCategoryInput, setShowNewCategoryInput] = React.useState(false);
 
   React.useEffect(() => {
     // Fetch coordinators
     const fetchCoordinators = async () => {
       try {
-        // Assuming endpoint /users?role=coordinator returns User[]
         const res = await client.get('/users?role=coordinator');
         if (Array.isArray(res)) {
           setCoordinatorsList(res);
@@ -60,7 +116,24 @@ export default function AdminCreateActivity() {
         console.log('Failed to fetch coordinators:', e);
       }
     };
+
+    // Fetch categories
+    const fetchCategories = async () => {
+      try {
+        const res = await client.get(ENDPOINTS.CATEGORIES);
+        if (Array.isArray(res)) {
+           const mapped = res.map((c: any) => ({ label: c.name, value: c.name })); // Value is name for now as backend Activity uses string
+           setCategories(mapped);
+        }
+      } catch (e) {
+        console.log('Failed to fetch categories:', e);
+        // Fallback
+        setCategories(CATEGORY_OPTIONS); 
+      }
+    };
+
     fetchCoordinators();
+    fetchCategories();
 
     if (isEditMode && params.activityId) {
       setFormData({
@@ -77,74 +150,22 @@ export default function AdminCreateActivity() {
     }
   }, []); // Run once on mount
 
-  // Calendar State
-  const [viewingDate, setViewingDate] = React.useState(new Date(2026, 0, 1));
-  const [showYearPicker, setShowYearPicker] = React.useState(false);
-
-  // Modal State
-  const [modalType, setModalType] = React.useState<'category' | 'coordinator' | 'date' | 'time' | null>(null);
-
-  const updateField = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleCapacityChange = (text: string) => {
-    const cleanText = text.replace(/[^0-9]/g, '');
-    updateField('capacity', cleanText);
-  };
-
-  const handleSubmit = async () => {
-    if (!formData.title || !formData.date) {
-      alert('Please fill at least the Title and Date.');
-      return;
-    }
-
+  const handleCreateCategory = async () => {
+    if (!newCategoryName.trim()) return;
+    
     setLoading(true);
     try {
-      const basePayload = {
-        title: formData.title,
-        description: formData.description,
-        category: formData.category,
-        date: formData.date,
-        time: formData.time,
-        location: formData.location,
-        capacity: formData.capacity ? parseInt(formData.capacity) : 0,
-      };
-
-      if (isEditMode && activityId) {
-        // For Update: Exclude coordinator fields as backend update DTO doesn't support them
-        await client.put(`${ENDPOINTS.ACTIVITIES}/${activityId}`, basePayload);
-        alert('Activity Updated Successfully!');
-      } else {
-        // For Create: Include coordinator name (mapped to coordinatorName for backend)
-        const createPayload = {
-            ...basePayload,
-            coordinatorName: formData.coordinator, 
-        };
-        await client.post(ENDPOINTS.ACTIVITIES, createPayload);
-        alert('Activity Published Successfully!');
-        
-        // Clear inputs after successful create
-        setFormData({
-            title: '',
-            description: '',
-            category: '',
-            coordinator: '',
-            coordinatorId: '',
-            date: '',
-            time: '',
-            location: '',
-            capacity: ''
-        });
-      }
-      
-      // Navigate back to refresh list (requires list to use useFocusEffect or manual refresh)
-      router.back();
-    } catch (error: any) {
-      console.log('Submission error:', error);
-      alert(`Failed: ${error.message || 'Unknown error'}`);
+        const res = await client.post(ENDPOINTS.CATEGORIES, { name: newCategoryName.trim() });
+        const newCat = { label: res.name, value: res.name };
+        setCategories(prev => [...prev, newCat]);
+        updateField('category', newCat.value);
+        setNewCategoryName('');
+        setShowNewCategoryInput(false);
+        setModalType(null); // Close modal
+    } catch (e: any) {
+        Alert.alert('Error', 'Failed to create category: ' + (e.message || 'Unknown error'));
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
   };
 
@@ -153,7 +174,12 @@ export default function AdminCreateActivity() {
     if (modalType === 'time') return renderTimeModal();
 
     const isCategory = modalType === 'category';
-    const data = isCategory ? CATEGORY_OPTIONS : coordinatorsList;
+    
+    // For category, stick "Create New" at the end
+    const displayData = isCategory 
+        ? [...categories, { label: '+ Create New Category', value: 'create_new_special_value' }]
+        : coordinatorsList;
+        
     const title = isCategory ? 'Select Category' : 'Assign Coordinator';
 
     if (!modalType) return null;
@@ -169,40 +195,83 @@ export default function AdminCreateActivity() {
           <GlassCard style={[styles.modalContent, { backgroundColor: theme.card }]}>
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: theme.text }]}>{title}</Text>
-              <TouchableOpacity onPress={() => setModalType(null)}>
+              <TouchableOpacity onPress={() => { setModalType(null); setShowNewCategoryInput(false); }}>
                 <X size={20} color={theme.icon} />
               </TouchableOpacity>
             </View>
-            <FlatList
-              data={data}
-              keyExtractor={item => isCategory ? item.value : item.id}
-              renderItem={({ item }) => {
-                const label = isCategory ? item.label : item.name;
-                const value = isCategory ? item.value : item.id;
-                const isSelected = isCategory ? (formData.category === value) : (formData.coordinatorId === value);
-                
-                return (
-                  <TouchableOpacity 
-                    style={[styles.modalItem, { borderBottomColor: theme.border }]}
-                    onPress={() => {
-                      if (isCategory) {
-                          updateField('category', value);
-                      } else {
-                          setFormData(prev => ({ ...prev, coordinator: label, coordinatorId: value }));
-                      }
-                      setModalType(null);
-                    }}
-                  >
-                    <Text style={[
-                      styles.modalItemText,
-                      { color: theme.textSecondary },
-                      isSelected && { color: theme.primary, fontWeight: '700' }
-                    ]}>{label}</Text>
-                    {isSelected && <Check size={18} color={theme.primary} />}
-                  </TouchableOpacity>
-                );
-              }}
-            />
+            
+            {showNewCategoryInput ? (
+                <View style={{ gap: 10 }}>
+                    <Text style={{ color: theme.textSecondary, fontSize: 13 }}>Enter Category Name:</Text>
+                    <TextInput 
+                        style={{ 
+                            borderWidth: 1, 
+                            borderColor: theme.primary, 
+                            borderRadius: 8, 
+                            padding: 10, 
+                            color: theme.text,
+                            backgroundColor: theme.background 
+                        }}
+                        placeholder="e.g. Hackathon"
+                        placeholderTextColor={theme.tabIconDefault}
+                        value={newCategoryName}
+                        onChangeText={setNewCategoryName}
+                        autoFocus
+                    />
+                    <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
+                        <TouchableOpacity 
+                            style={{ flex: 1, padding: 12, borderRadius: 8, backgroundColor: theme.background, borderWidth: 1, borderColor: theme.border, alignItems: 'center' }}
+                            onPress={() => setShowNewCategoryInput(false)}
+                        >
+                            <Text style={{ color: theme.text, fontWeight: '600' }}>Cancel</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                            style={{ flex: 1, padding: 12, borderRadius: 8, backgroundColor: theme.primary, alignItems: 'center' }}
+                            onPress={handleCreateCategory}
+                        >
+                            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Create</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            ) : (
+                <FlatList
+                data={displayData}
+                keyExtractor={item => isCategory ? item.value : item.id}
+                renderItem={({ item }) => {
+                    const label = isCategory ? item.label : item.name;
+                    const value = isCategory ? item.value : item.id;
+                    const isSelected = isCategory ? (formData.category === value) : (formData.coordinatorId === value);
+                    const isCreateAction = isCategory && value === 'create_new_special_value';
+                    
+                    return (
+                    <TouchableOpacity 
+                        style={[styles.modalItem, { borderBottomColor: theme.border }]}
+                        onPress={() => {
+                        if (isCreateAction) {
+                            setShowNewCategoryInput(true);
+                            return;
+                        }
+
+                        if (isCategory) {
+                            updateField('category', value);
+                        } else {
+                            setFormData(prev => ({ ...prev, coordinator: label, coordinatorId: value }));
+                        }
+                        setModalType(null);
+                        }}
+                    >
+                        <Text style={[
+                        styles.modalItemText,
+                        { color: theme.textSecondary },
+                        isSelected && { color: theme.primary, fontWeight: '700' },
+                        isCreateAction && { color: theme.primary, fontWeight: '800' }
+                        ]}>{label}</Text>
+                        {isSelected && <Check size={18} color={theme.primary} />}
+                    </TouchableOpacity>
+                    );
+                }}
+                />
+            )}
           </GlassCard>
         </View>
       </Modal>
@@ -572,7 +641,7 @@ export default function AdminCreateActivity() {
                                 formData.category && { color: theme.text, fontWeight: '600' }
                             ]}>
                               {formData.category 
-                                ? CATEGORY_OPTIONS.find(c => c.value === formData.category)?.label || formData.category 
+                                ? categories.find(c => c.value === formData.category)?.label || formData.category 
                                 : 'Select category'}
                             </Text>
                             <ChevronDown size={18} color={theme.tabIconDefault} />

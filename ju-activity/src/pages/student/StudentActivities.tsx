@@ -27,7 +27,7 @@ import {
 const StudentActivities = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { activities, isLoading } = useActivity();
+  const { activities, categories, isLoading } = useActivity();
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
 
@@ -151,6 +151,13 @@ const StudentActivities = () => {
                   <SelectItem value="seminar">Seminar</SelectItem>
                   <SelectItem value="training">Training</SelectItem>
                   <SelectItem value="extracurricular">Extracurricular</SelectItem>
+                  {categories
+                    .filter(cat => !["workshop", "seminar", "training", "extracurricular"].includes(cat.name.toLowerCase()))
+                    .map((cat) => (
+                      <SelectItem key={cat.id} value={cat.name} className="capitalize">
+                        {cat.name}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>

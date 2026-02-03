@@ -30,6 +30,9 @@ This script will:
  npm run seed
 ```
 
+```bash # to check-esers
+npx -y tsx check-users.ts
+```
 This script will:
 - Check if user exists in Clerk
 - Create or update the user in Clerk

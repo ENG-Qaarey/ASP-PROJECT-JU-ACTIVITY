@@ -35,24 +35,67 @@ export default function PersonalInformation() {
 
   const handlePickImage = async () => {
     try {
-        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (status !== 'granted') {
-            Alert.alert('Permission Denied', 'We need permission to access your gallery.');
+        // Request permissions
+        const [libraryStatus, cameraStatus] = await Promise.all([
+          ImagePicker.requestMediaLibraryPermissionsAsync(),
+          ImagePicker.requestCameraPermissionsAsync(),
+        ]);
+
+        if (libraryStatus.status !== 'granted') {
+            if (!libraryStatus.canAskAgain) {
+                Alert.alert(
+                    'Permission Required', 
+                    'Gallery access is disabled. Please enable it in Settings.',
+                    [
+                        { text: 'Cancel', style: 'cancel' },
+                        { text: 'Open Settings', onPress: () => Platform.OS === 'ios' ? ImagePicker.requestMediaLibraryPermissionsAsync() : {} } 
+                        // Note: Expo doesn't have a direct 'openSettings' in picker, usually handled by OS or Linking
+                    ]
+                );
+            } else {
+                Alert.alert('Permission Denied', 'We need permission to access your gallery.');
+            }
             return;
         }
 
-        const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: true,
-            aspect: [1, 1],
-            quality: 0.7,
-        });
-
-        if (!result.canceled) {
-            uploadAvatar(result.assets[0].uri);
-        }
+        // Show choice to user
+        Alert.alert(
+            'Update Profile Picture',
+            'Choose a source',
+            [
+                { 
+                    text: 'Camera', 
+                    onPress: async () => {
+                        if (cameraStatus.status !== 'granted') {
+                            Alert.alert('Error', 'Camera permission not granted');
+                            return;
+                        }
+                        const result = await ImagePicker.launchCameraAsync({
+                            allowsEditing: true,
+                            aspect: [1, 1],
+                            quality: 0.7,
+                        });
+                        if (!result.canceled) uploadAvatar(result.assets[0].uri);
+                    }
+                },
+                { 
+                    text: 'Gallery', 
+                    onPress: async () => {
+                        const result = await ImagePicker.launchImageLibraryAsync({
+                            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                            allowsEditing: true,
+                            aspect: [1, 1],
+                            quality: 0.7,
+                        });
+                        if (!result.canceled) uploadAvatar(result.assets[0].uri);
+                    }
+                },
+                { text: 'Cancel', style: 'cancel' }
+            ]
+        );
     } catch (error) {
         console.error('Pick image error:', error);
+        Alert.alert('Error', 'An unexpected error occurred while picking an image.');
     }
   };
 

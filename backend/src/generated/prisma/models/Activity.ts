@@ -40,7 +40,7 @@ export type ActivityMinAggregateOutputType = {
   id: string | null
   title: string | null
   description: string | null
-  category: $Enums.ActivityCategory | null
+  category: string | null
   date: Date | null
   time: string | null
   location: string | null
@@ -57,7 +57,7 @@ export type ActivityMaxAggregateOutputType = {
   id: string | null
   title: string | null
   description: string | null
-  category: $Enums.ActivityCategory | null
+  category: string | null
   date: Date | null
   time: string | null
   location: string | null
@@ -241,7 +241,7 @@ export type ActivityGroupByOutputType = {
   id: string
   title: string
   description: string
-  category: $Enums.ActivityCategory
+  category: string
   date: Date
   time: string
   location: string
@@ -281,7 +281,7 @@ export type ActivityWhereInput = {
   id?: Prisma.StringFilter<"Activity"> | string
   title?: Prisma.StringFilter<"Activity"> | string
   description?: Prisma.StringFilter<"Activity"> | string
-  category?: Prisma.EnumActivityCategoryFilter<"Activity"> | $Enums.ActivityCategory
+  category?: Prisma.StringFilter<"Activity"> | string
   date?: Prisma.DateTimeFilter<"Activity"> | Date | string
   time?: Prisma.StringFilter<"Activity"> | string
   location?: Prisma.StringFilter<"Activity"> | string
@@ -324,7 +324,7 @@ export type ActivityWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.ActivityWhereInput | Prisma.ActivityWhereInput[]
   title?: Prisma.StringFilter<"Activity"> | string
   description?: Prisma.StringFilter<"Activity"> | string
-  category?: Prisma.EnumActivityCategoryFilter<"Activity"> | $Enums.ActivityCategory
+  category?: Prisma.StringFilter<"Activity"> | string
   date?: Prisma.DateTimeFilter<"Activity"> | Date | string
   time?: Prisma.StringFilter<"Activity"> | string
   location?: Prisma.StringFilter<"Activity"> | string
@@ -369,7 +369,7 @@ export type ActivityScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"Activity"> | string
   title?: Prisma.StringWithAggregatesFilter<"Activity"> | string
   description?: Prisma.StringWithAggregatesFilter<"Activity"> | string
-  category?: Prisma.EnumActivityCategoryWithAggregatesFilter<"Activity"> | $Enums.ActivityCategory
+  category?: Prisma.StringWithAggregatesFilter<"Activity"> | string
   date?: Prisma.DateTimeWithAggregatesFilter<"Activity"> | Date | string
   time?: Prisma.StringWithAggregatesFilter<"Activity"> | string
   location?: Prisma.StringWithAggregatesFilter<"Activity"> | string
@@ -386,7 +386,7 @@ export type ActivityCreateInput = {
   id?: string
   title: string
   description: string
-  category: $Enums.ActivityCategory
+  category: string
   date: Date | string
   time: string
   location: string
@@ -405,7 +405,7 @@ export type ActivityUncheckedCreateInput = {
   id?: string
   title: string
   description: string
-  category: $Enums.ActivityCategory
+  category: string
   date: Date | string
   time: string
   location: string
@@ -424,7 +424,7 @@ export type ActivityUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
-  category?: Prisma.EnumActivityCategoryFieldUpdateOperationsInput | $Enums.ActivityCategory
+  category?: Prisma.StringFieldUpdateOperationsInput | string
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   time?: Prisma.StringFieldUpdateOperationsInput | string
   location?: Prisma.StringFieldUpdateOperationsInput | string
@@ -443,7 +443,7 @@ export type ActivityUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
-  category?: Prisma.EnumActivityCategoryFieldUpdateOperationsInput | $Enums.ActivityCategory
+  category?: Prisma.StringFieldUpdateOperationsInput | string
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   time?: Prisma.StringFieldUpdateOperationsInput | string
   location?: Prisma.StringFieldUpdateOperationsInput | string
@@ -462,7 +462,7 @@ export type ActivityCreateManyInput = {
   id?: string
   title: string
   description: string
-  category: $Enums.ActivityCategory
+  category: string
   date: Date | string
   time: string
   location: string
@@ -479,7 +479,7 @@ export type ActivityUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
-  category?: Prisma.EnumActivityCategoryFieldUpdateOperationsInput | $Enums.ActivityCategory
+  category?: Prisma.StringFieldUpdateOperationsInput | string
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   time?: Prisma.StringFieldUpdateOperationsInput | string
   location?: Prisma.StringFieldUpdateOperationsInput | string
@@ -495,7 +495,7 @@ export type ActivityUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
-  category?: Prisma.EnumActivityCategoryFieldUpdateOperationsInput | $Enums.ActivityCategory
+  category?: Prisma.StringFieldUpdateOperationsInput | string
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   time?: Prisma.StringFieldUpdateOperationsInput | string
   location?: Prisma.StringFieldUpdateOperationsInput | string
@@ -626,10 +626,6 @@ export type ActivityUncheckedUpdateManyWithoutCoordinatorNestedInput = {
   deleteMany?: Prisma.ActivityScalarWhereInput | Prisma.ActivityScalarWhereInput[]
 }
 
-export type EnumActivityCategoryFieldUpdateOperationsInput = {
-  set?: $Enums.ActivityCategory
-}
-
 export type EnumActivityStatusFieldUpdateOperationsInput = {
   set?: $Enums.ActivityStatus
 }
@@ -666,7 +662,7 @@ export type ActivityCreateWithoutCoordinatorInput = {
   id?: string
   title: string
   description: string
-  category: $Enums.ActivityCategory
+  category: string
   date: Date | string
   time: string
   location: string
@@ -684,7 +680,7 @@ export type ActivityUncheckedCreateWithoutCoordinatorInput = {
   id?: string
   title: string
   description: string
-  category: $Enums.ActivityCategory
+  category: string
   date: Date | string
   time: string
   location: string
@@ -731,7 +727,7 @@ export type ActivityScalarWhereInput = {
   id?: Prisma.StringFilter<"Activity"> | string
   title?: Prisma.StringFilter<"Activity"> | string
   description?: Prisma.StringFilter<"Activity"> | string
-  category?: Prisma.EnumActivityCategoryFilter<"Activity"> | $Enums.ActivityCategory
+  category?: Prisma.StringFilter<"Activity"> | string
   date?: Prisma.DateTimeFilter<"Activity"> | Date | string
   time?: Prisma.StringFilter<"Activity"> | string
   location?: Prisma.StringFilter<"Activity"> | string
@@ -748,7 +744,7 @@ export type ActivityCreateWithoutApplicationsInput = {
   id?: string
   title: string
   description: string
-  category: $Enums.ActivityCategory
+  category: string
   date: Date | string
   time: string
   location: string
@@ -766,7 +762,7 @@ export type ActivityUncheckedCreateWithoutApplicationsInput = {
   id?: string
   title: string
   description: string
-  category: $Enums.ActivityCategory
+  category: string
   date: Date | string
   time: string
   location: string
@@ -800,7 +796,7 @@ export type ActivityUpdateWithoutApplicationsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
-  category?: Prisma.EnumActivityCategoryFieldUpdateOperationsInput | $Enums.ActivityCategory
+  category?: Prisma.StringFieldUpdateOperationsInput | string
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   time?: Prisma.StringFieldUpdateOperationsInput | string
   location?: Prisma.StringFieldUpdateOperationsInput | string
@@ -818,7 +814,7 @@ export type ActivityUncheckedUpdateWithoutApplicationsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
-  category?: Prisma.EnumActivityCategoryFieldUpdateOperationsInput | $Enums.ActivityCategory
+  category?: Prisma.StringFieldUpdateOperationsInput | string
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   time?: Prisma.StringFieldUpdateOperationsInput | string
   location?: Prisma.StringFieldUpdateOperationsInput | string
@@ -836,7 +832,7 @@ export type ActivityCreateWithoutAttendanceInput = {
   id?: string
   title: string
   description: string
-  category: $Enums.ActivityCategory
+  category: string
   date: Date | string
   time: string
   location: string
@@ -854,7 +850,7 @@ export type ActivityUncheckedCreateWithoutAttendanceInput = {
   id?: string
   title: string
   description: string
-  category: $Enums.ActivityCategory
+  category: string
   date: Date | string
   time: string
   location: string
@@ -888,7 +884,7 @@ export type ActivityUpdateWithoutAttendanceInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
-  category?: Prisma.EnumActivityCategoryFieldUpdateOperationsInput | $Enums.ActivityCategory
+  category?: Prisma.StringFieldUpdateOperationsInput | string
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   time?: Prisma.StringFieldUpdateOperationsInput | string
   location?: Prisma.StringFieldUpdateOperationsInput | string
@@ -906,7 +902,7 @@ export type ActivityUncheckedUpdateWithoutAttendanceInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
-  category?: Prisma.EnumActivityCategoryFieldUpdateOperationsInput | $Enums.ActivityCategory
+  category?: Prisma.StringFieldUpdateOperationsInput | string
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   time?: Prisma.StringFieldUpdateOperationsInput | string
   location?: Prisma.StringFieldUpdateOperationsInput | string
@@ -924,7 +920,7 @@ export type ActivityCreateManyCoordinatorInput = {
   id?: string
   title: string
   description: string
-  category: $Enums.ActivityCategory
+  category: string
   date: Date | string
   time: string
   location: string
@@ -940,7 +936,7 @@ export type ActivityUpdateWithoutCoordinatorInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
-  category?: Prisma.EnumActivityCategoryFieldUpdateOperationsInput | $Enums.ActivityCategory
+  category?: Prisma.StringFieldUpdateOperationsInput | string
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   time?: Prisma.StringFieldUpdateOperationsInput | string
   location?: Prisma.StringFieldUpdateOperationsInput | string
@@ -958,7 +954,7 @@ export type ActivityUncheckedUpdateWithoutCoordinatorInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
-  category?: Prisma.EnumActivityCategoryFieldUpdateOperationsInput | $Enums.ActivityCategory
+  category?: Prisma.StringFieldUpdateOperationsInput | string
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   time?: Prisma.StringFieldUpdateOperationsInput | string
   location?: Prisma.StringFieldUpdateOperationsInput | string
@@ -976,7 +972,7 @@ export type ActivityUncheckedUpdateManyWithoutCoordinatorInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
-  category?: Prisma.EnumActivityCategoryFieldUpdateOperationsInput | $Enums.ActivityCategory
+  category?: Prisma.StringFieldUpdateOperationsInput | string
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   time?: Prisma.StringFieldUpdateOperationsInput | string
   location?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1127,7 +1123,7 @@ export type $ActivityPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     id: string
     title: string
     description: string
-    category: $Enums.ActivityCategory
+    category: string
     date: Date
     time: string
     location: string
@@ -1567,7 +1563,7 @@ export interface ActivityFieldRefs {
   readonly id: Prisma.FieldRef<"Activity", 'String'>
   readonly title: Prisma.FieldRef<"Activity", 'String'>
   readonly description: Prisma.FieldRef<"Activity", 'String'>
-  readonly category: Prisma.FieldRef<"Activity", 'ActivityCategory'>
+  readonly category: Prisma.FieldRef<"Activity", 'String'>
   readonly date: Prisma.FieldRef<"Activity", 'DateTime'>
   readonly time: Prisma.FieldRef<"Activity", 'String'>
   readonly location: Prisma.FieldRef<"Activity", 'String'>

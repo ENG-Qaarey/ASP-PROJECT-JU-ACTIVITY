@@ -53,6 +53,11 @@ export type Admin = Prisma.AdminModel
  */
 export type Coordinator = Prisma.CoordinatorModel
 /**
+ * Model Category
+ * 
+ */
+export type Category = Prisma.CategoryModel
+/**
  * Model Activity
  * 
  */

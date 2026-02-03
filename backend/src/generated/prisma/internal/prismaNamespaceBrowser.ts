@@ -54,6 +54,7 @@ export const ModelName = {
   User: 'User',
   Admin: 'Admin',
   Coordinator: 'Coordinator',
+  Category: 'Category',
   Activity: 'Activity',
   Application: 'Application',
   Notification: 'Notification',
@@ -126,6 +127,16 @@ export const CoordinatorScalarFieldEnum = {
 } as const
 
 export type CoordinatorScalarFieldEnum = (typeof CoordinatorScalarFieldEnum)[keyof typeof CoordinatorScalarFieldEnum]
+
+
+export const CategoryScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CategoryScalarFieldEnum = (typeof CategoryScalarFieldEnum)[keyof typeof CategoryScalarFieldEnum]
 
 
 export const ActivityScalarFieldEnum = {

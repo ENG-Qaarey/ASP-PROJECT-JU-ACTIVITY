@@ -53,7 +53,7 @@ import { useActivity } from "@/contexts/ActivityContext";
 
 const AdminActivities = () => {
   const navigate = useNavigate();
-  const { activities, deleteActivity, updateActivity, getApplicationsByActivity } = useActivity();
+  const { activities, categories, deleteActivity, updateActivity, getApplicationsByActivity } = useActivity();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -64,7 +64,7 @@ const AdminActivities = () => {
   const [editForm, setEditForm] = useState({
     title: "",
     description: "",
-    category: "" as Activity["category"] | "",
+    category: "",
     date: "",
     time: "",
     location: "",
@@ -479,7 +479,7 @@ const AdminActivities = () => {
                 <Label>Category *</Label>
                 <Select
                   value={editForm.category}
-                  onValueChange={(value) => setEditForm((prev) => ({ ...prev, category: value as Activity["category"] }))}
+                  onValueChange={(value) => setEditForm((prev) => ({ ...prev, category: value }))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select category" />
@@ -489,6 +489,13 @@ const AdminActivities = () => {
                     <SelectItem value="seminar">Seminar</SelectItem>
                     <SelectItem value="training">Training</SelectItem>
                     <SelectItem value="extracurricular">Extracurricular</SelectItem>
+                    {categories
+                      ?.filter(cat => !["workshop", "seminar", "training", "extracurricular"].includes(cat.name.toLowerCase()))
+                      .map((cat) => (
+                        <SelectItem key={cat.id} value={cat.name} className="capitalize">
+                          {cat.name}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>

@@ -2,7 +2,7 @@ export interface Activity {
   id: string;
   title: string;
   description: string;
-  category: "workshop" | "seminar" | "training" | "extracurricular";
+  category: string;
   date: string;
   time: string;
   location: string;

@@ -13,6 +13,7 @@ import { AdminsModule } from './admins/admins.module';
 import { CoordinatorsModule } from './coordinators/coordinators.module';
 import { AuthzModule } from './authz/authz.module';
 import { AuditLogsModule } from './audit-logs/audit-logs.module';
+import { CategoriesModule } from './categories/categories.module';
 
 @Module({
   imports: [
@@ -28,8 +29,9 @@ import { AuditLogsModule } from './audit-logs/audit-logs.module';
     AdminsModule,
     CoordinatorsModule,
     AuditLogsModule,
+    CategoriesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }

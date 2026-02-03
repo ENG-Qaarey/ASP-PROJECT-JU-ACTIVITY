@@ -26,16 +26,6 @@ export const UserStatus = {
 export type UserStatus = (typeof UserStatus)[keyof typeof UserStatus]
 
 
-export const ActivityCategory = {
-  workshop: 'workshop',
-  seminar: 'seminar',
-  training: 'training',
-  extracurricular: 'extracurricular'
-} as const
-
-export type ActivityCategory = (typeof ActivityCategory)[keyof typeof ActivityCategory]
-
-
 export const ActivityStatus = {
   upcoming: 'upcoming',
   ongoing: 'ongoing',

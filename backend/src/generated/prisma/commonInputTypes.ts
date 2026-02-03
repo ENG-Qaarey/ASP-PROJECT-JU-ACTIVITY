@@ -209,28 +209,11 @@ export type DateTimeWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedDateTimeFilter<$PrismaModel>
 }
 
-export type EnumActivityCategoryFilter<$PrismaModel = never> = {
-  equals?: $Enums.ActivityCategory | Prisma.EnumActivityCategoryFieldRefInput<$PrismaModel>
-  in?: $Enums.ActivityCategory[] | Prisma.ListEnumActivityCategoryFieldRefInput<$PrismaModel>
-  notIn?: $Enums.ActivityCategory[] | Prisma.ListEnumActivityCategoryFieldRefInput<$PrismaModel>
-  not?: Prisma.NestedEnumActivityCategoryFilter<$PrismaModel> | $Enums.ActivityCategory
-}
-
 export type EnumActivityStatusFilter<$PrismaModel = never> = {
   equals?: $Enums.ActivityStatus | Prisma.EnumActivityStatusFieldRefInput<$PrismaModel>
   in?: $Enums.ActivityStatus[] | Prisma.ListEnumActivityStatusFieldRefInput<$PrismaModel>
   notIn?: $Enums.ActivityStatus[] | Prisma.ListEnumActivityStatusFieldRefInput<$PrismaModel>
   not?: Prisma.NestedEnumActivityStatusFilter<$PrismaModel> | $Enums.ActivityStatus
-}
-
-export type EnumActivityCategoryWithAggregatesFilter<$PrismaModel = never> = {
-  equals?: $Enums.ActivityCategory | Prisma.EnumActivityCategoryFieldRefInput<$PrismaModel>
-  in?: $Enums.ActivityCategory[] | Prisma.ListEnumActivityCategoryFieldRefInput<$PrismaModel>
-  notIn?: $Enums.ActivityCategory[] | Prisma.ListEnumActivityCategoryFieldRefInput<$PrismaModel>
-  not?: Prisma.NestedEnumActivityCategoryWithAggregatesFilter<$PrismaModel> | $Enums.ActivityCategory
-  _count?: Prisma.NestedIntFilter<$PrismaModel>
-  _min?: Prisma.NestedEnumActivityCategoryFilter<$PrismaModel>
-  _max?: Prisma.NestedEnumActivityCategoryFilter<$PrismaModel>
 }
 
 export type EnumActivityStatusWithAggregatesFilter<$PrismaModel = never> = {
@@ -587,28 +570,11 @@ export type NestedDateTimeWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedDateTimeFilter<$PrismaModel>
 }
 
-export type NestedEnumActivityCategoryFilter<$PrismaModel = never> = {
-  equals?: $Enums.ActivityCategory | Prisma.EnumActivityCategoryFieldRefInput<$PrismaModel>
-  in?: $Enums.ActivityCategory[] | Prisma.ListEnumActivityCategoryFieldRefInput<$PrismaModel>
-  notIn?: $Enums.ActivityCategory[] | Prisma.ListEnumActivityCategoryFieldRefInput<$PrismaModel>
-  not?: Prisma.NestedEnumActivityCategoryFilter<$PrismaModel> | $Enums.ActivityCategory
-}
-
 export type NestedEnumActivityStatusFilter<$PrismaModel = never> = {
   equals?: $Enums.ActivityStatus | Prisma.EnumActivityStatusFieldRefInput<$PrismaModel>
   in?: $Enums.ActivityStatus[] | Prisma.ListEnumActivityStatusFieldRefInput<$PrismaModel>
   notIn?: $Enums.ActivityStatus[] | Prisma.ListEnumActivityStatusFieldRefInput<$PrismaModel>
   not?: Prisma.NestedEnumActivityStatusFilter<$PrismaModel> | $Enums.ActivityStatus
-}
-
-export type NestedEnumActivityCategoryWithAggregatesFilter<$PrismaModel = never> = {
-  equals?: $Enums.ActivityCategory | Prisma.EnumActivityCategoryFieldRefInput<$PrismaModel>
-  in?: $Enums.ActivityCategory[] | Prisma.ListEnumActivityCategoryFieldRefInput<$PrismaModel>
-  notIn?: $Enums.ActivityCategory[] | Prisma.ListEnumActivityCategoryFieldRefInput<$PrismaModel>
-  not?: Prisma.NestedEnumActivityCategoryWithAggregatesFilter<$PrismaModel> | $Enums.ActivityCategory
-  _count?: Prisma.NestedIntFilter<$PrismaModel>
-  _min?: Prisma.NestedEnumActivityCategoryFilter<$PrismaModel>
-  _max?: Prisma.NestedEnumActivityCategoryFilter<$PrismaModel>
 }
 
 export type NestedEnumActivityStatusWithAggregatesFilter<$PrismaModel = never> = {

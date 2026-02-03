@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { ActivityCategory, ActivityStatus, ApplicationStatus, NotificationType, UserRole } from '../generated/prisma';
+import { ActivityStatus, ApplicationStatus, NotificationType, UserRole } from '../generated/prisma';
 import { NotificationsService } from '../notifications/notifications.service';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
 
@@ -10,7 +10,7 @@ export class ActivitiesService {
     private prisma: PrismaService,
     private notificationsService: NotificationsService,
     private auditLogs: AuditLogsService,
-  ) {}
+  ) { }
 
   async findAll(status?: string, category?: string, coordinatorId?: string) {
     const where: any = {};
@@ -57,12 +57,6 @@ export class ActivitiesService {
     coordinatorId: string;
     coordinatorName: string;
   }, actorId?: string) {
-    if (!Object.values(ActivityCategory).includes(activityData.category as ActivityCategory)) {
-      throw new BadRequestException(
-        `Invalid category. Expected one of: ${Object.values(ActivityCategory).join(', ')}`,
-      );
-    }
-
     const parsedDate = new Date(activityData.date);
     if (Number.isNaN(parsedDate.getTime())) {
       throw new BadRequestException('Invalid date');
@@ -76,7 +70,7 @@ export class ActivitiesService {
       data: {
         title: activityData.title,
         description: activityData.description,
-        category: activityData.category as ActivityCategory,
+        category: activityData.category,
         date: parsedDate,
         time: activityData.time,
         location: activityData.location,

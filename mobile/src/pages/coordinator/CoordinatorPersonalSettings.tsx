@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View, ScrollView, TouchableOpacity, TextInput, Alert, KeyboardAvoidingView, Platform, Text } from 'react-native';
+import { StyleSheet, View, ScrollView, TouchableOpacity, TextInput, Alert, KeyboardAvoidingView, Platform, Text, ActivityIndicator } from 'react-native';
 import { 
   ArrowLeft, Save, User, Mail, Shield, Phone, MapPin, 
   Camera, CheckCircle2 
@@ -12,21 +12,127 @@ import { useRouter } from 'expo-router';
 
 import { useColorScheme } from '@/src/hooks/use-color-scheme';
 import { Colors } from '@/src/data/theme';
+import { useAuth } from '@/src/context/AuthContext';
+import { client } from '@/src/lib/api';
+import { IMAGE_BASE } from '@/src/lib/config';
+import * as ImagePicker from 'expo-image-picker';
 
 export default function CoordinatorPersonalSettings() {
   const router = useRouter();
+  const { user, setUser, refreshProfile } = useAuth();
   const [loading, setLoading] = React.useState(false);
+  const [fetching, setFetching] = React.useState(false);
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
 
-  const handleSave = () => {
+  const [name, setName] = React.useState(user?.name || '');
+  const [email, setEmail] = React.useState(user?.email || '');
+  const [department, setDepartment] = React.useState(user?.department || '');
+  const [phone, setPhone] = React.useState(user?.studentId || ''); // Reusing field
+
+  const handleSave = async () => {
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
-      Alert.alert('Success', 'Profile updated successfully');
-    }, 1000);
+    try {
+        const updated = await client.patch('/users/me', {
+            name,
+            email,
+            department,
+            studentId: phone,
+        });
+        if (updated) {
+            setUser(updated);
+            Alert.alert('Success', 'Profile updated successfully');
+        }
+    } catch (error: any) {
+        Alert.alert('Error', error.message || 'Failed to update profile');
+    } finally {
+        setLoading(false);
+    }
   };
+
+  const pickImage = async () => {
+    try {
+      const [libraryStatus, cameraStatus] = await Promise.all([
+        ImagePicker.requestMediaLibraryPermissionsAsync(),
+        ImagePicker.requestCameraPermissionsAsync(),
+      ]);
+
+      if (libraryStatus.status !== 'granted') {
+        Alert.alert(
+          'Permission Denied', 
+          'Gallery access is required to change your photo. Please enable it in Settings.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+
+      Alert.alert(
+        'Update Profile Photo',
+        'Select a source for your new photo:',
+        [
+          {
+            text: 'Camera',
+            onPress: async () => {
+              if (cameraStatus.status !== 'granted') {
+                Alert.alert('Permission Error', 'Camera access is not granted.');
+                return;
+              }
+              const result = await ImagePicker.launchCameraAsync({
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.7,
+              });
+              if (!result.canceled) uploadImage(result.assets[0].uri);
+            }
+          },
+          {
+            text: 'Gallery',
+            onPress: async () => {
+              const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.7,
+              });
+              if (!result.canceled) uploadImage(result.assets[0].uri);
+            }
+          },
+          { text: 'Cancel', style: 'cancel' }
+        ]
+      );
+    } catch (e) {
+      console.error('Pick image error:', e);
+      Alert.alert('Error', 'Failed to open image picker.');
+    }
+  };
+
+  const uploadImage = async (uri: string) => {
+    setLoading(true);
+    try {
+      const formData = new FormData();
+      const filename = uri.split('/').pop() || 'profile.jpg';
+      const match = /\.(\w+)$/.exec(filename || '');
+      const type = match ? `image/${match[1]}` : `image`;
+
+      // @ts-ignore
+      formData.append('file', { uri: Platform.OS === 'ios' ? uri.replace('file://', '') : uri, name: filename, type });
+
+      const updatedUser = await client.post('/users/me/avatar', formData);
+      if (updatedUser) {
+          setUser(updatedUser);
+          Alert.alert('Success', 'Profile photo updated successfully.');
+      }
+    } catch (e: any) {
+      console.error('Photo upload failed:', e);
+      Alert.alert('Error', 'Failed to upload photo: ' + (e.message || 'Unknown error'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fullAvatarUrl = user?.avatar 
+    ? (user.avatar.startsWith('http') ? user.avatar : `${IMAGE_BASE}${user.avatar}`) 
+    : 'https://github.com/shadcn.png';
 
   return (
     <GradientBackground>
@@ -46,14 +152,16 @@ export default function CoordinatorPersonalSettings() {
           <View style={styles.avatarSection}>
             <View style={styles.avatarContainer}>
               <Image 
-                source={{ uri: 'https://github.com/shadcn.png' }} 
+                source={{ uri: fullAvatarUrl }} 
                 style={[styles.avatar, { borderColor: theme.card }]} 
               />
-              <TouchableOpacity style={[styles.cameraBtn, { borderColor: theme.card }]}>
+              <TouchableOpacity style={[styles.cameraBtn, { borderColor: theme.card }]} onPress={pickImage}>
                 <Camera size={18} color="#FFFFFF" />
               </TouchableOpacity>
             </View>
-            <Text style={[styles.changePhotoText, { color: theme.primary }]}>Change Profile Photo</Text>
+            <TouchableOpacity onPress={pickImage}>
+                <Text style={[styles.changePhotoText, { color: theme.primary }]}>Change Profile Photo</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Form Section */}
@@ -62,7 +170,8 @@ export default function CoordinatorPersonalSettings() {
               <Label icon={User} label="Full Name" theme={theme} />
               <TextInput 
                 style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} 
-                defaultValue="Amiin Daahir" 
+                value={name}
+                onChangeText={setName}
                 placeholder="Enter full name"
                 placeholderTextColor={theme.textSecondary}
               />
@@ -72,7 +181,7 @@ export default function CoordinatorPersonalSettings() {
               <Label icon={Shield} label="Coordinator Role" theme={theme} />
               <TextInput 
                 style={[styles.input, { backgroundColor: theme.background + '80', color: theme.textSecondary, borderColor: theme.border }]} 
-                defaultValue="Activity Coordinator" 
+                value="Activity Coordinator" 
                 editable={false}
               />
             </View>
@@ -81,7 +190,8 @@ export default function CoordinatorPersonalSettings() {
               <Label icon={Mail} label="Email Address" theme={theme} />
               <TextInput 
                 style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} 
-                defaultValue="amiin.daahir@ju.edu.so" 
+                value={email}
+                onChangeText={setEmail}
                 keyboardType="email-address"
                 placeholder="Enter email"
                 placeholderTextColor={theme.textSecondary}
@@ -92,7 +202,8 @@ export default function CoordinatorPersonalSettings() {
               <Label icon={Phone} label="Phone Number" theme={theme} />
               <TextInput 
                 style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} 
-                defaultValue="+252 61 7720000" 
+                value={phone}
+                onChangeText={setPhone}
                 keyboardType="phone-pad"
                 placeholder="Enter phone number"
                 placeholderTextColor={theme.textSecondary}
@@ -103,7 +214,8 @@ export default function CoordinatorPersonalSettings() {
               <Label icon={MapPin} label="Office Location" theme={theme} />
               <TextInput 
                 style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} 
-                defaultValue="Main Campus, Block B, Room 204" 
+                value={department}
+                onChangeText={setDepartment}
                 placeholder="Enter office location"
                 placeholderTextColor={theme.textSecondary}
               />

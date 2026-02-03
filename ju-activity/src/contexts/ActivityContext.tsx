@@ -8,7 +8,7 @@ import {
   mockNotifications as mockNotificationsSeed,
 } from "@/data/mockData";
 import { useAuth } from "./AuthContext";
-import { activitiesApi, applicationsApi, notificationsApi, attendanceApi } from "@/lib/api";
+import { activitiesApi, applicationsApi, notificationsApi, attendanceApi, categoriesApi } from "@/lib/api";
 
 type Attendance = {
   id: string;
@@ -23,14 +23,16 @@ type Attendance = {
 
 type CreateActivityInput = Pick<
   Activity,
-  "title" | "description" | "category" | "date" | "time" | "location" | "capacity"
+  "title" | "description" | "date" | "time" | "location" | "capacity"
 > & {
+  category: string;
   // Admins can assign an activity to a coordinator; coordinators cannot spoof this (backend enforces).
   coordinatorId?: string;
 };
 
 interface ActivityContextType {
   activities: Activity[];
+  categories: { id: string; name: string }[];
   applications: Application[];
   notifications: Notification[];
   attendance: Attendance[];
@@ -61,6 +63,7 @@ const ActivityContext = createContext<ActivityContextType | undefined>(undefined
 export const ActivityProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [attendance, setAttendance] = useState<Attendance[]>([]);
@@ -131,6 +134,7 @@ export const ActivityProvider = ({ children }: { children: ReactNode }) => {
   const refreshData = async () => {
     if (!user) {
       setActivities([]);
+      setCategories([]);
       setApplications([]);
       setNotifications([]);
       setAttendance([]);
@@ -153,6 +157,7 @@ export const ActivityProvider = ({ children }: { children: ReactNode }) => {
 
       // Kick off requests in parallel so we can hydrate activities ASAP
       const activitiesPromise = activitiesApi.getAll(activitiesParams);
+      const categoriesPromise = categoriesApi.getAll();
       const applicationsPromise = hasToken ? applicationsApi.getAll(applicationsParams) : Promise.resolve([]);
       const notificationsPromise = hasToken
         ? user.role === "admin"
@@ -168,23 +173,27 @@ export const ActivityProvider = ({ children }: { children: ReactNode }) => {
       // Activities are needed for most screens (including attendance dropdown), so set them first.
       const activitiesData = await activitiesPromise;
       setActivities(activitiesData);
-
-      const [applicationsData, notificationsData, attendanceData] = await Promise.all([
+      
+      const [applicationsData, notificationsData, attendanceData, categoriesData] = await Promise.all([
         applicationsPromise,
         notificationsPromise,
         attendancePromise,
+        categoriesPromise
       ]);
 
       setApplications(applicationsData);
       setNotifications(notificationsData);
       setAttendance(attendanceData);
+      setCategories(categoriesData);
     } catch (error) {
       console.error("Failed to load data:", error);
       // Avoid silently switching to mock data for authenticated users.
       setActivities([]);
+      setCategories([]);
       setApplications([]);
       setNotifications([]);
       setAttendance([]);
+
     } finally {
       setIsLoading(false);
     }
@@ -501,6 +510,7 @@ export const ActivityProvider = ({ children }: { children: ReactNode }) => {
   const value = useMemo(
     () => ({
       activities,
+      categories,
       applications,
       notifications: userNotifications,
       attendance,
@@ -525,7 +535,7 @@ export const ActivityProvider = ({ children }: { children: ReactNode }) => {
       clearAllActivityData,
       refreshData,
     }),
-    [activities, applications, userNotifications, attendance, isLoading, user]
+    [activities, categories, applications, userNotifications, attendance, isLoading, user]
   );
 
   return <ActivityContext.Provider value={value}>{children}</ActivityContext.Provider>;

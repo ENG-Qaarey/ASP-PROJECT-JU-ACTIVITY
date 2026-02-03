@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/select";
 import { useActivity } from "@/contexts/ActivityContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { categoriesApi } from "@/lib/api";
 
 const AdminCreateActivity = () => {
   const navigate = useNavigate();
@@ -43,9 +44,24 @@ const AdminCreateActivity = () => {
     coordinatorId: "",
   });
 
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+
   useEffect(() => {
     refreshUsers();
+    fetchCategories();
   }, [refreshUsers]);
+
+  const fetchCategories = async () => {
+    try {
+      const data = await categoriesApi.getAll();
+      setCategories(data);
+    } catch (error) {
+      console.error("Failed to fetch categories", error);
+      // Fallback to default categories if needed
+    }
+  };
 
   const coordinators = useMemo(() => {
     return (users ?? []).filter((u) => u.role === "coordinator" && (u.status ?? "active") === "active");
@@ -92,7 +108,7 @@ const AdminCreateActivity = () => {
       await createActivity({
         title: formData.title.trim(),
         description: formData.description.trim(),
-        category: formData.category as any,
+        category: formData.category,
         date: formData.date,
         time: formData.time,
         location: formData.location.trim(),
@@ -120,16 +136,86 @@ const AdminCreateActivity = () => {
   return (
     <DashboardLayout>
       <div className="w-full max-w-6xl mx-auto space-y-6">
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 text-sm uppercase tracking-[0.3em] text-muted-foreground">
-            <ShieldCheck className="w-4 h-4" />
-            Admin Action
+        <div className="flex items-center justify-between">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-sm uppercase tracking-[0.3em] text-muted-foreground">
+               <ShieldCheck className="w-4 h-4" />
+               Admin Action
+            </div>
+            <h1 className="text-2xl font-bold">Publish Strategic Activity</h1>
+            <p className="text-muted-foreground">
+               Spin up university-wide workshops, seminars, or urgent make-up sessions without waiting on coordinators.
+            </p>
           </div>
-          <h1 className="text-2xl font-bold">Publish Strategic Activity</h1>
-          <p className="text-muted-foreground">
-            Spin up university-wide workshops, seminars, or urgent make-up sessions without waiting on coordinators.
-          </p>
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={() => setIsCreatingCategory(true)}
+            className="shrink-0"
+          >
+            + New Category
+          </Button>
         </div>
+
+        {/* New Category Dialog */}
+        {isCreatingCategory && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+            onClick={() => setIsCreatingCategory(false)}
+          >
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="bg-card border rounded-xl p-6 w-full max-w-md shadow-xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="text-lg font-semibold mb-4">Create New Category</h2>
+              <Input
+                placeholder="Enter category name (e.g. Hackathon)"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                autoFocus
+              />
+              <div className="flex gap-3 mt-4">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => {
+                    setIsCreatingCategory(false);
+                    setNewCategoryName("");
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="button" 
+                  className="flex-1"
+                  disabled={!newCategoryName.trim() || isLoading}
+                  onClick={async () => {
+                    if (!newCategoryName.trim()) return;
+                    setIsLoading(true);
+                    try {
+                      await categoriesApi.create(newCategoryName.trim());
+                      await fetchCategories();
+                      toast({ title: "Category Created", description: `"${newCategoryName.trim()}" has been added.` });
+                      setNewCategoryName("");
+                      setIsCreatingCategory(false);
+                    } catch (error) {
+                      toast({ title: "Failed", description: "Could not create category.", variant: "destructive" });
+                    } finally {
+                      setIsLoading(false);
+                    }
+                  }}
+                >
+                  {isLoading ? "Creating..." : "Create"}
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="min-w-0">
           <Card className="w-full">
@@ -155,12 +241,12 @@ const AdminCreateActivity = () => {
                 <div className="space-y-2 lg:col-span-2">
                   <Label htmlFor="description">Description *</Label>
                   <Textarea
-                    id="description"
-                    name="description"
-                    placeholder="Outline the purpose, speakers, and outcomes for this activity..."
-                    value={formData.description}
-                    onChange={handleChange}
-                    rows={4}
+                     id="description"
+                     name="description"
+                     placeholder="Outline the purpose, speakers, and outcomes for this activity..."
+                     value={formData.description}
+                     onChange={handleChange}
+                     rows={4}
                   />
                 </div>
 
@@ -170,14 +256,19 @@ const AdminCreateActivity = () => {
                     value={formData.category}
                     onValueChange={(value) => setFormData({ ...formData, category: value })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="workshop">Workshop</SelectItem>
                       <SelectItem value="seminar">Seminar</SelectItem>
-                      <SelectItem value="training">Training Program</SelectItem>
+                      <SelectItem value="training">Training</SelectItem>
                       <SelectItem value="extracurricular">Extracurricular</SelectItem>
+                      {categories
+                        .filter(cat => !["workshop", "seminar", "training", "extracurricular"].includes(cat.name.toLowerCase()))
+                        .map((cat) => (
+                          <SelectItem key={cat.id} value={cat.name} className="capitalize">{cat.name}</SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 </div>

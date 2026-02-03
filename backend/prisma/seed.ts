@@ -17,73 +17,43 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  console.log('🗑️  Clearing all database records...');
+  console.log('� Starting non-destructive seed...');
 
-  // Delete in order to respect foreign key constraints
-  // 1. Delete Attendance records
-  const attendanceCount = await prisma.attendance.deleteMany({});
-  console.log(`   ✅ Deleted ${attendanceCount.count} attendance records`);
-
-  // 2. Delete Applications
-  const applicationCount = await prisma.application.deleteMany({});
-  console.log(`   ✅ Deleted ${applicationCount.count} applications`);
-
-  // 3. Delete Notifications
-  const notificationCount = await prisma.notification.deleteMany({});
-  console.log(`   ✅ Deleted ${notificationCount.count} notifications`);
-
-  // 4. Delete Activities
-  const activityCount = await prisma.activity.deleteMany({});
-  console.log(`   ✅ Deleted ${activityCount.count} activities`);
-
-  // 5. Delete Admin profiles (will cascade delete users)
-  const adminCount = await prisma.admin.deleteMany({});
-  console.log(`   ✅ Deleted ${adminCount.count} admin profiles`);
-
-  // 6. Delete Coordinator profiles (will cascade delete users)
-  const coordinatorCount = await prisma.coordinator.deleteMany({});
-  console.log(`   ✅ Deleted ${coordinatorCount.count} coordinator profiles`);
-
-  // 7. Delete all remaining Users (those without admin/coordinator profiles)
-  const userCount = await prisma.user.deleteMany({});
-  console.log(`   ✅ Deleted ${userCount.count} users`);
-
-  console.log('\n🌱 Creating admin user...');
-
-  // Create admin user with admin profile
+  console.log('\n🌱 Seeding database...');
   const securePassword = 'Jamiila@JU2024Secure!';
-  const adminPassword = await bcrypt.hash(securePassword, 10);
-  const admin = await prisma.user.create({
-    data: {
+  const hashedPassword = await bcrypt.hash(securePassword, 10);
+
+  // 1. Categories
+  const categories = ['Workshop', 'Seminar', 'Training', 'Extracurricular'];
+  for (const name of categories) {
+    await prisma.category.upsert({
+      where: { name },
+      update: {},
+      create: { name },
+    });
+  }
+  console.log('   ✅ Categories seeded');
+
+  // 2. Admin
+  await prisma.user.upsert({
+    where: { email: 'jamiila@gmail.com' },
+    update: {},
+    create: {
       name: 'ENG-jamiila',
-      email: 'jamiila@gmail.com', // Normalized to lowercase
-      passwordHash: adminPassword,
+      email: 'jamiila@gmail.com',
+      passwordHash: hashedPassword,
       role: 'admin',
-      department: 'computer science and Information technology',
-      joinedAt: new Date('2025-11-09'),
+      department: 'Computer Science',
       status: 'active',
       emailVerified: true,
       passwordVersion: 1,
-      adminProfile: {
-        create: {
-          permissions: JSON.stringify(['*']), // Full permissions
-          accessLevel: 'full',
-        },
-      },
-    },
-    include: {
-      adminProfile: true,
+      adminProfile: { create: { permissions: '["*"]', accessLevel: 'full' } },
     },
   });
+  console.log('   ✅ Admin ensured (jamiila@gmail.com)');
 
-  console.log('✅ Admin user created successfully!');
-  console.log(`   📧 Email: ${admin.email}`);
-  console.log(`   🔑 Password: ${securePassword}`);
-  console.log(`   👤 Name: ${admin.name}`);
-  console.log(`   🏢 Department: ${admin.department}`);
-  console.log(`   🔐 Role: ${admin.role}`);
-  console.log(`   📅 Joined: ${admin.joinedAt?.toLocaleDateString()}`);
-
+  console.log('\n✨ Seeding complete!');
+  console.log(`🔑 Admin user uses password: ${securePassword}`);
   await prisma.$disconnect();
 }
 
