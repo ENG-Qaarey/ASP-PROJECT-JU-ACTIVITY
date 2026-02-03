@@ -63,43 +63,10 @@ export default function UserDirectoryScreen() {
     fetchUsers();
   }, [searchQuery]);
 
-  const renderUserItem = ({ item }: { item: User }) => {
-    const initials = item.name.substring(0, 2).toUpperCase();
-    
-    return (
-      <TouchableOpacity
-        style={[
-          styles.userCard, 
-          { backgroundColor: colorScheme === 'dark' ? 'rgba(30, 41, 59, 0.7)' : 'rgba(255, 255, 255, 0.7)' }
-        ]}
-        onPress={() => router.push(`/chat/${item.id}`)}
-      >
-        <ExpoBlurView intensity={20} style={StyleSheet.absoluteFill} tint={colorScheme === 'dark' ? 'dark' : 'light'} />
-        <View style={styles.cardContent}>
-          <View style={styles.avatarWrapper}>
-            <Image source={{ uri: getAvatarUrl(item.avatar) }} style={styles.avatar} />
-          </View>
-          <View style={styles.userInfo}>
-            <ThemedText style={styles.userName}>{item.name}</ThemedText>
-            <ThemedText style={styles.userRole}>
-              {item.role.charAt(0).toUpperCase() + item.role.slice(1)}
-            </ThemedText>
-          </View>
-          <View style={styles.actionIcon}>
-            <MessageSquare size={20} color={theme.primary} />
-          </View>
-        </View>
-      </TouchableOpacity>
-    );
-  };
+  // renderUserItem will be handled inline to fix variable scoping issues during multi-turn refactors
 
   return (
     <GradientBackground>
-      <Image 
-        source={{ uri: 'https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png' }}
-        style={[StyleSheet.absoluteFill, { opacity: 0.1 }]}
-        contentFit="cover"
-      />
       <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
       <Stack.Screen
         options={{
@@ -111,19 +78,22 @@ export default function UserDirectoryScreen() {
           headerBackVisible: false,
           headerBackground: () => (
             <View style={styles.floatingHeaderWrapper}>
-              <View style={styles.premiumPill}>
+              <View style={[
+                styles.premiumPill, 
+                { borderColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.3)' }
+              ]}>
                 <ExpoBlurView intensity={80} style={StyleSheet.absoluteFill} tint={colorScheme === 'dark' ? 'dark' : 'light'} />
                 <View style={styles.pillContent}>
                   <TouchableOpacity onPress={() => router.back()} style={styles.pillIconBtn}>
-                    <ArrowLeft size={26} color="#007AFF" />
+                    <ArrowLeft size={26} color={theme.primary} />
                   </TouchableOpacity>
                   
                   <View style={styles.pillMainInfo}>
-                    <Text style={styles.pillTitle}>Community Hub</Text>
+                    <Text style={[styles.pillTitle, { color: theme.text }]}>Community Hub</Text>
                   </View>
 
                   <TouchableOpacity style={styles.pillIconBtn}>
-                    <MoreVertical size={26} color="#007AFF" />
+                    <MoreVertical size={26} color={theme.primary} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -136,15 +106,22 @@ export default function UserDirectoryScreen() {
 
       <View style={styles.container}>
         <View style={styles.searchWrapper}>
-          <View style={styles.premiumSearchBox}>
+          <View style={[
+            styles.premiumSearchBox, 
+            { 
+              backgroundColor: colorScheme === 'dark' ? 'rgba(30, 41, 59, 0.7)' : 'rgba(255, 255, 255, 0.7)',
+              borderColor: theme.border
+            }
+          ]}>
             <ExpoBlurView intensity={30} style={StyleSheet.absoluteFill} tint={colorScheme === 'dark' ? 'dark' : 'light'} />
-            <Search size={18} color="#64748B" />
+            <Search size={18} color={theme.textSecondary} />
             <TextInput
               style={[styles.searchInput, { color: theme.text }]}
               placeholder="Search by name or role..."
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor={theme.textSecondary}
               value={searchQuery}
               onChangeText={setSearchQuery}
+              keyboardAppearance={colorScheme === 'dark' ? 'dark' : 'light'}
             />
           </View>
         </View>
@@ -184,7 +161,34 @@ export default function UserDirectoryScreen() {
         ) : (
           <FlatList
             data={users}
-            renderItem={renderUserItem}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={[
+                  styles.userCard, 
+                  { 
+                    backgroundColor: colorScheme === 'dark' ? 'rgba(30, 41, 59, 0.7)' : 'rgba(255, 255, 255, 0.7)',
+                    borderColor: theme.border
+                  }
+                ]}
+                onPress={() => router.push(`/chat/${item.id}`)}
+              >
+                <ExpoBlurView intensity={20} style={StyleSheet.absoluteFill} tint={colorScheme === 'dark' ? 'dark' : 'light'} />
+                <View style={styles.cardContent}>
+                  <View style={styles.avatarWrapper}>
+                    <Image source={{ uri: getAvatarUrl(item.avatar) }} style={styles.avatar} />
+                  </View>
+                  <View style={styles.userInfo}>
+                    <Text style={[styles.userName, { color: theme.text }]}>{item.name}</Text>
+                    <Text style={[styles.userRole, { color: theme.textSecondary }]}>
+                      {item.role.charAt(0).toUpperCase() + item.role.slice(1)}
+                    </Text>
+                  </View>
+                  <View style={[styles.actionIcon, { backgroundColor: theme.primary + '15' }]}>
+                    <MessageSquare size={20} color={theme.primary} />
+                  </View>
+                </View>
+              </TouchableOpacity>
+            )}
             keyExtractor={item => item.id}
             contentContainerStyle={styles.listContent}
             ListEmptyComponent={() => (
@@ -206,20 +210,19 @@ const styles = StyleSheet.create({
   floatingHeaderWrapper: {
     paddingHorizontal: 8,
     paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    marginTop: Platform.OS === 'ios' ? -20 : -10,
+    marginTop: Platform.OS === 'ios' ? -24 : -10,
   },
   premiumPill: {
     height: 60,
     borderRadius: 30,
-    backgroundColor: 'rgba(255, 255, 255, 0.4)',
+    backgroundColor: 'rgba(255, 255, 255, 0)', // Fully transparent to let BlurView work
     overflow: 'hidden',
-    shadowColor: '#000',
+    shadowColor: '#4FA3F7',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.1,
     shadowRadius: 20,
     elevation: 8,
     borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   pillContent: {
     flex: 1,
@@ -258,7 +261,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.4)',
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
     gap: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -311,13 +313,12 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginBottom: 12,
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.08,
     shadowRadius: 16,
     elevation: 4,
+    borderWidth: 1,
   },
   cardContent: {
     flexDirection: 'row',
@@ -348,11 +349,9 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 17,
     fontWeight: '700',
-    color: '#0F172A',
   },
   userRole: {
     fontSize: 13,
-    color: '#64748B',
     fontWeight: '600',
     marginTop: 1,
   },

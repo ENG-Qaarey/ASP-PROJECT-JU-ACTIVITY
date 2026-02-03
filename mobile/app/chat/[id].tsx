@@ -406,11 +406,15 @@ export default function ChatScreen() {
               isMe 
                 ? [
                     styles.myMessageBubble, 
-                    { backgroundColor: '#DCF8C6' },
+                    { backgroundColor: colorScheme === 'dark' ? theme.primary + 'D9' : '#DCF8C6' },
                   ] 
                 : [
                     styles.theirMessageBubble, 
-                    { backgroundColor: '#FFFFFF', borderColor: '#EEE', borderWidth: 1 },
+                    { 
+                      backgroundColor: colorScheme === 'dark' ? 'rgba(30, 41, 59, 0.7)' : '#FFFFFF', 
+                      borderColor: colorScheme === 'dark' ? theme.border : '#EEE', 
+                      borderWidth: 1 
+                    },
                   ]
             ]}>
               {msgItem.forwarded && (
@@ -438,17 +442,17 @@ export default function ChatScreen() {
 
               <Text style={[
                 styles.messageText,
-                { color: '#000' }
+                { color: isMe ? (colorScheme === 'dark' ? '#000' : '#000') : theme.text }
               ]}>
                 {msgItem.text}
               </Text>
               
               <View style={styles.timestampRow}>
-                <Text style={[styles.inlineTimestamp, { color: '#667788' }]}>
+                <Text style={[styles.inlineTimestamp, { color: isMe ? (colorScheme === 'dark' ? '#075E54' : '#667788') : theme.textSecondary }]}>
                   {formatTime(msgItem.timestamp)}
                 </Text>
                 {isMe && (
-                  <Text style={[styles.checkmark, { color: msgItem.status === 'read' ? '#4FC3F7' : '#999' }]}>
+                  <Text style={[styles.checkmark, { color: msgItem.status === 'read' ? '#007AFF' : (colorScheme === 'dark' ? '#075E54' : '#999') }]}>
                     ✓✓
                   </Text>
                 )}
@@ -498,11 +502,6 @@ export default function ChatScreen() {
 
   return (
     <GradientBackground>
-      <Image 
-        source={{ uri: 'https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png' }}
-        style={[StyleSheet.absoluteFill, { opacity: 0.12 }]}
-        contentFit="cover"
-      />
       <Stack.Screen
         options={{
           headerShown: true,
@@ -518,7 +517,7 @@ export default function ChatScreen() {
                 />
                 <View style={styles.pillContent}>
                   <TouchableOpacity onPress={() => router.back()} style={styles.pillIconBtn}>
-                    <ArrowLeft size={26} color="#007AFF" />
+                    <ArrowLeft size={26} color={theme.primary} />
                   </TouchableOpacity>
                   
                   <View style={styles.pillMainInfo}>
@@ -538,17 +537,17 @@ export default function ChatScreen() {
                       />
                     </View>
                     <View style={styles.headerNameContainer}>
-                      <Text style={styles.headerTitleText} numberOfLines={1}>
+                      <Text style={[styles.headerTitleText, { color: theme.text }]} numberOfLines={1}>
                         {contact.id === user?.id ? `${user?.name} (You)` : (contact.name || 'Chat')}
                       </Text>
-                      <Text style={styles.headerSubtext}>
+                      <Text style={[styles.headerSubtext, { color: theme.textSecondary }]}>
                         {contact.id === user?.id ? 'Message yourself' : (contact.isTyping ? 'typing...' : (contact.isOnline ? 'Online' : 'Offline'))}
                       </Text>
                     </View>
                   </View>
 
                   <TouchableOpacity style={styles.pillIconBtn}>
-                    <MoreVertical size={26} color="#007AFF" />
+                    <MoreVertical size={26} color={theme.primary} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -559,8 +558,6 @@ export default function ChatScreen() {
           headerBackVisible: false,
         }}
       />
-      <View style={styles.whatsappWallpaper} />
-      
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -603,19 +600,26 @@ export default function ChatScreen() {
           </TouchableOpacity>
         </Animated.View>
 
-        <View style={styles.whatsappInputWrapper}>
+        <View style={[
+          styles.whatsappInputWrapper, 
+          { 
+            backgroundColor: theme.card,
+            borderTopColor: theme.border
+          }
+        ]}>
           <TouchableOpacity style={styles.plusBtn}>
             <Text style={styles.plusIcon}>+</Text>
           </TouchableOpacity>
 
-          <View style={styles.whatsappInputFrame}>
+          <View style={[styles.whatsappInputFrame, { backgroundColor: colorScheme === 'dark' ? '#0F172A' : '#FFF', borderColor: colorScheme === 'dark' ? '#334155' : '#CCC' }]}>
             <TextInput
-              style={styles.chatInput}
+              style={[styles.chatInput, { color: theme.text }]}
               placeholder="Message..."
-              placeholderTextColor="#999"
+              placeholderTextColor={theme.textSecondary}
               value={inputText}
               onChangeText={handleInputChange}
               multiline
+              keyboardAppearance={colorScheme === 'dark' ? 'dark' : 'light'}
             />
             <TouchableOpacity style={styles.stickerBtn}>
               <Smile size={24} color="#666" />
@@ -633,7 +637,7 @@ export default function ChatScreen() {
             </View>
           ) : (
             <TouchableOpacity style={styles.whatsappSendBtn} onPress={handleSend}>
-              <Send size={20} color="#007AFF" />
+              <Send size={20} color={theme.primary} />
             </TouchableOpacity>
           )}
         </View>
@@ -654,7 +658,7 @@ const styles = StyleSheet.create({
   floatingHeaderWrapper: {
     paddingHorizontal: 8,
     paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    marginTop: Platform.OS === 'ios' ? -24 : -20,
+    marginTop: Platform.OS === 'ios' ? -25 : -20,
     paddingBottom: 10,
   },
   premiumPill: {
@@ -662,13 +666,13 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     backgroundColor: 'rgba(255, 255, 255, 0)',
     overflow: 'hidden',
-    shadowColor: '#000',
+    shadowColor: '#2485e7',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.1,
     shadowRadius: 20,
     elevation: 8,
     borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
+    borderColor: 'rgba(255, 255, 255, 0)',
   },
   pillContent: {
     flex: 1,
@@ -729,7 +733,6 @@ const styles = StyleSheet.create({
   },
   whatsappWallpaper: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#E5DDD5',
     zIndex: -2,
   },
   whatsappInputWrapper: {
@@ -737,9 +740,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 8,
     paddingVertical: 12,
-    backgroundColor: '#F6F6F6',
     borderTopWidth: 1,
-    borderTopColor: '#DDD',
     zIndex: 100,
   },
   plusBtn: {
@@ -784,6 +785,9 @@ const styles = StyleSheet.create({
   whatsappSendBtn: {
     padding: 4,
     marginRight: 4,
+  },
+  whatsappSendIcon: {
+    color: '#0EA5E9',
   },
   messagesList: {
     paddingHorizontal: 16,
