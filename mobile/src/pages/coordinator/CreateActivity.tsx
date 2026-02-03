@@ -604,11 +604,28 @@ export default function CoordinatorCreateActivity() {
                     
                     try {
                         setLoading(true);
+
+                        // Convert mm/dd/yyyy to yyyy-mm-dd
+                        const dateParts = formData.date.split('/');
+                        const isoDate = dateParts.length === 3 ? `${dateParts[2]}-${dateParts[0]}-${dateParts[1]}` : formData.date;
+
+                        // Validate that date/time is in the future
+                        const [timeStr, period] = formData.time.split(' ');
+                        let [hours, minutes] = timeStr.split(':').map(Number);
+                        if (period === 'PM' && hours < 12) hours += 12;
+                        if (period === 'AM' && hours === 12) hours = 0;
+                        
+                        const activityDateTime = new Date(`${isoDate}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`);
+                        if (activityDateTime < new Date()) {
+                          Alert.alert('Invalid Date', 'The activity date and time must be in the future.');
+                          setLoading(false);
+                          return;
+                        }
+
                         const payload = {
                             ...formData,
                             capacity: parseInt(formData.capacity, 10),
-                            // Basic format conversion for backend
-                            date: formData.date.split('/').join('-') // transform mm/dd/yyyy to mm-dd-yyyy which is more standard
+                            date: isoDate
                         };
 
                         if (editId) {

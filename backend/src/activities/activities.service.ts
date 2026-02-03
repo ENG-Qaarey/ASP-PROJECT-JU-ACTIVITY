@@ -1,16 +1,77 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ActivityStatus, ApplicationStatus, NotificationType, UserRole } from '../generated/prisma';
 import { NotificationsService } from '../notifications/notifications.service';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
 
 @Injectable()
-export class ActivitiesService {
+export class ActivitiesService implements OnModuleInit {
   constructor(
     private prisma: PrismaService,
     private notificationsService: NotificationsService,
     private auditLogs: AuditLogsService,
   ) { }
+
+  onModuleInit() {
+    // Check and update statuses every minute
+    setInterval(() => {
+      this.updateActivityStatuses().catch(err => {
+        console.error('Error auto-updating activity statuses:', err);
+      });
+    }, 60000);
+
+    // Also run once on startup
+    setTimeout(() => this.updateActivityStatuses().catch(() => { }), 5000);
+  }
+
+  private parseActivityDateTime(date: Date, timeStr: string): Date {
+    try {
+      const dt = new Date(date);
+      const parts = timeStr.split(' ');
+      if (parts.length !== 2) return dt;
+
+      const [hms, period] = parts;
+      const [h, m] = hms.split(':').map(Number);
+
+      let hours = h;
+      if (period.toUpperCase() === 'PM' && hours < 12) hours += 12;
+      if (period.toUpperCase() === 'AM' && hours === 12) hours = 0;
+
+      dt.setHours(hours, m || 0, 0, 0);
+      return dt;
+    } catch (e) {
+      return new Date(date);
+    }
+  }
+
+  async updateActivityStatuses() {
+    const now = new Date();
+    const activities = await this.prisma.activity.findMany({
+      where: {
+        status: { in: [ActivityStatus.upcoming, ActivityStatus.ongoing] },
+      },
+    });
+
+    for (const activity of activities) {
+      const start = this.parseActivityDateTime(activity.date, activity.time);
+      // Default duration: 2 hours
+      const end = new Date(start.getTime() + 2 * 60 * 60 * 1000);
+
+      if (activity.status === ActivityStatus.upcoming && now >= start && now < end) {
+        await this.prisma.activity.update({
+          where: { id: activity.id },
+          data: { status: ActivityStatus.ongoing },
+        });
+        console.log(`[StatusUpdate] Activity "${activity.title}" is now ONGOING`);
+      } else if ((activity.status === ActivityStatus.ongoing || activity.status === ActivityStatus.upcoming) && now >= end) {
+        await this.prisma.activity.update({
+          where: { id: activity.id },
+          data: { status: ActivityStatus.completed },
+        });
+        console.log(`[StatusUpdate] Activity "${activity.title}" is now COMPLETED`);
+      }
+    }
+  }
 
   async findAll(status?: string, category?: string, coordinatorId?: string) {
     const where: any = {};
@@ -64,6 +125,11 @@ export class ActivitiesService {
 
     if (!Number.isFinite(activityData.capacity) || activityData.capacity <= 0) {
       throw new BadRequestException('Capacity must be a positive number');
+    }
+
+    const activityDateTime = this.parseActivityDateTime(parsedDate, activityData.time);
+    if (activityDateTime < new Date()) {
+      throw new BadRequestException('Activity date and time must be in the future');
     }
 
     const activity = await this.prisma.activity.create({
