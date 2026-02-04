@@ -69,32 +69,29 @@ export default function UserDirectoryScreen() {
       />
 
       {/* Floating Header - Rendered in component for consistent cross-platform behavior */}
-      <View style={[styles.floatingHeaderWrapper, { paddingTop: insets.top + 8 }]}>
-        <View style={styles.premiumPill}>
-          <ExpoBlurView intensity={Platform.OS === 'ios' ? 80 : 100} style={StyleSheet.absoluteFill} tint={colorScheme === 'dark' ? 'dark' : 'light'} />
-          <View style={styles.pillContent}>
-            <TouchableOpacity onPress={() => router.back()} style={styles.pillIconBtn}>
-              <ArrowLeft size={24} color={theme.text} />
-            </TouchableOpacity>
-            
-            <View style={styles.pillMainInfo}>
-              <Text style={[styles.pillTitle, { color: theme.text }]}>Community Hub</Text>
-            </View>
-            <View style={{ width: 44 }} /> 
+      <View style={[styles.floatingHeaderWrapper, { paddingTop: insets.top + 4 }]}>
+        <View style={styles.headerContainer}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.headerBackBtn}>
+            <ArrowLeft size={24} color={theme.text} />
+          </TouchableOpacity>
+          
+          <View style={styles.headerTitleContainer}>
+            <Text style={[styles.headerTitle, { color: theme.text }]}>Community Hub</Text>
           </View>
+          
+          <View style={{ width: 44 }} />
         </View>
       </View>
 
       <View style={styles.container}>
         <View style={styles.searchWrapper}>
           <View style={[
-            styles.premiumSearchBox, 
+            styles.searchBar, 
             { 
-              backgroundColor: colorScheme === 'dark' ? 'rgba(30, 41, 59, 0.7)' : 'rgba(255, 255, 255, 0.7)',
+              backgroundColor: theme.card,
               borderColor: theme.border
             }
           ]}>
-            <ExpoBlurView intensity={30} style={StyleSheet.absoluteFill} tint={colorScheme === 'dark' ? 'dark' : 'light'} />
             <Search size={18} color={theme.textSecondary} />
             <TextInput
               style={[styles.searchInput, { color: theme.text }]}
@@ -141,13 +138,12 @@ export default function UserDirectoryScreen() {
                 style={[
                   styles.userCard, 
                   { 
-                    backgroundColor: colorScheme === 'dark' ? 'rgba(30, 41, 59, 0.7)' : 'rgba(255, 255, 255, 0.7)',
+                    backgroundColor: theme.card,
                     borderColor: theme.border
                   }
                 ]}
                 onPress={() => router.push(`/chat/${item.id}`)}
               >
-                <ExpoBlurView intensity={20} style={StyleSheet.absoluteFill} tint={colorScheme === 'dark' ? 'dark' : 'light'} />
                 <View style={styles.cardContent}>
                   <View style={styles.avatarWrapper}>
                     <Image source={getAvatarUrl(item.avatar)} style={styles.avatar} />
@@ -187,34 +183,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingBottom: 10,
   },
-  premiumPill: {
+  headerContainer: {
     height: 56,
-    borderRadius: 28,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 4,
-  },
-  pillContent: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
   },
-  pillIconBtn: {
+  headerBackBtn: {
     width: 44,
     height: 44,
-    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  pillMainInfo: {
+  headerTitleContainer: {
     flex: 1,
     alignItems: 'center',
   },
-  pillTitle: {
+  headerTitle: {
     fontSize: 20,
     fontWeight: '800',
     letterSpacing: -0.5,
@@ -224,21 +209,14 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 20,
   },
-  premiumSearchBox: {
+  searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: 'rgba(255, 255, 255, 0.4)',
-    overflow: 'hidden',
-    borderWidth: 1,
+    height: 50,
+    borderRadius: 12,
+    borderWidth: 1.5,
     gap: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 3,
   },
   searchInput: {
     flex: 1,
@@ -253,12 +231,9 @@ const styles = StyleSheet.create({
   },
   filterChip: {
     paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingVertical: 9,
     borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'transparent',
+    backgroundColor: 'rgba(150, 150, 150, 0.1)',
   },
   filterChipActive: {
     backgroundColor: '#0EA5E9', // App Primary Blue
@@ -281,15 +256,10 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   userCard: {
-    borderRadius: 20,
-    marginBottom: 12,
+    borderRadius: 12,
+    marginBottom: 10,
+    borderWidth: 1.5,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 4,
-    borderWidth: 1,
   },
   cardContent: {
     flexDirection: 'row',
