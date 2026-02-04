@@ -52,6 +52,7 @@ import { getAvatarUrl } from '@/src/lib/media';
 import { IMAGE_BASE } from '@/src/lib/config';
 import dayjs from 'dayjs';
 import { SwipeableMessage } from '@/src/components/SwipeableMessage';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const VoiceMessage = ({ messageId, url, isMe, theme, avatar, colorScheme, activeId, onPlay }: { messageId: string; url: string; isMe: boolean; theme: any, avatar?: string, colorScheme: 'light' | 'dark', activeId: string | null, onPlay: (id: string | null) => void }) => {
   const [sound, setSound] = useState<Audio.Sound | null>(null);
@@ -284,6 +285,7 @@ export default function ChatScreen() {
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
   const flatListRef = useRef<FlatList>(null);
+  const insets = useSafeAreaInsets();
   
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1334,39 +1336,155 @@ export default function ChatScreen() {
     );
   };
 
+  // Animated dots for typing indicator
+  const typingDot1 = useRef(new RNAnimated.Value(0)).current;
+  const typingDot2 = useRef(new RNAnimated.Value(0)).current;
+  const typingDot3 = useRef(new RNAnimated.Value(0)).current;
+  const typingScale = useRef(new RNAnimated.Value(0)).current;
+
+  useEffect(() => {
+    if (contact.isTyping) {
+      // Scale in animation
+      RNAnimated.spring(typingScale, {
+        toValue: 1,
+        tension: 100,
+        friction: 8,
+        useNativeDriver: true,
+      }).start();
+
+      // Bouncing dots animation - wave effect
+      const createBounceAnimation = (animValue: RNAnimated.Value, delay: number) => {
+        return RNAnimated.loop(
+          RNAnimated.sequence([
+            RNAnimated.delay(delay),
+            RNAnimated.timing(animValue, {
+              toValue: -8,
+              duration: 300,
+              useNativeDriver: true,
+            }),
+            RNAnimated.timing(animValue, {
+              toValue: 0,
+              duration: 300,
+              useNativeDriver: true,
+            }),
+            RNAnimated.delay(600 - delay),
+          ])
+        );
+      };
+
+      const anim1 = createBounceAnimation(typingDot1, 0);
+      const anim2 = createBounceAnimation(typingDot2, 150);
+      const anim3 = createBounceAnimation(typingDot3, 300);
+
+      anim1.start();
+      anim2.start();
+      anim3.start();
+
+      return () => {
+        anim1.stop();
+        anim2.stop();
+        anim3.stop();
+      };
+    } else {
+      // Scale out animation
+      RNAnimated.timing(typingScale, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+      typingDot1.setValue(0);
+      typingDot2.setValue(0);
+      typingDot3.setValue(0);
+    }
+  }, [contact.isTyping]);
+
   const renderTypingIndicator = () => {
     if (!contact.isTyping) return null;
 
     return (
-      <View style={styles.typingContainer}>
-        <View style={styles.avatarContainer}>
-          <View style={styles.avatarCircle}>
-            <Text style={styles.avatarText}>
-              {contact.name?.charAt(0) || 'U'}
-            </Text>
-          </View>
+      <RNAnimated.View 
+        style={[
+          styles.typingContainer,
+          {
+            opacity: typingScale,
+            transform: [{ scale: typingScale }],
+          }
+        ]}
+      >
+        {/* Avatar with gradient ring */}
+        <View style={styles.typingAvatarWrapper}>
+          <LinearGradient
+            colors={['#0EA5E9', '#8B5CF6', '#EC4899']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.typingAvatarRing}
+          >
+            <View style={[styles.typingAvatarInner, { backgroundColor: colorScheme === 'dark' ? '#0F172A' : '#F8FAFC' }]}>
+              <Image 
+                source={getAvatarUrl(contact.avatar)} 
+                style={styles.typingAvatar}
+                contentFit="cover"
+              />
+            </View>
+          </LinearGradient>
+          <View style={[styles.typingOnlineDot, { borderColor: colorScheme === 'dark' ? '#0F172A' : '#FFFFFF' }]} />
         </View>
-        <RNAnimated.View 
-          style={[
-            styles.typingBubble,
-            { 
-              backgroundColor: colorScheme === 'dark' ? '#1E293B' : '#FFFFFF',
-              opacity: typingOpacity,
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 1 },
-              shadowOpacity: 0.05,
-              shadowRadius: 2,
-              elevation: 1,
-            }
-          ]}
-        >
-          <View style={styles.typingDots}>
-            <View style={[styles.typingDot, { backgroundColor: theme.icon }]} />
-            <View style={[styles.typingDot, { backgroundColor: theme.icon }]} />
-            <View style={[styles.typingDot, { backgroundColor: theme.icon }]} />
-          </View>
-        </RNAnimated.View>
-      </View>
+
+        {/* Typing bubble with glassmorphism */}
+        <View style={styles.typingBubbleWrapper}>
+          <ExpoBlurView 
+            intensity={colorScheme === 'dark' ? 40 : 60} 
+            style={[
+              styles.typingBubble,
+              { 
+                backgroundColor: colorScheme === 'dark' ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.9)',
+                borderColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+              }
+            ]}
+            tint={colorScheme === 'dark' ? 'dark' : 'light'}
+          >
+            <View style={styles.typingDotsContainer}>
+              <RNAnimated.View 
+                style={[
+                  styles.typingDot, 
+                  { 
+                    backgroundColor: theme.primary,
+                    transform: [{ translateY: typingDot1 }],
+                  }
+                ]} 
+              />
+              <RNAnimated.View 
+                style={[
+                  styles.typingDot, 
+                  { 
+                    backgroundColor: theme.primary,
+                    transform: [{ translateY: typingDot2 }],
+                  }
+                ]} 
+              />
+              <RNAnimated.View 
+                style={[
+                  styles.typingDot, 
+                  { 
+                    backgroundColor: theme.primary,
+                    transform: [{ translateY: typingDot3 }],
+                  }
+                ]} 
+              />
+            </View>
+          </ExpoBlurView>
+          
+          {/* Bubble tail */}
+          <View 
+            style={[
+              styles.typingBubbleTail, 
+              { 
+                borderRightColor: colorScheme === 'dark' ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.9)',
+              }
+            ]} 
+          />
+        </View>
+      </RNAnimated.View>
     );
   };
 
@@ -1374,58 +1492,7 @@ export default function ChatScreen() {
     <GradientBackground>
       <Stack.Screen
         options={{
-          headerShown: true,
-          headerTransparent: true,
-          headerTitle: '',
-          headerBackground: () => (
-            <View style={styles.floatingHeaderWrapper}>
-              <View style={styles.premiumPill}>
-                <ExpoBlurView 
-                  intensity={80} 
-                  style={StyleSheet.absoluteFill} 
-                  tint={colorScheme === 'dark' ? 'dark' : 'light'} 
-                />
-                <View style={styles.pillContent}>
-                  <TouchableOpacity onPress={() => router.back()} style={styles.pillIconBtn}>
-                    <ArrowLeft size={26} color={theme.primary} />
-                  </TouchableOpacity>
-                  
-                  <View style={styles.pillMainInfo}>
-                    <View style={styles.avatarWrapperMini}>
-                      <Image 
-                        source={getAvatarUrl(contact.avatar)} 
-                        style={styles.headerAvatar} 
-                      />
-                      <RNAnimated.View 
-                        style={[
-                          styles.headerPulseDot, 
-                          { 
-                            backgroundColor: contact.isOnline ? '#22C55E' : '#94A3B8',
-                            opacity: pulseAnim 
-                          }
-                        ]} 
-                      />
-                    </View>
-                    <View style={styles.headerNameContainer}>
-                      <Text style={[styles.headerTitleText, { color: theme.text }]} numberOfLines={1}>
-                        {contact.id === user?.id ? `${user?.name} (You)` : (contact.name || 'Chat')}
-                      </Text>
-                      <Text style={[styles.headerSubtext, { color: theme.textSecondary }]}>
-                        {contact.id === user?.id ? 'Message yourself' : (contact.isTyping ? 'typing...' : (contact.isOnline ? 'Online' : 'Offline'))}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <TouchableOpacity style={styles.pillIconBtn} onPress={() => setShowOptionsMenu(!showOptionsMenu)}>
-                    <MoreVertical size={26} color={theme.primary} />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-          ),
-          headerLeft: () => null,
-          headerRight: () => null,
-          headerBackVisible: false,
+          headerShown: false,
         }}
       />
       <KeyboardAvoidingView
@@ -1434,6 +1501,52 @@ export default function ChatScreen() {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
         <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
+        
+        {/* Floating Header - Rendered in component for consistent cross-platform behavior */}
+        <View style={[styles.floatingHeaderWrapper, { paddingTop: insets.top + 8 }]}>
+          <View style={styles.premiumPill}>
+            <ExpoBlurView 
+              intensity={80} 
+              style={StyleSheet.absoluteFill} 
+              tint={colorScheme === 'dark' ? 'dark' : 'light'} 
+            />
+            <View style={styles.pillContent}>
+              <TouchableOpacity onPress={() => router.back()} style={styles.pillIconBtn}>
+                <ArrowLeft size={26} color={theme.primary} />
+              </TouchableOpacity>
+              
+              <View style={styles.pillMainInfo}>
+                <View style={styles.avatarWrapperMini}>
+                  <Image 
+                    source={getAvatarUrl(contact.avatar)} 
+                    style={styles.headerAvatar} 
+                  />
+                  <RNAnimated.View 
+                    style={[
+                      styles.headerPulseDot, 
+                      { 
+                        backgroundColor: contact.isOnline ? '#22C55E' : '#94A3B8',
+                        opacity: pulseAnim 
+                      }
+                    ]} 
+                  />
+                </View>
+                <View style={styles.headerNameContainer}>
+                  <Text style={[styles.headerTitleText, { color: theme.text }]} numberOfLines={1}>
+                    {contact.id === user?.id ? `${user?.name} (You)` : (contact.name || 'Chat')}
+                  </Text>
+                  <Text style={[styles.headerSubtext, { color: theme.textSecondary }]}>
+                    {contact.id === user?.id ? 'Message yourself' : (contact.isTyping ? 'typing...' : (contact.isOnline ? 'Online' : 'Offline'))}
+                  </Text>
+                </View>
+              </View>
+
+              <TouchableOpacity style={styles.pillIconBtn} onPress={() => setShowOptionsMenu(!showOptionsMenu)}>
+                <MoreVertical size={26} color={theme.primary} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
         
         {loading ? (
           <View style={styles.loaderContainer}>
@@ -1445,9 +1558,9 @@ export default function ChatScreen() {
             data={groupMessages(messages)}
             renderItem={renderMessage}
             keyExtractor={(item, index) => item.type === 'date' ? `date-${item.date}-${index}` : item.id}
+            style={{ flex: 1 }}
             contentContainerStyle={styles.messagesList}
             ListFooterComponent={renderTypingIndicator}
-            onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
             onScroll={onScroll}
             scrollEventThrottle={16}
             showsVerticalScrollIndicator={false}
@@ -1796,67 +1909,6 @@ export default function ChatScreen() {
         </GestureHandlerRootView>
       </Modal>
 
-      {/* Options Menu Dropdown */}
-      {showOptionsMenu && (
-        <>
-          <TouchableOpacity 
-            style={styles.menuOverlay} 
-            activeOpacity={1} 
-            onPress={() => setShowOptionsMenu(false)}
-          />
-          <View style={[styles.optionsMenu, { backgroundColor: theme.card, borderColor: theme.border }]}>
-            <TouchableOpacity 
-              style={styles.menuItem} 
-              onPress={() => {
-                setShowOptionsMenu(false);
-                // TODO: Open Media picker
-              }}
-            >
-              <Camera size={18} color={theme.text} />
-              <Text style={[styles.menuItemText, { color: theme.text }]}>Media & Files</Text>
-            </TouchableOpacity>
-
-            <View style={[styles.menuDivider, { backgroundColor: theme.border }]} />
-
-            <TouchableOpacity 
-              style={styles.menuItem} 
-              onPress={() => {
-                setShowOptionsMenu(false);
-                // TODO: Navigate to chat settings
-              }}
-            >
-              <Info size={18} color={theme.text} />
-              <Text style={[styles.menuItemText, { color: theme.text }]}>Chat Info</Text>
-            </TouchableOpacity>
-            
-            <View style={[styles.menuDivider, { backgroundColor: theme.border }]} />
-            
-            <TouchableOpacity 
-              style={styles.menuItem}
-              onPress={() => {
-                setShowOptionsMenu(false);
-                // TODO: Implement mute
-              }}
-            >
-              <Clock size={18} color={theme.text} />
-              <Text style={[styles.menuItemText, { color: theme.text }]}>Mute Notifications</Text>
-            </TouchableOpacity>
-            
-            <View style={[styles.menuDivider, { backgroundColor: theme.border }]} />
-            
-            <TouchableOpacity 
-              style={styles.menuItem}
-              onPress={() => {
-                setShowOptionsMenu(false);
-                // TODO: Implement block
-              }}
-            >
-              <Trash2 size={18} color={theme.text} />
-              <Text style={[styles.menuItemText, { color: theme.text }]}>Clear Chat</Text>
-            </TouchableOpacity>
-          </View>
-        </>
-      )}
     </GradientBackground>
   );
 }
@@ -1872,8 +1924,6 @@ const styles = StyleSheet.create({
   },
   floatingHeaderWrapper: {
     paddingHorizontal: 8,
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    marginTop: Platform.OS === 'ios' ? -25 : -20,
     paddingBottom: 10,
   },
   premiumPill: {
@@ -2016,7 +2066,7 @@ const styles = StyleSheet.create({
   },
   messagesList: {
     paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'ios' ? 110 : 100,
+    paddingTop: 10,
     paddingBottom: 20,
   },
   scrollToBottom: {
@@ -2156,30 +2206,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#4FC3F7',
   },
-  typingContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 8,
-    marginVertical: 8,
-    marginHorizontal: 16,
-  },
-  typingBubble: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 15,
-    backgroundColor: '#FFFFFF',
-  },
-  typingDots: {
-    flexDirection: 'row',
-    gap: 4,
-    alignItems: 'center',
-  },
-  typingDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-    backgroundColor: '#999',
-  },
+
   forwardedRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -2802,5 +2829,94 @@ const styles = StyleSheet.create({
     elevation: 10,
     zIndex: 1000,
     overflow: 'hidden',
+  },
+  // Enhanced Typing Indicator Styles
+  typingContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 8,
+  },
+  typingAvatarWrapper: {
+    position: 'relative',
+  },
+  typingAvatarRing: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    padding: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  typingAvatarInner: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    padding: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  typingAvatar: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#E2E8F0',
+  },
+  typingOnlineDot: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#22C55E',
+    borderWidth: 2,
+  },
+  typingBubbleWrapper: {
+    position: 'relative',
+  },
+  typingBubble: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 20,
+    borderTopLeftRadius: 4,
+    borderWidth: 1,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  typingBubbleTail: {
+    position: 'absolute',
+    bottom: 0,
+    left: -6,
+    width: 0,
+    height: 0,
+    borderStyle: 'solid',
+    borderTopWidth: 0,
+    borderRightWidth: 10,
+    borderBottomWidth: 10,
+    borderLeftWidth: 0,
+    borderTopColor: 'transparent',
+    borderLeftColor: 'transparent',
+    borderBottomColor: 'transparent',
+  },
+  typingDotsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    height: 12,
+  },
+  typingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
 });

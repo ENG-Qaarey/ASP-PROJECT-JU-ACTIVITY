@@ -23,6 +23,7 @@ import { ThemedText } from '@/src/components/themed-text';
 import * as Haptics from 'expo-haptics';
 import { client } from '@/src/lib/api';
 import { getAvatarUrl } from '@/src/lib/media';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface User {
   id: string;
@@ -36,6 +37,7 @@ export default function UserDirectoryScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
+  const insets = useSafeAreaInsets();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -57,46 +59,37 @@ export default function UserDirectoryScreen() {
     fetchUsers();
   }, [searchQuery]);
 
-  // renderUserItem will be handled inline to fix variable scoping issues during multi-turn refactors
-
   return (
     <GradientBackground>
       <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
       <Stack.Screen
         options={{
-          headerShown: true,
-          headerTransparent: true,
-          title: '',
-          headerTitle: () => null,
-          headerBackTitle: '',
-          headerBackVisible: false,
-          headerBackground: () => (
-            <View style={styles.floatingHeaderWrapper}>
-              <View style={[
-                styles.premiumPill, 
-                { borderColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.3)' }
-              ]}>
-                <ExpoBlurView intensity={80} style={StyleSheet.absoluteFill} tint={colorScheme === 'dark' ? 'dark' : 'light'} />
-                <View style={styles.pillContent}>
-                  <TouchableOpacity onPress={() => router.back()} style={styles.pillIconBtn}>
-                    <ArrowLeft size={26} color={theme.primary} />
-                  </TouchableOpacity>
-                  
-                  <View style={styles.pillMainInfo}>
-                    <Text style={[styles.pillTitle, { color: theme.text }]}>Community Hub</Text>
-                  </View>
-
-                  <TouchableOpacity style={styles.pillIconBtn}>
-                    <MoreVertical size={26} color={theme.primary} />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-          ),
-          headerLeft: () => null,
-          headerRight: () => null,
+          headerShown: false,
         }}
       />
+
+      {/* Floating Header - Rendered in component for consistent cross-platform behavior */}
+      <View style={[styles.floatingHeaderWrapper, { paddingTop: insets.top + 8 }]}>
+        <View style={[
+          styles.premiumPill, 
+          { borderColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.3)' }
+        ]}>
+          <ExpoBlurView intensity={80} style={StyleSheet.absoluteFill} tint={colorScheme === 'dark' ? 'dark' : 'light'} />
+          <View style={styles.pillContent}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.pillIconBtn}>
+              <ArrowLeft size={26} color={theme.primary} />
+            </TouchableOpacity>
+            
+            <View style={styles.pillMainInfo}>
+              <Text style={[styles.pillTitle, { color: theme.text }]}>Community Hub</Text>
+            </View>
+
+            <TouchableOpacity style={styles.pillIconBtn}>
+              <MoreVertical size={26} color={theme.primary} />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
 
       <View style={styles.container}>
         <View style={styles.searchWrapper}>
@@ -203,8 +196,7 @@ const styles = StyleSheet.create({
   },
   floatingHeaderWrapper: {
     paddingHorizontal: 8,
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    marginTop: Platform.OS === 'ios' ? -24 : -10,
+    paddingBottom: 10,
   },
   premiumPill: {
     height: 60,
@@ -243,7 +235,7 @@ const styles = StyleSheet.create({
   },
   searchWrapper: {
     paddingHorizontal: 20,
-    marginTop: Platform.OS === 'ios' ? 125 : 110,
+    marginTop: 16,
     marginBottom: 20,
   },
   premiumSearchBox: {

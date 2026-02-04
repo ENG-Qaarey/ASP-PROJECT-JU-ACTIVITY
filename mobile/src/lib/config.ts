@@ -14,7 +14,7 @@ const LAN_IP = '172.20.10.11'; // Your computer's current IP
 
 const DEV_HOST = Platform.select({
     // 10.0.2.2 is the magic IP for Android Emulators to reach the host machine
-    android: '10.0.2.2',
+    android: LAN_IP,
     ios: LAN_IP,
     web: 'localhost',
     default: LAN_IP,

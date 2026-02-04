@@ -10,6 +10,7 @@ import {
   Dimensions,
   Animated,
   Easing,
+  StatusBar,
 } from 'react-native';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -127,6 +128,7 @@ export default function Register() {
 
   return (
     <View style={{ flex: 1 }}>
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
       {/* BACKGROUND */}
       <LinearGradient
         colors={['#F0F9FF', '#E0F2FE', '#BAE6FD', '#7DD3FC']}

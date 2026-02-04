@@ -12,6 +12,7 @@ import {
   Dimensions,
   Animated,
   Easing,
+  StatusBar,
 } from 'react-native';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from 'expo-router';
@@ -136,6 +137,7 @@ export default function Login() {
 
   return (
     <View style={{ flex: 1 }}>
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
       {/* BACKGROUND */}
       <LinearGradient
         colors={['#F0F9FF', '#E0F2FE', '#BAE6FD', '#7DD3FC']}
