@@ -33,7 +33,7 @@ import Reanimated, {
 } from 'react-native-reanimated';
 import { BlurView as ExpoBlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
+import { Stack, useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { ArrowLeft, Send, Paperclip, Smile, Camera, Mic, Info, MoreVertical, Play, Pause, Square, Trash2, Clock, Reply, X, Star, Pin, Share2, FilePlus, Image as ImageIcon, FileText, Download, File, User, Search, Ban, Settings, Bell, BellOff } from 'lucide-react-native';
 import { useColorScheme } from '@/src/hooks/use-color-scheme';
 import { Colors } from '@/src/data/theme';
@@ -295,7 +295,7 @@ export default function ChatScreen() {
     id: id || '',
     name: 'Loading...',
     avatar: '',
-    isOnline: onlineUsers.includes(id || ''),
+    isOnline: id ? onlineUsers.some(uid => String(uid) === String(id)) : false,
     isTyping: false,
   });
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
@@ -307,6 +307,7 @@ export default function ChatScreen() {
   const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
   const [activeMessageId, setActiveMessageId] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState(false);
+  const [disappearingTimer, setDisappearingTimer] = useState('off');
 
   // Quick Actions
   const handleMute = () => {
@@ -353,7 +354,7 @@ export default function ChatScreen() {
 
     setIsContextMenuVisible(false);
 
-    const options = [
+    const options: { text: string; style?: 'default' | 'cancel' | 'destructive'; onPress: () => void }[] = [
       {
         text: 'Delete for Me',
         style: 'destructive' as const,
@@ -619,10 +620,21 @@ export default function ChatScreen() {
     if (id) {
       setContact(prev => ({
         ...prev,
-        isOnline: onlineUsers.includes(id)
+        isOnline: onlineUsers.some(uid => String(uid) === String(id))
       }));
     }
   }, [onlineUsers, id]);
+
+  // Load chat-specific settings on focus
+  useFocusEffect(
+    React.useCallback(() => {
+      if (id) {
+        AsyncStorage.getItem(`chat_disappearing_${id}`).then(timer => {
+          if (timer) setDisappearingTimer(timer);
+        });
+      }
+    }, [id])
+  );
 
   const handleSend = async () => {
     if (!inputText.trim() || !id || !connected) return;
@@ -1532,9 +1544,14 @@ export default function ChatScreen() {
                   />
                 </View>
                 <View style={styles.headerNameContainer}>
-                  <Text style={[styles.headerTitleText, { color: theme.text }]} numberOfLines={1}>
-                    {contact.id === user?.id ? `${user?.name} (You)` : (contact.name || 'Chat')}
-                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <Text style={[styles.headerTitleText, { color: theme.text }]} numberOfLines={1}>
+                      {contact.id === user?.id ? `${user?.name} (You)` : (contact.name || 'Chat')}
+                    </Text>
+                    {disappearingTimer !== 'off' && (
+                      <Clock size={12} color={theme.primary} strokeWidth={2.5} />
+                    )}
+                  </View>
                   <Text style={[styles.headerSubtext, { color: theme.textSecondary }]}>
                     {contact.id === user?.id ? 'Message yourself' : (contact.isTyping ? 'typing...' : (contact.isOnline ? 'Online' : 'Offline'))}
                   </Text>

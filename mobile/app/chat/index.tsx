@@ -10,7 +10,7 @@ import {
   TextInput,
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
-import { Search, ArrowLeft, MessageSquarePlus } from 'lucide-react-native';
+import { Search, ArrowLeft, MessageSquarePlus, Clock } from 'lucide-react-native';
 import { useColorScheme } from '@/src/hooks/use-color-scheme';
 import { Colors } from '@/src/data/theme';
 import { Image } from 'expo-image';
@@ -22,6 +22,8 @@ import { ActivityIndicator, RefreshControl } from 'react-native';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { getAvatarUrl } from '@/src/lib/media';
+import { useFocusEffect } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 dayjs.extend(relativeTime);
 
@@ -115,6 +117,7 @@ export default function ChatListScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [disappearingSettings, setDisappearingSettings] = useState<Record<string, boolean>>({});
 
   const fetchChats = async () => {
     try {
@@ -168,6 +171,21 @@ export default function ChatListScreen() {
   useEffect(() => {
     fetchChats();
   }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const loadAllSettings = async () => {
+        if (chats.length === 0) return;
+        const settings: Record<string, boolean> = {};
+        for (const chat of chats) {
+          const val = await AsyncStorage.getItem(`chat_disappearing_${chat.id}`);
+          settings[chat.id] = !!val && val !== 'off';
+        }
+        setDisappearingSettings(settings);
+      };
+      loadAllSettings();
+    }, [chats])
+  );
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -223,6 +241,9 @@ export default function ChatListScreen() {
               >
                 {item.timestamp}
               </Text>
+              {disappearingSettings[item.id] && (
+                <Clock size={12} color={theme.primary} strokeWidth={2.5} />
+              )}
             </View>
           </View>
 
