@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -35,12 +35,14 @@ import { BlurView as ExpoBlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { ArrowLeft, Send, Paperclip, Smile, Camera, Mic, Info, MoreVertical, Play, Pause, Square, Trash2, Clock, Reply, X, Star, Pin, Share2, FilePlus, Image as ImageIcon, FileText, Download, File, User, Search, Ban, Settings, Bell, BellOff } from 'lucide-react-native';
+import Svg, { Path } from 'react-native-svg';
 import { useColorScheme } from '@/src/hooks/use-color-scheme';
 import { Colors } from '@/src/data/theme';
 import { Image } from 'expo-image';
-import { Audio } from 'expo-av';
+import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 import { GradientBackground } from '@/src/components/GradientBackground';
+import { PremiumMessageBubble } from '@/src/components/PremiumMessageBubble';
 import * as Haptics from 'expo-haptics';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
@@ -82,8 +84,10 @@ const VoiceMessage = ({ messageId, url, isMe, theme, avatar, colorScheme, active
     try {
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: false,
+        interruptionModeIOS: InterruptionModeIOS.DuckOthers,
         playsInSilentModeIOS: true,
         staysActiveInBackground: false,
+        interruptionModeAndroid: InterruptionModeAndroid.DuckOthers,
         shouldDuckAndroid: true,
         playThroughEarpieceAndroid: false,
       });
@@ -95,6 +99,11 @@ const VoiceMessage = ({ messageId, url, isMe, theme, avatar, colorScheme, active
           onPlay(null);
         } else {
           onPlay(messageId);
+          // Better detection for finished sound
+          const status = await sound.getStatusAsync();
+          if (status.isLoaded && (status.didJustFinish || (status.positionMillis >= (status.durationMillis || 0) - 100))) {
+            await sound.setPositionAsync(0);
+          }
           await sound.playAsync();
           setIsPlaying(true);
         }
@@ -103,7 +112,7 @@ const VoiceMessage = ({ messageId, url, isMe, theme, avatar, colorScheme, active
         const fullUrl = url.startsWith('http') ? url : `${IMAGE_BASE}${url}`;
         const { sound: newSound } = await Audio.Sound.createAsync(
           { uri: fullUrl },
-          { shouldPlay: true },
+          { shouldPlay: true, volume: 1.0 },
           onPlaybackStatusUpdate
         );
         setSound(newSound);
@@ -122,6 +131,10 @@ const VoiceMessage = ({ messageId, url, isMe, theme, avatar, colorScheme, active
         setIsPlaying(false);
         setPosition(0);
         onPlay(null);
+        if (sound) {
+          sound.stopAsync().catch(() => {});
+          sound.setPositionAsync(0).catch(() => {});
+        }
       }
     }
   };
@@ -196,6 +209,29 @@ const VoiceMessage = ({ messageId, url, isMe, theme, avatar, colorScheme, active
   );
 };
 
+const SentTail = ({ color }: { color: string }) => (
+  <View style={styles.sentTailContainer}>
+    <Svg width={15} height={20} viewBox="0 0 15 20">
+      <Path
+        d="M0,0 C7.5,0 15,10 15,20 L15,0 L0,0 Z"
+        fill={color}
+        transform="scale(-1, 1) translate(-15, 0)"
+      />
+    </Svg>
+  </View>
+);
+
+const ReceivedTail = ({ color }: { color: string }) => (
+  <View style={styles.receivedTailContainer}>
+    <Svg width={15} height={20} viewBox="0 0 15 20">
+      <Path
+        d="M0,0 C7.5,0 15,10 15,20 L15,0 L0,0 Z"
+        fill={color}
+      />
+    </Svg>
+  </View>
+);
+
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const ZoomableImage = ({ uri }: { uri: string }) => {
@@ -269,6 +305,44 @@ interface Contact {
   isTyping: boolean;
 }
 
+const formatTime = (date: Date) => {
+  return date.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
+
+const groupMessages = (msgs: Message[]) => {
+  const groups: (Message | { type: 'date'; date: string })[] = [];
+  let lastDate = '';
+
+  msgs.forEach((msg) => {
+    const dateStr = dayjs(msg.timestamp).format('MMMM D, YYYY');
+    const displayDate = dayjs(msg.timestamp).isSame(dayjs(), 'day') 
+      ? 'Today' 
+      : dayjs(msg.timestamp).isSame(dayjs().subtract(1, 'day'), 'day')
+        ? 'Yesterday'
+        : dateStr;
+
+    if (displayDate !== lastDate) {
+      groups.push({ type: 'date', date: displayDate });
+      lastDate = displayDate;
+    }
+    groups.push(msg);
+  });
+
+  return groups;
+};
+
+const getFormattedReplyText = (replyTo: any) => {
+  if (!replyTo) return '';
+  if (replyTo.type === 'image') return '📸 Photo';
+  if (replyTo.type === 'audio') return '🎤 Voice Message';
+  if (replyTo.type === 'video') return '🎥 Video';
+  if (replyTo.type === 'file') return '📁 File';
+  return replyTo.text;
+};
+
 const mockContact: Contact = {
   id: '1',
   name: 'Amin Daahir',
@@ -308,6 +382,8 @@ export default function ChatScreen() {
   const [activeMessageId, setActiveMessageId] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState(false);
   const [disappearingTimer, setDisappearingTimer] = useState('off');
+
+  const groupedMessages = useMemo(() => groupMessages(messages), [messages]);
 
   // Quick Actions
   const handleMute = () => {
@@ -552,18 +628,24 @@ export default function ChatScreen() {
 
           // 2. For 'me' messages, check if we have an optimistic message to replace
           if (isMe) {
-            // Find by temporary ID (numeric strings) or same content within 5 seconds
+            // Find by temporary ID (numeric strings) or same content
+            // We search for EITHER 'sending' OR already reconciled but with same content to avoid duplicates from multiple events
             const optimisticIndex = prev.findIndex(m => 
               m.sender === 'me' && 
-              m.status === 'sending' && 
+              (m.status === 'sending' || m.id === msg.id) && 
               m.text === msg.content
             );
 
             if (optimisticIndex !== -1) {
+              // If already has this ID, just return prev to avoid double update/flash
+              if (prev[optimisticIndex].id === msg.id && prev[optimisticIndex].status === 'read') {
+                return prev;
+              }
+
               const updated = [...prev];
               updated[optimisticIndex] = {
                 ...updated[optimisticIndex],
-                id: msg.id,
+                id: msg.id, // Set the real DB ID
                 status: 'read',
                 timestamp: new Date(msg.createdAt),
               };
@@ -734,7 +816,12 @@ export default function ChatScreen() {
 
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
+        interruptionModeIOS: InterruptionModeIOS.DoNotMix,
         playsInSilentModeIOS: true,
+        staysActiveInBackground: false,
+        interruptionModeAndroid: InterruptionModeAndroid.DoNotMix,
+        shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false,
       });
 
       const { recording } = await Audio.Recording.createAsync(
@@ -815,9 +902,24 @@ export default function ChatScreen() {
   const uploadAndSendVoice = async (uri: string) => {
     if (!id || !connected) return;
     
+    const localId = Date.now().toString();
+    const optimisticMessage: Message = {
+      id: localId,
+      localId: localId,
+      text: uri, // Use local URI for potential preview/local playback if needed
+      sender: 'me',
+      timestamp: new Date(),
+      status: 'sending',
+      type: 'audio',
+    };
+
+    // 1. Show message immediately
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setMessages(prev => [...prev, optimisticMessage]);
+
     setIsUploadingVoice(true);
     try {
-      // 1. Prepare form data for upload
+      // 2. Prepare form data for upload
       const formData = new FormData();
       const filename = uri.split('/').pop() || 'voice.m4a';
       const type = 'audio/m4a';
@@ -828,32 +930,26 @@ export default function ChatScreen() {
         type,
       } as any);
 
-      // 2. Upload to server
+      // 3. Upload to server
       const response = await client.post('/chat/upload', formData);
-
       const audioUrl = response.url;
-      const localId = Date.now().toString();
 
-      // 3. Optimistic update
-      const newMessage: Message = {
-        id: localId,
-        localId: localId,
-        text: audioUrl, // Store URL in text for audio messages
-        sender: 'me',
-        timestamp: new Date(),
-        status: 'sending',
-        type: 'audio',
-      };
-
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      setMessages(prev => [...prev, newMessage]);
+      // 4. Update message state with real URL - but keep it 'sending' until socket confirms
+      setMessages(prev => prev.map(m => 
+        m.localId === localId ? { ...m, text: audioUrl } : m
+      ));
       
-      // 4. Send via socket
+      // 5. Send via socket
       sendMessage(id, audioUrl, 'audio');
       
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch (err) {
       console.error('Voice upload failed', err);
+      // Mark as failed
+      setMessages(prev => prev.map(m => 
+        m.localId === localId ? { ...m, status: 'sending' } : m // Could add 'error' status if supported
+      ));
+      Alert.alert('Error', 'Failed to upload voice message.');
     } finally {
       setIsUploadingVoice(false);
     }
@@ -862,11 +958,47 @@ export default function ChatScreen() {
   const uploadAndSendMessage = async (uri: string, type: 'image' | 'file' | 'audio', originalName?: string, size?: number) => {
     if (!id || !connected) return;
     
+    const localId = Date.now().toString();
+    const filename = originalName || uri.split('/').pop() || `file.${type === 'image' ? 'jpg' : 'bin'}`;
+    
+    const formatSize = (bytes?: number) => {
+      if (!bytes) return '0 KB';
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    };
+
+    const optimisticMessage: Message = {
+      id: localId,
+      localId: localId,
+      text: uri, 
+      fileName: type === 'file' ? filename : undefined,
+      fileSize: formatSize(size),
+      fileExt: filename.split('.').pop()?.toLowerCase(),
+      pdfPages: filename.endsWith('.pdf') ? 72 : undefined,
+      sender: 'me',
+      timestamp: new Date(),
+      status: 'sending',
+      type: type,
+      ...(replyTo ? {
+        replyTo: {
+          senderName: replyTo.sender === 'me' ? 'You' : contact.name,
+          text: replyTo.text,
+          type: replyTo.type,
+          fileName: replyTo.fileName
+        }
+      } : {}),
+    };
+
+    // 1. Show message immediately
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setMessages(prev => [...prev, optimisticMessage]);
+    setReplyTo(null);
+
     try {
-      // 1. Prepare form data for upload
+      // 2. Prepare form data
       const formData = new FormData();
-      const filename = originalName || uri.split('/').pop() || `file.${type === 'image' ? 'jpg' : 'bin'}`;
-      
       let mimeType = 'application/octet-stream';
       if (type === 'image') mimeType = 'image/jpeg';
       else if (type === 'audio') mimeType = 'audio/m4a';
@@ -892,56 +1024,27 @@ export default function ChatScreen() {
         type: mimeType,
       } as any);
 
-      const formatSize = (bytes?: number) => {
-        if (!bytes) return '0 KB';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-      };
-
-      // 2. Upload to server
+      // 3. Upload to server
       const response = await client.post('/chat/upload', formData);
       const fileUrl = response.url;
-      const localId = Date.now().toString();
 
-      // 3. Optimistic update
-      const newMessage: Message = {
-        id: localId,
-        localId: localId,
-        text: fileUrl, 
-        fileName: type === 'file' ? filename : undefined,
-        fileSize: formatSize(size),
-        fileExt: filename.split('.').pop()?.toLowerCase(),
-        pdfPages: filename.endsWith('.pdf') ? 72 : undefined, // Mocking pages for demo
-        sender: 'me',
-        timestamp: new Date(),
-        status: 'sending',
-        type: type,
-        ...(replyTo ? {
-          replyTo: {
-            senderName: replyTo.sender === 'me' ? 'You' : contact.name,
-            text: replyTo.text,
-            type: replyTo.type,
-            fileName: replyTo.fileName
-          }
-        } : {}),
-      };
-
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      setMessages(prev => [...prev, newMessage]);
+      // 4. Update state with real URL - keep it 'sending' until socket confirms
+      setMessages(prev => prev.map(m => 
+        m.localId === localId ? { ...m, text: fileUrl } : m
+      ));
       
-      // 4. Send via socket
-      sendMessage(id, fileUrl, type, newMessage.replyTo, { 
-        fileName: newMessage.fileName, 
-        fileSize: newMessage.fileSize,
-        fileExt: newMessage.fileExt,
-        pdfPages: newMessage.pdfPages
+      // 5. Send via socket
+      sendMessage(id, fileUrl, type, optimisticMessage.replyTo, { 
+        fileName: optimisticMessage.fileName, 
+        fileSize: optimisticMessage.fileSize,
+        fileExt: optimisticMessage.fileExt,
+        pdfPages: optimisticMessage.pdfPages
       });
      
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch (err) {
       console.error('File upload failed', err);
+      // Mark as failed in UI
       Alert.alert('Upload Failed', 'There was an error uploading your file. Please try again.');
     }
   };
@@ -996,43 +1099,6 @@ export default function ChatScreen() {
     }
   };
 
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-  const groupMessages = (msgs: Message[]) => {
-    const groups: (Message | { type: 'date'; date: string })[] = [];
-    let lastDate = '';
-
-    msgs.forEach((msg) => {
-      const dateStr = dayjs(msg.timestamp).format('MMMM D, YYYY');
-      const displayDate = dayjs(msg.timestamp).isSame(dayjs(), 'day') 
-        ? 'Today' 
-        : dayjs(msg.timestamp).isSame(dayjs().subtract(1, 'day'), 'day')
-          ? 'Yesterday'
-          : dateStr;
-
-      if (displayDate !== lastDate) {
-        groups.push({ type: 'date', date: displayDate });
-        lastDate = displayDate;
-      }
-      groups.push(msg);
-    });
-
-    return groups;
-  };
-
-  const getFormattedReplyText = (replyTo: any) => {
-    if (!replyTo) return '';
-    if (replyTo.type === 'image') return '📸 Photo';
-    if (replyTo.type === 'audio') return '🎤 Voice Message';
-    if (replyTo.type === 'video') return '🎥 Video';
-    if (replyTo.type === 'file') return '📁 File';
-    return replyTo.text;
-  };
 
   const renderMessage = ({ item, index }: { item: any; index: number }) => {
     // Correct type handling for union
@@ -1052,7 +1118,6 @@ export default function ChatScreen() {
     }
 
     const isMe = msgItem.sender === 'me';
-    const groupedMessages = groupMessages(messages);
     
     // Logic for tails and grouping
     const prevMsg = groupedMessages[index - 1] as any;
@@ -1097,250 +1162,63 @@ export default function ChatScreen() {
             
             {/* Message bubble */}
             <View style={[styles.messageContent, isMe && { alignItems: 'flex-end' }]}>
-               {/* Use LinearGradient for sender if not selecting, or flat color if selected */}
-               {isMe ? (
-                   <View style={{ alignItems: 'flex-end' }}>
-                     <LinearGradient
-                       colors={[theme.primary, theme.primary]}
-                       start={{ x: 0, y: 0 }}
-                       end={{ x: 1, y: 1 }}
-                       style={[
-                         styles.messageBubble,
-                         styles.myMessageBubble,
-                         !isFirstInGroup && { borderTopRightRadius: 20 },
-                         selectedMessages.has(msgItem.id) && { borderColor: '#FFF', borderWidth: 2 }
-                       ]}
-                     >
-                      {msgItem.replyTo && (
-                        <View style={[styles.replyPreview, { backgroundColor: 'rgba(0,0,0,0.15)', borderLeftColor: '#FFF', borderLeftWidth: 3, flexDirection: 'row', alignItems: 'center' }]}>
-                          <View style={{ flex: 1 }}>
-                            <Text style={[styles.replyName, { color: '#FFF' }]}>{msgItem.replyTo.senderName}</Text>
-                            <Text style={[styles.replyText, { color: 'rgba(255,255,255,0.7)' }]} numberOfLines={1}>{getFormattedReplyText(msgItem.replyTo)}</Text>
-                          </View>
-                          {msgItem.replyTo.type === 'image' && (
-                            <TouchableOpacity 
-                              onPress={() => setViewerImageUrl(msgItem.replyTo!.text.startsWith('http') ? msgItem.replyTo!.text : `${IMAGE_BASE}${msgItem.replyTo!.text}`)}
-                            >
-                              <Image 
-                                source={{ uri: msgItem.replyTo.text.startsWith('http') ? msgItem.replyTo.text : `${IMAGE_BASE}${msgItem.replyTo.text}` }} 
-                                style={styles.replyThumbnail}
-                                contentFit="cover"
-                              />
-                            </TouchableOpacity>
-                          )}
-                        </View>
-                      )}
+                {isMe ? (
+                  <View style={{ alignItems: 'flex-end' }}>
+                    <PremiumMessageBubble
+                      msgItem={msgItem}
+                      isMe={isMe}
+                      isFirstInGroup={isFirstInGroup}
+                      isLastInGroup={isLastInGroup}
+                      theme={theme}
+                      colorScheme={colorScheme as any}
+                      formatTime={formatTime}
+                      getFormattedReplyText={getFormattedReplyText}
+                      setViewerImageUrl={setViewerImageUrl}
+                      handleOpenFile={handleOpenFile}
+                      VoiceMessageComponent={VoiceMessage}
+                      playingAudioId={playingAudioId}
+                      setPlayingAudioId={setPlayingAudioId}
+                      userAvatar={user?.avatar}
+                      contactAvatar={contact.avatar}
+                    />
 
-                      {msgItem.type === 'audio' ? (
-                        <VoiceMessage 
-                           messageId={msgItem.id}
-                           url={msgItem.text} 
-                           isMe={isMe} 
-                           theme={theme} 
-                           avatar={user?.avatar}
-                           colorScheme={colorScheme}
-                           activeId={playingAudioId}
-                           onPlay={setPlayingAudioId}
-                        />
-                      ) : msgItem.type === 'file' ? (
-                        <View style={styles.fileCardRow}>
-                          <TouchableOpacity 
-                            onPress={() => handleOpenFile(msgItem.text)}
-                            activeOpacity={0.9}
-                          >
-                             <LinearGradient
-                                colors={[theme.primary, theme.primary]} 
-                                style={[
-                                  styles.fileCard, 
-                                  { borderBottomRightRadius: 4 }
-                                ]}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 1 }}
-                              >
-                            <View style={styles.fileCardContent}>
-                              <View style={[styles.fileCardIconContainer, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
-                                <FileText size={24} color="#FFF" />
-                              </View>
-                              <View style={styles.fileCardInfo}>
-                                <Text style={[styles.fileCardName, { color: '#FFF' }]} numberOfLines={1}>
-                                  {msgItem.fileName || 'Document'}
-                                </Text>
-                                <Text style={[styles.fileCardMeta, { color: 'rgba(255,255,255,0.7)' }]}>
-                                  {msgItem.fileSize || 'Unknown size'} • {msgItem.fileExt?.toUpperCase() || 'FILE'}
-                                </Text>
-                              </View>
-                            </View>
-                            
-                            <View style={styles.fileCardFooter}>
-                               <Text style={[styles.fileCardTime, { color: 'rgba(255,255,255,0.7)' }]}>{formatTime(msgItem.timestamp)}</Text>
-                               <Text style={[styles.fileCardCheckmark, { color: '#FFF' }]}>✓✓</Text>
-                            </View>
-
-                            <View style={styles.downloadIconContainer}>
-                              <Download size={20} color="#FFF" />
-                            </View>
-                            </LinearGradient>
-                          </TouchableOpacity>
-                        </View>
-                      ) : msgItem.type === 'image' ? (
-                        <TouchableOpacity 
-                          style={styles.imageBubbleContainer}
-                          onPress={() => setViewerImageUrl(msgItem.text.startsWith('http') ? msgItem.text : `${IMAGE_BASE}${msgItem.text}`)}
-                        >
-                          <Image 
-                            source={{ uri: msgItem.text.startsWith('http') ? msgItem.text : `${IMAGE_BASE}${msgItem.text}` }} 
-                            style={styles.messageImage}
-                            contentFit="cover"
-                          />
-                        </TouchableOpacity>
-                      ) : (
-                        <Text style={[styles.messageText, { color: '#FFF' }]}>
-                          {msgItem.text}
-                        </Text>
-                      )}
-
-                      <View style={styles.timestampRow}>
-                        {msgItem.pinned && <Pin size={10} color="rgba(255,255,255,0.7)" style={{ marginRight: 4 }} fill="rgba(255,255,255,0.7)" />}
-                        {msgItem.starred && <Star size={10} color="rgba(255,255,255,0.7)" style={{ marginRight: 4 }} fill="rgba(255,255,255,0.7)" />}
-                        <Text style={[styles.inlineTimestamp, { color: 'rgba(255,255,255,0.7)' }]}>
-                          {formatTime(msgItem.timestamp)}
-                        </Text>
-                        <Text style={[styles.checkmark, { color: msgItem.status === 'read' ? '#38BDF8' : 'rgba(255,255,255,0.5)' }]}>
-                          ✓✓
-                        </Text>
+                    {msgItem.reactions && msgItem.reactions.length > 0 && (
+                      <View style={[styles.bubbleReactions, { alignSelf: 'flex-end', marginRight: 4, marginTop: -4 }]}>
+                        {msgItem.reactions.map((emoji, i) => (
+                          <Text key={i} style={styles.bubbleReactionEmoji}>{emoji}</Text>
+                        ))}
                       </View>
-                   </LinearGradient>
-                   
-                   {msgItem.reactions && msgItem.reactions.length > 0 && (
-                     <View style={[styles.bubbleReactions, { alignSelf: 'flex-end', marginRight: 4 }]}>
-                       {msgItem.reactions.map((emoji, i) => (
-                         <Text key={i} style={styles.bubbleReactionEmoji}>{emoji}</Text>
-                       ))}
-                     </View>
-                   )}
-                 </View>
-               ) : (
-                 <View style={{ alignItems: 'flex-start' }}>
-                   <View style={[
-                     styles.messageBubble,
-                     styles.theirMessageBubble,
-                     { 
-                       backgroundColor: colorScheme === 'dark' ? '#1E293B' : '#FFFFFF', 
-                       borderWidth: 0, // Removed border for cleaner look
-                       shadowColor: "#000",
-                       shadowOffset: { width: 0, height: 1 },
-                       shadowOpacity: 0.1,
-                       shadowRadius: 2,
-                       elevation: 2
-                     },
-                     !isFirstInGroup && { borderTopLeftRadius: 16 },
-                     selectedMessages.has(msgItem.id) && { borderColor: theme.primary, borderWidth: 2 }
-                   ]}>
-                      {msgItem.replyTo && (
-                        <View style={[styles.replyPreview, { backgroundColor: colorScheme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', borderLeftColor: theme.primary, flexDirection: 'row', alignItems: 'center' }]}>
-                          <View style={{ flex: 1 }}>
-                            <Text style={[styles.replyName, { color: theme.primary }]}>{msgItem.replyTo.senderName}</Text>
-                            <Text style={[styles.replyText, { color: theme.textSecondary }]} numberOfLines={1}>{getFormattedReplyText(msgItem.replyTo)}</Text>
-                          </View>
-                          {msgItem.replyTo.type === 'image' && (
-                            <TouchableOpacity 
-                              onPress={() => setViewerImageUrl(msgItem.replyTo!.text.startsWith('http') ? msgItem.replyTo!.text : `${IMAGE_BASE}${msgItem.replyTo!.text}`)}
-                            >
-                              <Image 
-                                source={{ uri: msgItem.replyTo.text.startsWith('http') ? msgItem.replyTo.text : `${IMAGE_BASE}${msgItem.replyTo.text}` }} 
-                                style={styles.replyThumbnail}
-                                contentFit="cover"
-                              />
-                            </TouchableOpacity>
-                          )}
-                        </View>
-                      )}
+                    )}
+                  </View>
+                ) : (
+                  <View style={{ alignItems: 'flex-start' }}>
+                    <PremiumMessageBubble
+                      msgItem={msgItem}
+                      isMe={isMe}
+                      isFirstInGroup={isFirstInGroup}
+                      isLastInGroup={isLastInGroup}
+                      theme={theme}
+                      colorScheme={colorScheme as any}
+                      formatTime={formatTime}
+                      getFormattedReplyText={getFormattedReplyText}
+                      setViewerImageUrl={setViewerImageUrl}
+                      handleOpenFile={handleOpenFile}
+                      VoiceMessageComponent={VoiceMessage}
+                      playingAudioId={playingAudioId}
+                      setPlayingAudioId={setPlayingAudioId}
+                      userAvatar={user?.avatar}
+                      contactAvatar={contact.avatar}
+                    />
 
-                      {msgItem.type === 'audio' ? (
-                        <VoiceMessage 
-                           messageId={msgItem.id}
-                           url={msgItem.text} 
-                           isMe={isMe} 
-                           theme={theme} 
-                           avatar={contact.avatar}
-                           colorScheme={colorScheme}
-                           activeId={playingAudioId}
-                           onPlay={setPlayingAudioId}
-                        />
-                      ) : msgItem.type === 'image' ? (
-                        <TouchableOpacity 
-                          style={styles.imageBubbleContainer}
-                          onPress={() => setViewerImageUrl(msgItem.text.startsWith('http') ? msgItem.text : `${IMAGE_BASE}${msgItem.text}`)}
-                        >
-                          <Image 
-                            source={{ uri: msgItem.text.startsWith('http') ? msgItem.text : `${IMAGE_BASE}${msgItem.text}` }} 
-                            style={styles.messageImage}
-                            contentFit="cover"
-                          />
-                        </TouchableOpacity>
-                      ) : msgItem.type === 'file' ? (
-                        <View style={styles.fileCardRow}>
-                          <TouchableOpacity 
-                            style={[
-                              styles.fileCard, 
-                              { 
-                                backgroundColor: colorScheme === 'dark' ? '#1E293B' : '#FFFFFF',
-                                borderTopLeftRadius: 4,
-                                borderWidth: 1,
-                                borderColor: colorScheme === 'dark' ? 'rgba(255,255,255,0.1)' : '#E2E8F0'
-                              }
-                            ]}
-                            onPress={() => handleOpenFile(msgItem.text)}
-                            activeOpacity={0.9}
-                          >
-                            <View style={styles.fileCardContent}>
-                              <View style={[styles.fileCardIconContainer, { backgroundColor: theme.primary + '15' }]}>
-                                <FileText size={24} color={theme.primary} />
-                              </View>
-                              <View style={styles.fileCardInfo}>
-                                <Text style={[styles.fileCardName, { color: theme.text }]} numberOfLines={1}>
-                                  {msgItem.fileName || 'Document'}
-                                </Text>
-                                <Text style={[styles.fileCardMeta, { color: theme.textSecondary }]}>
-                                  {msgItem.fileSize || 'Unknown size'} • {msgItem.fileExt?.toUpperCase() || 'FILE'}
-                                </Text>
-                              </View>
-                            </View>
-                            
-                            <View style={styles.fileCardFooter}>
-                               <Text style={[styles.fileCardTime, { color: theme.textSecondary }]}>{formatTime(msgItem.timestamp)}</Text>
-                               <Text style={[styles.fileCardCheckmark, { color: msgItem.status === 'read' ? theme.primary : theme.textSecondary }]}>✓✓</Text>
-                            </View>
-
-                            <View style={styles.downloadIconContainer}>
-                              <Download size={20} color={theme.textSecondary} />
-                            </View>
-                          </TouchableOpacity>
-                        </View>
-                      ) : (
-                        <Text style={[styles.messageText, { color: theme.text }]}>
-                          {msgItem.text}
-                        </Text>
-                      )}
-
-                      <View style={styles.timestampRow}>
-                        {msgItem.pinned && <Pin size={10} color={theme.textSecondary} style={{ marginRight: 4 }} fill={theme.textSecondary} />}
-                        {msgItem.starred && <Star size={10} color="#EAB308" style={{ marginRight: 4 }} fill="#EAB308" />}
-                        <Text style={[styles.inlineTimestamp, { color: theme.textSecondary }]}>
-                          {formatTime(msgItem.timestamp)}
-                        </Text>
+                    {msgItem.reactions && msgItem.reactions.length > 0 && (
+                      <View style={[styles.bubbleReactions, { alignSelf: 'flex-start', marginLeft: 4, marginTop: -4 }]}>
+                        {msgItem.reactions.map((emoji, i) => (
+                          <Text key={i} style={styles.bubbleReactionEmoji}>{emoji}</Text>
+                        ))}
                       </View>
-                   </View>
-
-                   {msgItem.reactions && msgItem.reactions.length > 0 && (
-                     <View style={[styles.bubbleReactions, { alignSelf: 'flex-start', marginLeft: 4 }]}>
-                       {msgItem.reactions.map((emoji, i) => (
-                         <Text key={i} style={styles.bubbleReactionEmoji}>{emoji}</Text>
-                       ))}
-                     </View>
-                   )}
-                 </View>
-               )}
+                    )}
+                  </View>
+                )}
             </View>
           </TouchableOpacity>
         </View>
@@ -1572,7 +1450,7 @@ export default function ChatScreen() {
         ) : (
           <FlatList
             ref={flatListRef}
-            data={groupMessages(messages)}
+            data={groupedMessages}
             renderItem={renderMessage}
             keyExtractor={(item, index) => item.type === 'date' ? `date-${item.date}-${index}` : item.id}
             style={{ flex: 1 }}
@@ -2169,12 +2047,22 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   messageBubble: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    minHeight: 38,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 18,
+    minHeight: 42,
     justifyContent: 'center',
-    overflow: 'hidden',
+    position: 'relative',
+  },
+  sentTailContainer: {
+    position: 'absolute',
+    bottom: 0,
+    right: -8,
+  },
+  receivedTailContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: -8,
   },
   imageBubbleContainer: {
     width: 240,
@@ -2188,20 +2076,18 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   myMessageBubble: {
-    borderTopRightRadius: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
-    elevation: 3,
-  },
-  theirMessageBubble: {
-    borderTopLeftRadius: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
+  },
+  theirMessageBubble: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 1,
+    elevation: 1,
   },
   messageText: {
     fontSize: 15,

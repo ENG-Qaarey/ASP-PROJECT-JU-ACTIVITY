@@ -70,23 +70,17 @@ export default function UserDirectoryScreen() {
 
       {/* Floating Header - Rendered in component for consistent cross-platform behavior */}
       <View style={[styles.floatingHeaderWrapper, { paddingTop: insets.top + 8 }]}>
-        <View style={[
-          styles.premiumPill, 
-          { borderColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.3)' }
-        ]}>
-          <ExpoBlurView intensity={80} style={StyleSheet.absoluteFill} tint={colorScheme === 'dark' ? 'dark' : 'light'} />
+        <View style={styles.premiumPill}>
+          <ExpoBlurView intensity={Platform.OS === 'ios' ? 80 : 100} style={StyleSheet.absoluteFill} tint={colorScheme === 'dark' ? 'dark' : 'light'} />
           <View style={styles.pillContent}>
             <TouchableOpacity onPress={() => router.back()} style={styles.pillIconBtn}>
-              <ArrowLeft size={26} color={theme.primary} />
+              <ArrowLeft size={24} color={theme.text} />
             </TouchableOpacity>
             
             <View style={styles.pillMainInfo}>
               <Text style={[styles.pillTitle, { color: theme.text }]}>Community Hub</Text>
             </View>
-
-            <TouchableOpacity style={styles.pillIconBtn}>
-              <MoreVertical size={26} color={theme.primary} />
-            </TouchableOpacity>
+            <View style={{ width: 44 }} /> 
           </View>
         </View>
       </View>
@@ -121,10 +115,7 @@ export default function UserDirectoryScreen() {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             }}
           >
-            {activeFilter !== 'all' && (
-              <ExpoBlurView intensity={20} style={StyleSheet.absoluteFill} tint={colorScheme === 'dark' ? 'dark' : 'light'} />
-            )}
-            <Text style={[styles.filterText, activeFilter === 'all' && styles.filterTextActive]}>All</Text>
+            <Text style={[styles.filterText, activeFilter === 'all' && styles.filterTextActive]}>All Users</Text>
           </TouchableOpacity>
           
           <TouchableOpacity 
@@ -134,9 +125,6 @@ export default function UserDirectoryScreen() {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             }}
           >
-            {activeFilter !== 'groups' && (
-              <ExpoBlurView intensity={20} style={StyleSheet.absoluteFill} tint={colorScheme === 'dark' ? 'dark' : 'light'} />
-            )}
             <Text style={[styles.filterText, activeFilter === 'groups' && styles.filterTextActive]}>Groups</Text>
           </TouchableOpacity>
         </View>
@@ -178,6 +166,7 @@ export default function UserDirectoryScreen() {
             )}
             keyExtractor={item => item.id}
             contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
             ListEmptyComponent={() => (
               <View style={styles.emptyContainer}>
                 <ThemedText style={styles.emptyText}>No users found</ThemedText>
@@ -199,16 +188,14 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   premiumPill: {
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'rgba(255, 255, 255, 0)', // Fully transparent to let BlurView work
+    height: 56,
+    borderRadius: 28,
     overflow: 'hidden',
-    shadowColor: '#4FA3F7',
-    shadowOffset: { width: 0, height: 10 },
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 8,
-    borderWidth: 1.5,
+    shadowRadius: 10,
+    elevation: 4,
   },
   pillContent: {
     flex: 1,
@@ -228,9 +215,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pillTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '800',
-    color: '#000',
     letterSpacing: -0.5,
   },
   searchWrapper: {
@@ -266,13 +252,13 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   filterChip: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     paddingVertical: 10,
-    borderRadius: 25,
-    backgroundColor: 'rgba(255, 255, 255, 0.4)', // Glass effect
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
   filterChipActive: {
     backgroundColor: '#0EA5E9', // App Primary Blue
@@ -284,9 +270,8 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   filterText: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#334155', // Deeper slate for better contrast on glass
+    fontSize: 14,
+    fontWeight: '700',
   },
   filterTextActive: {
     color: '#FFFFFF',
