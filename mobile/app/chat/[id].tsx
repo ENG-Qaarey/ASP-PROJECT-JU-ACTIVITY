@@ -484,6 +484,7 @@ export default function ChatScreen() {
   }, []);
 
   const fetchHistory = async (showLoader = false) => {
+    const startTime = Date.now();
     if (showLoader) setLoading(true);
     if (!id) return;
     try {
@@ -519,11 +520,11 @@ export default function ChatScreen() {
       
       // Fetch profile / group info
       if (isGroupChat) {
-        // For activity group chats, use the passed title and app icon
+        // For activity group chats, use the passed title and image
         setContact(prev => ({
           ...prev,
           name: title || prev.name || 'Activity Group',
-          avatar: '', // icon is handled in header avatar
+          avatar: image || prev.avatar || '', 
           isOnline: false,
         }));
       } else {
@@ -543,6 +544,11 @@ export default function ChatScreen() {
     } catch (error) {
       console.error('Failed to fetch history:', error);
     } finally {
+      const elapsed = Date.now() - startTime;
+      const minDelay = 2000;
+      if (elapsed < minDelay) {
+        await new Promise(resolve => setTimeout(resolve, minDelay - elapsed));
+      }
       setLoading(false);
       setTimeout(() => flatListRef.current?.scrollToEnd({ animated: false }), 100);
     }
@@ -1204,7 +1210,7 @@ export default function ChatScreen() {
             {/* Avatar for received messages - only show for the last message in a block */}
             {!isMe && (
               <View style={styles.avatarContainer}>
-                {isLastInGroup && (
+                {(isLastInGroup || isGroupChat) && (
                   <Image
                     source={
                       isGroupChat
@@ -1529,11 +1535,11 @@ export default function ChatScreen() {
                     )}
                   </View>
                   <Text style={[styles.headerSubtext, { color: (contact.isRecording || contact.isTyping) ? (contact.isRecording ? '#EC4899' : theme.primary) : theme.textSecondary }]}>
-                    {isGroupChat ? 'Activity Group Chat' :
-                      contact.id === user?.id ? 'Message yourself' : 
-                       contact.isRecording ? 'Recording audio...' : 
-                       contact.isTyping ? 'typing...' : 
-                       contact.isOnline ? 'Online' : 'Offline'}
+                    {contact.isRecording ? 'Recording audio...' : 
+                     contact.isTyping ? 'typing...' : 
+                     isGroupChat ? 'Activity Group Chat' :
+                     contact.id === user?.id ? 'Message yourself' : 
+                     contact.isOnline ? 'Online' : 'Offline'}
                   </Text>
                 </View>
               </View>

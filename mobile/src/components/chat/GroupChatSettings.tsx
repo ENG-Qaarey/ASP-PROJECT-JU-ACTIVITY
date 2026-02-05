@@ -9,6 +9,7 @@ import {
   Alert,
   Dimensions,
   Modal,
+  TextInput,
 } from 'react-native';
 import { 
   Bell, 
@@ -29,14 +30,17 @@ import {
   Download,
   MoreHorizontal,
   Camera,
-  Edit2
+  Edit2,
+  ArrowLeft,
+  X
 } from 'lucide-react-native';
 import { Image } from 'expo-image';
-import * as ImagePicker from 'expo-image-picker';
-import { client } from '@/src/lib/api';
 import { LinearGradient } from 'expo-linear-gradient';
-import { getAvatarUrl } from '@/src/lib/media';
 import { useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
+import { getAvatarUrl } from '@/src/lib/media';
+import { client } from '@/src/lib/api';
+import { BlurView as ExpoBlurView } from 'expo-blur';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -298,6 +302,42 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  searchInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 16,
+    borderWidth: 1,
+    marginBottom: 16,
+    height: 44,
+  },
+  searchInput: {
+    flex: 1,
+    paddingHorizontal: 12,
+    fontSize: 15,
+  },
+  inputField: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 16,
+    minHeight: 50,
+    textAlignVertical: 'top',
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+    marginTop: 24,
+  },
+  modalBtn: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  modalBtnText: {
+    fontWeight: '700',
+    fontSize: 15,
+  },
 });
 
 const AlertModal = ({ visible, onClose, title, children, theme }: any) => (
@@ -315,6 +355,46 @@ const AlertModal = ({ visible, onClose, title, children, theme }: any) => (
     </Modal>
 );
 
+const InputModal = ({ visible, onClose, title, value, onSave, theme, placeholder }: any) => {
+    const [text, setText] = React.useState(value);
+    
+    React.useEffect(() => {
+        setText(value);
+    }, [value, visible]);
+
+    return (
+        <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+            <View style={styles.modalOverlay}>
+                <View style={[styles.modalContent, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                    <View style={styles.modalHeader}>
+                        <Text style={[styles.modalTitle, { color: theme.text }]}>{title}</Text>
+                    </View>
+                    <TextInput
+                        style={[styles.inputField, { color: theme.text, borderColor: theme.border, backgroundColor: theme.background }]}
+                        value={text}
+                        onChangeText={setText}
+                        placeholder={placeholder}
+                        placeholderTextColor={theme.textSecondary}
+                        autoFocus
+                        multiline={title.toLowerCase().includes('description')}
+                    />
+                    <View style={styles.modalFooter}>
+                        <TouchableOpacity style={styles.modalBtn} onPress={onClose}>
+                            <Text style={[styles.modalBtnText, { color: theme.textSecondary }]}>Cancel</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                            style={[styles.modalBtn, { backgroundColor: theme.primary }]} 
+                            onPress={() => onSave(text)}
+                        >
+                            <Text style={[styles.modalBtnText, { color: '#FFF' }]}>Save</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </View>
+        </Modal>
+    );
+};
+
 interface GroupChatSettingsProps {
   id: string;
   title: string;
@@ -331,7 +411,11 @@ interface GroupChatSettingsProps {
   groupImage?: string;
   onImageUpdate?: (url: string) => void;
   onToggleAdmin?: (memberId: string) => void;
+  onUpdateTitle?: (title: string) => void;
+  onUpdateDescription?: (desc: string) => void;
+  onRemoveMember?: (memberId: string) => void;
   currentUserId?: string;
+  description?: string;
 }
 
 export const GroupChatSettings = ({
@@ -350,29 +434,48 @@ export const GroupChatSettings = ({
   groupImage,
   onImageUpdate,
   onToggleAdmin,
+  onUpdateTitle,
+  onUpdateDescription,
+  onRemoveMember,
   currentUserId,
+  description,
 }: GroupChatSettingsProps) => {
   const router = useRouter();
   const [selectedMember, setSelectedMember] = React.useState<any>(null);
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const [showSearch, setShowSearch] = React.useState(false);
+  const [editingField, setEditingField] = React.useState<{ type: 'title' | 'description', value: string } | null>(null);
 
-  // Sort members: Current user first, then admin/coordinator, then others
+  // Sort and filter members
   const sortedMembers = React.useMemo(() => {
-    return [...members].sort((a, b) => {
+    let filtered = [...members];
+    if (searchQuery.trim()) {
+      filtered = filtered.filter(m => 
+        m.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    return filtered.sort((a, b) => {
         if (a.id === currentUserId) return -1;
         if (b.id === currentUserId) return 1;
         if (a.isGroupAdmin && !b.isGroupAdmin) return -1;
         if (!a.isGroupAdmin && b.isGroupAdmin) return 1;
         return 0;
     });
-  }, [members, currentUserId]);
+  }, [members, currentUserId, searchQuery]);
 
   const isCurrentUserAdmin = members.find(m => m.id === currentUserId)?.isGroupAdmin;
-  const canManageAdmins = currentUserRole === 'admin' || isCurrentUserAdmin;
-  const canEdit = currentUserRole === 'admin' || currentUserRole === 'coordinator';
+  const canManageAdmins = currentUserRole === 'admin' || isCurrentUserAdmin || currentUserRole === 'coordinator';
+  const canEdit = currentUserRole === 'admin' || currentUserRole === 'coordinator' || isCurrentUserAdmin;
 
   const handleMemberPress = (member: any) => {
-      // Don't allow managing yourself or non-students (coordinators are fixed admins)
-      if (member.id === currentUserId || member.role !== 'student') {
+      // Don't allow managing yourself
+      if (member.id === currentUserId) {
+        router.push({ pathname: '/chat/[id]', params: { id: member.id } });
+        return;
+      }
+
+      // Coordinators/Platform Admins are fixed admins
+      if (member.role === 'coordinator' || member.role === 'admin') {
         router.push({ pathname: '/chat/[id]', params: { id: member.id } });
         return;
       }
@@ -387,6 +490,9 @@ export const GroupChatSettings = ({
   const confirmToggleAdmin = () => {
     if (!selectedMember || !onToggleAdmin) return;
     
+    // Safety check: students can't toggle coordinators/admins
+    if (selectedMember.role !== 'student') return;
+
     const action = selectedMember.isGroupAdmin ? 'Revoke' : 'Grant';
     Alert.alert(
         `${action} Admin`,
@@ -395,13 +501,43 @@ export const GroupChatSettings = ({
             { text: 'Cancel', style: 'cancel', onPress: () => setSelectedMember(null) },
             { 
                 text: 'Confirm', 
-                onPress: async () => {
-                    await onToggleAdmin(selectedMember.id);
+                onPress: () => {
+                    onToggleAdmin(selectedMember.id);
                     setSelectedMember(null);
                 }
             }
         ]
     );
+  };
+
+  const handleRemoveMember = () => {
+    if (!selectedMember || !onRemoveMember) return;
+    
+    Alert.alert(
+        "Remove Participant",
+        `Are you sure you want to remove ${selectedMember.name} from this group? They will no longer be able to see or send messages.`,
+        [
+            { text: 'Cancel', style: 'cancel', onPress: () => setSelectedMember(null) },
+            { 
+                text: 'Remove', 
+                style: 'destructive',
+                onPress: () => {
+                    onRemoveMember(selectedMember.id);
+                    setSelectedMember(null);
+                }
+            }
+        ]
+    );
+  };
+
+  const handleUpdateTitle = () => {
+    if (!canEdit || !onUpdateTitle) return;
+    setEditingField({ type: 'title', value: title });
+  };
+
+  const handleUpdateDescription = () => {
+    if (!canEdit || !onUpdateDescription) return;
+    setEditingField({ type: 'description', value: description || "" });
   };
 
   const handleUpdateImage = async () => {
@@ -479,7 +615,15 @@ export const GroupChatSettings = ({
           </View>
         </TouchableOpacity>
         
-        <Text style={[styles.heroName, { color: theme.text }]}>{title || 'Activity Group'}</Text>
+        <TouchableOpacity 
+          onPress={handleUpdateTitle}
+          disabled={!canEdit}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
+        >
+          <Text style={[styles.heroName, { color: theme.text }]}>{title || 'Activity Group'}</Text>
+          {canEdit && <Edit2 size={18} color={theme.primary} />}
+        </TouchableOpacity>
+
         <View style={[styles.badgeContainer, { backgroundColor: theme.primary + '20' }]}>
           <Text style={[styles.badgeText, { color: theme.primary }]}>ACTIVITY HUB GROUP</Text>
         </View>
@@ -492,17 +636,37 @@ export const GroupChatSettings = ({
         </View>
       </View>
 
-      {/* Participants Section - More Prominent */}
+      {/* Participants Section */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
             <View style={styles.headerLeft}>
                 <Users size={16} color={theme.textSecondary} />
                 <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>PARTICIPANTS • {members.length}</Text>
             </View>
-            <TouchableOpacity style={styles.searchIcon}>
-                <Search size={18} color={theme.primary} />
+            <TouchableOpacity 
+              style={styles.searchIcon}
+              onPress={() => {
+                setShowSearch(!showSearch);
+                if (showSearch) setSearchQuery('');
+              }}
+            >
+                {showSearch ? <X size={18} color={theme.error} /> : <Search size={18} color={theme.primary} />}
             </TouchableOpacity>
         </View>
+
+        {showSearch && (
+          <View style={[styles.searchInputContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <Search size={16} color={theme.textSecondary} style={{ marginLeft: 12 }} />
+            <TextInput
+              style={[styles.searchInput, { color: theme.text }]}
+              placeholder="Search participants..."
+              placeholderTextColor={theme.textSecondary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              autoFocus
+            />
+          </View>
+        )}
 
         <View style={[styles.membersCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
             {sortedMembers.map((member, idx) => (
@@ -523,8 +687,8 @@ export const GroupChatSettings = ({
                                     {member.id === currentUserId ? `${member.name} (You)` : member.name}
                                 </Text>
                                 {member.isGroupAdmin && (
-                                    <View style={[styles.adminBadge, { backgroundColor: theme.primary + '15' }]}>
-                                        <Text style={[styles.adminBadgeText, { color: theme.primary }]}>ADMIN</Text>
+                                    <View style={[styles.adminBadge, { backgroundColor: '#EC4899' + '15' }]}>
+                                        <Text style={[styles.adminBadgeText, { color: '#EC4899' }]}>ADMIN</Text>
                                     </View>
                                 )}
                             </View>
@@ -563,12 +727,17 @@ export const GroupChatSettings = ({
                     <MessageSquare size={20} color={theme.primary} />
                     <Text style={[styles.modalActionText, { color: theme.text }]}>Message {selectedMember.name}</Text>
                 </TouchableOpacity>
-                <View style={styles.divider} />
+                <View style={[styles.divider, { backgroundColor: theme.border }]} />
                 <TouchableOpacity style={styles.modalActionItem} onPress={confirmToggleAdmin}>
                     <Shield size={20} color={theme.primary} />
                     <Text style={[styles.modalActionText, { color: theme.text }]}>
                         {selectedMember.isGroupAdmin ? 'Revoke Admin' : 'Grant Admin'}
                     </Text>
+                </TouchableOpacity>
+                <View style={[styles.divider, { backgroundColor: theme.border }]} />
+                <TouchableOpacity style={styles.modalActionItem} onPress={handleRemoveMember}>
+                    <LogOut size={20} color={theme.error} />
+                    <Text style={[styles.modalActionText, { color: theme.error }]}>Remove from Group</Text>
                 </TouchableOpacity>
             </AlertModal>
         )}
@@ -586,7 +755,13 @@ export const GroupChatSettings = ({
         <View style={styles.divider} />
         <OptionItem icon={Download} label="Auto-download Files" theme={theme} right={<Switch value={autoDownload} onValueChange={() => setAutoDownload(!autoDownload)} />} />
         <View style={styles.divider} />
-        <OptionItem icon={BookOpen} label="Group Description" theme={theme} body="Standard activity group for collaborative learning and project development." />
+        <OptionItem 
+          icon={BookOpen} 
+          label="Group Description" 
+          theme={theme} 
+          onPress={handleUpdateDescription}
+          body={description || "No description set. Standard activity group for collaborative learning."} 
+        />
       </View>
 
       <View style={[styles.optionsCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
@@ -617,6 +792,25 @@ export const GroupChatSettings = ({
         <Lock size={12} color={theme.textSecondary} />
         <Text style={[styles.footerText, { color: theme.textSecondary }]}>Managed by University Activity Hub</Text>
       </View>
+
+      {editingField && (
+        <InputModal
+          visible={!!editingField}
+          onClose={() => setEditingField(null)}
+          title={editingField.type === 'title' ? 'Edit Group Name' : 'Edit Group Description'}
+          value={editingField.value}
+          theme={theme}
+          placeholder={editingField.type === 'title' ? 'e.g. Activity Planning' : 'Group purpose...'}
+          onSave={(newValue: string) => {
+            if (editingField.type === 'title') {
+                if (newValue.trim() && onUpdateTitle) onUpdateTitle(newValue.trim());
+            } else {
+                if (onUpdateDescription) onUpdateDescription(newValue.trim());
+            }
+            setEditingField(null);
+          }}
+        />
+      )}
     </ScrollView>
   );
 };

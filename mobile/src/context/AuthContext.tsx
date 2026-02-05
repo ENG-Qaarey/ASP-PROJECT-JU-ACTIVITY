@@ -31,6 +31,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Helper for 2s timeout
+  const timeoutPromise = (ms: number) => new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms));
+
   const fetchProfile = async () => {
     try {
       const token = await AsyncStorage.getItem('user_token');
@@ -40,20 +43,50 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
 
-      const data = await client.get('/users/me');
-      if (data && data.id) {
-        setUser(data);
-      } else {
-        setUser(null);
+      // Try to load cached profile first for instant load
+      const cachedProfile = await AsyncStorage.getItem('user_profile');
+      if (cachedProfile) {
+        setUser(JSON.parse(cachedProfile));
+        setLoading(false); // Stop loading immediately if we have a cache
       }
+
+      // Fetch fresh data with 2s timeout
+      // Valid data race: if network matches, use it. If timeout, we relied on cache or will fail silently if no cache
+      try {
+        const data: any = await Promise.race([
+          client.get('/users/me'),
+          timeoutPromise(2000)
+        ]);
+
+        if (data && data.id) {
+          setUser(data);
+          await AsyncStorage.setItem('user_profile', JSON.stringify(data));
+        } else {
+             if (!cachedProfile) setUser(null);
+        }
+      } catch (err: any) {
+        // If it was a timeout, just log and ignore (we likely have cache)
+        if (err.message === 'Timeout') {
+            console.log('AuthContext: Profile fetch timed out (2s limit)');
+        } else {
+            throw err; // Re-throw other errors to be handled by outer catch
+        }
+      }
+
     } catch (error: any) {
       if (error?.message !== 'User not found') {
-        console.log('AuthContext: Profile fetch failed', error?.message);
+        console.log('AuthContext: Profile fetch failed (using cache if available)', error?.message);
       }
-      // If profile fetch fails (e.g., user not found after DB reset), clear the token
-      await AsyncStorage.removeItem('user_token');
-      setUser(null);
+      
+      // If unauthorized (401), clear everything
+      if (error?.status === 401 || error?.response?.status === 401) {
+        await AsyncStorage.removeItem('user_token');
+        await AsyncStorage.removeItem('user_profile');
+        setUser(null);
+      }
+      // For other errors (network/timeout), we just keep the cached user if it exists
     } finally {
+      // FORCE stop loading after everything
       setLoading(false);
     }
   };
@@ -68,6 +101,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const logout = async () => {
     await AsyncStorage.removeItem('user_token');
+    await AsyncStorage.removeItem('user_profile');
     setUser(null);
   };
 

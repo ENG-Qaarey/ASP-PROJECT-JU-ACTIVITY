@@ -28,6 +28,7 @@ import { getAvatarUrl } from '@/src/lib/media';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useChat } from '@/src/context/ChatContext';
 import { useAuth } from '@/src/context/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface User {
   id: string;
@@ -144,12 +145,33 @@ export default function UserDirectoryScreen() {
   }, []);
 
   const fetchUsers = async (showLoader = false) => {
-    if (showLoader) setLoading(true);
+    // Only use loader if we don't have a cache or if explicitly searching
+    let shouldUseLoader = showLoader;
+
+    if (showLoader && !searchQuery) {
+        // Try to load cache first
+        const cache = await AsyncStorage.getItem('cached_users_directory');
+        if (cache) {
+            setUsers(JSON.parse(cache));
+            setLoading(false);
+            shouldUseLoader = false; // Don't show loader since we have data
+        }
+    }
+
+    if (shouldUseLoader) setLoading(true);
+
+    const timeoutPromise = (ms: number) => new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms));
+
+    const startTime = Date.now();
     try {
-      const [usersData, recentChatsData] = await Promise.all([
-        client.get(`/users/chat-directory${searchQuery ? `?search=${searchQuery}` : ''}`),
-        client.get('/chat/recent')
-      ]);
+      // Race the network request against a 5000ms timeout (increased from 2s to allow for 2s min display)
+      const [usersData, recentChatsData] = await Promise.race([
+          Promise.all([
+            client.get(`/users/chat-directory${searchQuery ? `?search=${searchQuery}` : ''}`),
+            client.get('/chat/recent')
+          ]),
+          timeoutPromise(5000)
+      ]) as [any, any];
 
       const usersWithCounts = usersData.map((u: User) => {
         const recent = recentChatsData.find((chat: any) => 
@@ -170,9 +192,26 @@ export default function UserDirectoryScreen() {
 
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       setUsers(usersWithCounts);
-    } catch (error) {
-      console.error('Failed to fetch users and counts:', error);
+      
+      // Cache the result if this is the main list (no search)
+      if (!searchQuery) {
+          await AsyncStorage.setItem('cached_users_directory', JSON.stringify(usersWithCounts));
+      }
+
+    } catch (error: any) {
+      if (error.message === 'Timeout') {
+          console.log('User fetch timed out (5s limit)');
+      } else {
+          console.error('Failed to fetch users and counts:', error);
+      }
     } finally {
+      if (shouldUseLoader) {
+        const elapsed = Date.now() - startTime;
+        const minDelay = 2000;
+        if (elapsed < minDelay) {
+          await new Promise(resolve => setTimeout(resolve, minDelay - elapsed));
+        }
+      }
       setLoading(false);
     }
   };
