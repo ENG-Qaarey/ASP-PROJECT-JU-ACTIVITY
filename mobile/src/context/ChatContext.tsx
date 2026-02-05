@@ -7,9 +7,12 @@ import { useAuth } from './AuthContext';
 interface ChatContextType {
   socket: any | null;
   connected: boolean;
-  sendMessage: (receiverId: string, content: string, type?: string, replyTo?: any, metadata?: any) => void;
-  emitTyping: (receiverId: string) => void;
-  emitStopTyping: (receiverId: string) => void;
+  sendMessage: (chatId: string, content: string, type?: string, replyTo?: any, metadata?: any, isGroup?: boolean) => void;
+  emitTyping: (chatId: string, isGroup?: boolean) => void;
+  emitStopTyping: (chatId: string, isGroup?: boolean) => void;
+  emitDeleteMessage: (messageId: string, chatId: string, deleteType?: 'me' | 'everyone', isGroup?: boolean) => void;
+  emitRecording: (chatId: string, isGroup?: boolean) => void;
+  emitStopRecording: (chatId: string, isGroup?: boolean) => void;
   onlineUsers: string[];
 }
 
@@ -19,6 +22,9 @@ const ChatContext = createContext<ChatContextType>({
   sendMessage: () => {},
   emitTyping: () => {},
   emitStopTyping: () => {},
+  emitDeleteMessage: () => {},
+  emitRecording: () => {},
+  emitStopRecording: () => {},
   onlineUsers: [],
 });
 
@@ -78,26 +84,54 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, [user]);
 
-  const sendMessage = (receiverId: string, content: string, type: string = 'text', replyTo?: any, metadata?: any) => {
+  const sendMessage = (chatId: string, content: string, type: string = 'text', replyTo?: any, metadata?: any, isGroup = false) => {
     if (socket && connected) {
-      socket.emit('sendMessage', { receiverId, content, type, replyTo, metadata });
+      const payload = isGroup 
+        ? { groupId: chatId, content, type, replyTo, metadata }
+        : { receiverId: chatId, content, type, replyTo, metadata };
+      socket.emit('sendMessage', payload);
     }
   };
 
-  const emitTyping = (receiverId: string) => {
+  const emitTyping = (chatId: string, isGroup = false) => {
     if (socket && connected) {
-      socket.emit('typing', { receiverId });
+      const payload = isGroup ? { groupId: chatId } : { receiverId: chatId };
+      socket.emit('typing', payload);
     }
   };
 
-  const emitStopTyping = (receiverId: string) => {
+  const emitStopTyping = (chatId: string, isGroup = false) => {
     if (socket && connected) {
-      socket.emit('stopTyping', { receiverId });
+      const payload = isGroup ? { groupId: chatId } : { receiverId: chatId };
+      socket.emit('stopTyping', payload);
+    }
+  };
+
+  const emitDeleteMessage = (messageId: string, chatId: string, deleteType: 'me' | 'everyone' = 'everyone', isGroup = false) => {
+    if (socket && connected) {
+      const payload = isGroup 
+        ? { messageId, groupId: chatId, deleteType }
+        : { messageId, receiverId: chatId, deleteType };
+      socket.emit('deleteMessage', payload);
+    }
+  };
+
+  const emitRecording = (chatId: string, isGroup = false) => {
+    if (socket && connected) {
+      const payload = isGroup ? { groupId: chatId } : { receiverId: chatId };
+      socket.emit('recording', payload);
+    }
+  };
+
+  const emitStopRecording = (chatId: string, isGroup = false) => {
+    if (socket && connected) {
+      const payload = isGroup ? { groupId: chatId } : { receiverId: chatId };
+      socket.emit('stopRecording', payload);
     }
   };
 
   return (
-    <ChatContext.Provider value={{ socket, connected, sendMessage, emitTyping, emitStopTyping, onlineUsers }}>
+    <ChatContext.Provider value={{ socket, connected, sendMessage, emitTyping, emitStopTyping, emitDeleteMessage, emitRecording, emitStopRecording, onlineUsers }}>
       {children}
     </ChatContext.Provider>
   );

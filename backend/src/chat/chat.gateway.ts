@@ -66,6 +66,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
             this.logger.log(`Client connected: ${userId} (${client.id})`);
 
+            // Join rooms for each activity/group they are part of
+            const userGroups = await this.chatService.getUserGroups(userId);
+            userGroups.forEach(groupId => {
+                client.join(`group_${groupId}`);
+                this.logger.log(`User ${userId} joined room group_${groupId}`);
+            });
+
             // Broadcast online status to all
             this.server.emit('userOnline', { userId });
 
@@ -92,51 +99,161 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @SubscribeMessage('sendMessage')
     async handleMessage(
         @ConnectedSocket() client: Socket,
-        @MessageBody() payload: { receiverId: string; content: string; type?: string; replyTo?: any; metadata?: any },
+        @MessageBody() payload: { receiverId?: string; groupId?: string; content: string; type?: string; replyTo?: any; metadata?: any },
     ) {
         const senderId = this.activeConnections.get(client.id);
         if (!senderId) return;
 
-        this.logger.log(`Message from ${senderId} to ${payload.receiverId}: [${payload.type || 'text'}] ${payload.content}`);
+        this.logger.log(`Message from ${senderId} to ${payload.receiverId || payload.groupId}: [${payload.type || 'text'}] ${payload.content}`);
 
         // Save to DB
-        const message = await this.chatService.saveMessage(senderId, payload.receiverId, payload.content, payload.type, payload.replyTo, payload.metadata);
+        const message = await this.chatService.saveMessage(
+            senderId,
+            payload.receiverId,
+            payload.groupId,
+            payload.content,
+            payload.type,
+            payload.replyTo,
+            payload.metadata
+        );
 
-        // Emit to receiver if online
-        const receiverSocketId = this.connectedUsers.get(payload.receiverId);
-        if (receiverSocketId) {
-            this.server.to(receiverSocketId).emit('newMessage', message);
+        if (payload.groupId) {
+            // Group message - broadcast to room
+            this.server.to(`group_${payload.groupId}`).emit('newMessage', message);
+        } else if (payload.receiverId) {
+            // 1-to-1 message
+            const receiverSocketId = this.connectedUsers.get(payload.receiverId);
+            if (receiverSocketId) {
+                this.server.to(receiverSocketId).emit('newMessage', message);
+            }
         }
 
-        // Emit back to sender (to confirm sent and update UI with ID and timestamp from DB)
+        // Emit back to sender (confirm sent)
         client.emit('messageSent', message);
+    }
+
+    @SubscribeMessage('joinGroup')
+    handleJoinGroup(
+        @ConnectedSocket() client: Socket,
+        @MessageBody() payload: { groupId: string },
+    ) {
+        client.join(`group_${payload.groupId}`);
+        this.logger.log(`Socket ${client.id} joined group_${payload.groupId} manually`);
     }
 
     @SubscribeMessage('typing')
     handleTyping(
         @ConnectedSocket() client: Socket,
-        @MessageBody() payload: { receiverId: string },
+        @MessageBody() payload: { receiverId?: string; groupId?: string },
     ) {
         const senderId = this.activeConnections.get(client.id);
         if (!senderId) return;
 
-        const receiverSocketId = this.connectedUsers.get(payload.receiverId);
-        if (receiverSocketId) {
-            this.server.to(receiverSocketId).emit('userTyping', { userId: senderId });
+        if (payload.groupId) {
+            this.server.to(`group_${payload.groupId}`).emit('userTyping', { userId: senderId, groupId: payload.groupId });
+        } else if (payload.receiverId) {
+            const receiverSocketId = this.connectedUsers.get(payload.receiverId);
+            if (receiverSocketId) {
+                this.server.to(receiverSocketId).emit('userTyping', { userId: senderId });
+            }
         }
     }
 
     @SubscribeMessage('stopTyping')
     handleStopTyping(
         @ConnectedSocket() client: Socket,
-        @MessageBody() payload: { receiverId: string },
+        @MessageBody() payload: { receiverId?: string; groupId?: string },
     ) {
         const senderId = this.activeConnections.get(client.id);
         if (!senderId) return;
 
-        const receiverSocketId = this.connectedUsers.get(payload.receiverId);
-        if (receiverSocketId) {
-            this.server.to(receiverSocketId).emit('userStopTyping', { userId: senderId });
+        if (payload.groupId) {
+            this.server.to(`group_${payload.groupId}`).emit('userStopTyping', { userId: senderId, groupId: payload.groupId });
+        } else if (payload.receiverId) {
+            const receiverSocketId = this.connectedUsers.get(payload.receiverId);
+            if (receiverSocketId) {
+                this.server.to(receiverSocketId).emit('userStopTyping', { userId: senderId });
+            }
+        }
+    }
+
+    @SubscribeMessage('recording')
+    handleRecording(
+        @ConnectedSocket() client: Socket,
+        @MessageBody() payload: { receiverId?: string; groupId?: string },
+    ) {
+        const senderId = this.activeConnections.get(client.id);
+        if (!senderId) return;
+
+        if (payload.groupId) {
+            this.server.to(`group_${payload.groupId}`).emit('userRecording', { userId: senderId, groupId: payload.groupId });
+        } else if (payload.receiverId) {
+            const receiverSocketId = this.connectedUsers.get(payload.receiverId);
+            if (receiverSocketId) {
+                this.server.to(receiverSocketId).emit('userRecording', { userId: senderId });
+            }
+        }
+    }
+
+    @SubscribeMessage('stopRecording')
+    handleStopRecording(
+        @ConnectedSocket() client: Socket,
+        @MessageBody() payload: { receiverId?: string; groupId?: string },
+    ) {
+        const senderId = this.activeConnections.get(client.id);
+        if (!senderId) return;
+
+        if (payload.groupId) {
+            this.server.to(`group_${payload.groupId}`).emit('userStopRecording', { userId: senderId, groupId: payload.groupId });
+        } else if (payload.receiverId) {
+            const receiverSocketId = this.connectedUsers.get(payload.receiverId);
+            if (receiverSocketId) {
+                this.server.to(receiverSocketId).emit('userStopRecording', { userId: senderId });
+            }
+        }
+    }
+
+    @SubscribeMessage('deleteMessage')
+    async handleDeleteMessage(
+        @ConnectedSocket() client: Socket,
+        @MessageBody() payload: { messageId: string; receiverId?: string; groupId?: string; deleteType?: 'me' | 'everyone' },
+    ) {
+        const userId = this.activeConnections.get(client.id);
+        if (!userId) return;
+
+        try {
+            if (payload.deleteType === 'me') {
+                await this.chatService.hideMessage(payload.messageId, userId);
+                client.emit('messageDeleted', { messageId: payload.messageId, deleteType: 'me' });
+            } else {
+                const updatedMessage = await this.chatService.deleteMessage(payload.messageId, userId);
+
+                if (payload.groupId) {
+                    this.server.to(`group_${payload.groupId}`).emit('messageDeleted', {
+                        messageId: payload.messageId,
+                        deleteType: 'everyone',
+                        groupId: payload.groupId,
+                        updatedMessage
+                    });
+                } else if (payload.receiverId) {
+                    const receiverSocketId = this.connectedUsers.get(payload.receiverId);
+                    if (receiverSocketId) {
+                        this.server.to(receiverSocketId).emit('messageDeleted', {
+                            messageId: payload.messageId,
+                            deleteType: 'everyone',
+                            updatedMessage
+                        });
+                    }
+                }
+
+                client.emit('messageDeleted', {
+                    messageId: payload.messageId,
+                    deleteType: 'everyone',
+                    updatedMessage
+                });
+            }
+        } catch (e) {
+            this.logger.error(`Delete message error: ${e.message}`);
         }
     }
 }

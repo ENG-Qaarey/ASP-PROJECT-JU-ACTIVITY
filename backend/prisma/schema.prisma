@@ -50,16 +50,21 @@ model Message {
   type      MessageType @default(text)
   metadata  Json?
   senderId  String
-  receiverId String
+  receiverId String?
+  groupId   String?
   createdAt DateTime @default(now())
   read      Boolean  @default(false)
   replyTo   Json?
+  hiddenBy  String[] @default([])
+  isDeleted Boolean  @default(false)
 
   sender    User     @relation("SentMessages", fields: [senderId], references: [id])
-  receiver  User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  receiver  User?    @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  activity  Activity? @relation(fields: [groupId], references: [id])
 
   @@index([senderId])
   @@index([receiverId])
+  @@index([groupId])
   @@map("messages")
 }
 
@@ -120,6 +125,7 @@ model Activity {
   enrolled        Int            @default(0)
   coordinatorId   String
   coordinatorName String
+  image           String?        // Added for group profile image
   status          ActivityStatus @default(upcoming)
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
@@ -127,6 +133,7 @@ model Activity {
   coordinator     User           @relation("CoordinatorActivities", fields: [coordinatorId], references: [id])
   applications    Application[]
   attendance      Attendance[]
+  messages        Message[]
 
   @@index([coordinatorId])
   @@index([status])
@@ -144,6 +151,7 @@ model Application {
   appliedAt     DateTime          @db.Date
   status        ApplicationStatus @default(pending)
   notes         String?
+  isAdmin       Boolean           @default(false) // Added for group admin privileges
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
   activity      Activity          @relation(fields: [activityId], references: [id])

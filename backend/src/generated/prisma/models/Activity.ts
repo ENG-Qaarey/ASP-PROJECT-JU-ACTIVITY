@@ -47,6 +47,7 @@ export type ActivityMinAggregateOutputType = {
   enrolled: number | null
   coordinatorId: string | null
   coordinatorName: string | null
+  image: string | null
   status: $Enums.ActivityStatus | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -64,6 +65,7 @@ export type ActivityMaxAggregateOutputType = {
   enrolled: number | null
   coordinatorId: string | null
   coordinatorName: string | null
+  image: string | null
   status: $Enums.ActivityStatus | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -81,6 +83,7 @@ export type ActivityCountAggregateOutputType = {
   enrolled: number
   coordinatorId: number
   coordinatorName: number
+  image: number
   status: number
   createdAt: number
   updatedAt: number
@@ -110,6 +113,7 @@ export type ActivityMinAggregateInputType = {
   enrolled?: true
   coordinatorId?: true
   coordinatorName?: true
+  image?: true
   status?: true
   createdAt?: true
   updatedAt?: true
@@ -127,6 +131,7 @@ export type ActivityMaxAggregateInputType = {
   enrolled?: true
   coordinatorId?: true
   coordinatorName?: true
+  image?: true
   status?: true
   createdAt?: true
   updatedAt?: true
@@ -144,6 +149,7 @@ export type ActivityCountAggregateInputType = {
   enrolled?: true
   coordinatorId?: true
   coordinatorName?: true
+  image?: true
   status?: true
   createdAt?: true
   updatedAt?: true
@@ -248,6 +254,7 @@ export type ActivityGroupByOutputType = {
   enrolled: number
   coordinatorId: string
   coordinatorName: string
+  image: string | null
   status: $Enums.ActivityStatus
   createdAt: Date
   updatedAt: Date
@@ -288,6 +295,7 @@ export type ActivityWhereInput = {
   enrolled?: Prisma.IntFilter<"Activity"> | number
   coordinatorId?: Prisma.StringFilter<"Activity"> | string
   coordinatorName?: Prisma.StringFilter<"Activity"> | string
+  image?: Prisma.StringNullableFilter<"Activity"> | string | null
   status?: Prisma.EnumActivityStatusFilter<"Activity"> | $Enums.ActivityStatus
   createdAt?: Prisma.DateTimeFilter<"Activity"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Activity"> | Date | string
@@ -295,6 +303,7 @@ export type ActivityWhereInput = {
   coordinator?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   applications?: Prisma.ApplicationListRelationFilter
   attendance?: Prisma.AttendanceListRelationFilter
+  messages?: Prisma.MessageListRelationFilter
 }
 
 export type ActivityOrderByWithRelationInput = {
@@ -308,6 +317,7 @@ export type ActivityOrderByWithRelationInput = {
   enrolled?: Prisma.SortOrder
   coordinatorId?: Prisma.SortOrder
   coordinatorName?: Prisma.SortOrder
+  image?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -315,6 +325,7 @@ export type ActivityOrderByWithRelationInput = {
   coordinator?: Prisma.UserOrderByWithRelationInput
   applications?: Prisma.ApplicationOrderByRelationAggregateInput
   attendance?: Prisma.AttendanceOrderByRelationAggregateInput
+  messages?: Prisma.MessageOrderByRelationAggregateInput
 }
 
 export type ActivityWhereUniqueInput = Prisma.AtLeast<{
@@ -331,6 +342,7 @@ export type ActivityWhereUniqueInput = Prisma.AtLeast<{
   enrolled?: Prisma.IntFilter<"Activity"> | number
   coordinatorId?: Prisma.StringFilter<"Activity"> | string
   coordinatorName?: Prisma.StringFilter<"Activity"> | string
+  image?: Prisma.StringNullableFilter<"Activity"> | string | null
   status?: Prisma.EnumActivityStatusFilter<"Activity"> | $Enums.ActivityStatus
   createdAt?: Prisma.DateTimeFilter<"Activity"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Activity"> | Date | string
@@ -338,6 +350,7 @@ export type ActivityWhereUniqueInput = Prisma.AtLeast<{
   coordinator?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   applications?: Prisma.ApplicationListRelationFilter
   attendance?: Prisma.AttendanceListRelationFilter
+  messages?: Prisma.MessageListRelationFilter
 }, "id">
 
 export type ActivityOrderByWithAggregationInput = {
@@ -351,6 +364,7 @@ export type ActivityOrderByWithAggregationInput = {
   enrolled?: Prisma.SortOrder
   coordinatorId?: Prisma.SortOrder
   coordinatorName?: Prisma.SortOrder
+  image?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -376,6 +390,7 @@ export type ActivityScalarWhereWithAggregatesInput = {
   enrolled?: Prisma.IntWithAggregatesFilter<"Activity"> | number
   coordinatorId?: Prisma.StringWithAggregatesFilter<"Activity"> | string
   coordinatorName?: Prisma.StringWithAggregatesFilter<"Activity"> | string
+  image?: Prisma.StringNullableWithAggregatesFilter<"Activity"> | string | null
   status?: Prisma.EnumActivityStatusWithAggregatesFilter<"Activity"> | $Enums.ActivityStatus
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Activity"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Activity"> | Date | string
@@ -392,6 +407,7 @@ export type ActivityCreateInput = {
   capacity: number
   enrolled?: number
   coordinatorName: string
+  image?: string | null
   status?: $Enums.ActivityStatus
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -399,6 +415,7 @@ export type ActivityCreateInput = {
   coordinator: Prisma.UserCreateNestedOneWithoutActivitiesAsCoordinatorInput
   applications?: Prisma.ApplicationCreateNestedManyWithoutActivityInput
   attendance?: Prisma.AttendanceCreateNestedManyWithoutActivityInput
+  messages?: Prisma.MessageCreateNestedManyWithoutActivityInput
 }
 
 export type ActivityUncheckedCreateInput = {
@@ -412,12 +429,14 @@ export type ActivityUncheckedCreateInput = {
   enrolled?: number
   coordinatorId: string
   coordinatorName: string
+  image?: string | null
   status?: $Enums.ActivityStatus
   createdAt?: Date | string
   updatedAt?: Date | string
   category: string
   applications?: Prisma.ApplicationUncheckedCreateNestedManyWithoutActivityInput
   attendance?: Prisma.AttendanceUncheckedCreateNestedManyWithoutActivityInput
+  messages?: Prisma.MessageUncheckedCreateNestedManyWithoutActivityInput
 }
 
 export type ActivityUpdateInput = {
@@ -430,6 +449,7 @@ export type ActivityUpdateInput = {
   capacity?: Prisma.IntFieldUpdateOperationsInput | number
   enrolled?: Prisma.IntFieldUpdateOperationsInput | number
   coordinatorName?: Prisma.StringFieldUpdateOperationsInput | string
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumActivityStatusFieldUpdateOperationsInput | $Enums.ActivityStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -437,6 +457,7 @@ export type ActivityUpdateInput = {
   coordinator?: Prisma.UserUpdateOneRequiredWithoutActivitiesAsCoordinatorNestedInput
   applications?: Prisma.ApplicationUpdateManyWithoutActivityNestedInput
   attendance?: Prisma.AttendanceUpdateManyWithoutActivityNestedInput
+  messages?: Prisma.MessageUpdateManyWithoutActivityNestedInput
 }
 
 export type ActivityUncheckedUpdateInput = {
@@ -450,12 +471,14 @@ export type ActivityUncheckedUpdateInput = {
   enrolled?: Prisma.IntFieldUpdateOperationsInput | number
   coordinatorId?: Prisma.StringFieldUpdateOperationsInput | string
   coordinatorName?: Prisma.StringFieldUpdateOperationsInput | string
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumActivityStatusFieldUpdateOperationsInput | $Enums.ActivityStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   category?: Prisma.StringFieldUpdateOperationsInput | string
   applications?: Prisma.ApplicationUncheckedUpdateManyWithoutActivityNestedInput
   attendance?: Prisma.AttendanceUncheckedUpdateManyWithoutActivityNestedInput
+  messages?: Prisma.MessageUncheckedUpdateManyWithoutActivityNestedInput
 }
 
 export type ActivityCreateManyInput = {
@@ -469,6 +492,7 @@ export type ActivityCreateManyInput = {
   enrolled?: number
   coordinatorId: string
   coordinatorName: string
+  image?: string | null
   status?: $Enums.ActivityStatus
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -485,6 +509,7 @@ export type ActivityUpdateManyMutationInput = {
   capacity?: Prisma.IntFieldUpdateOperationsInput | number
   enrolled?: Prisma.IntFieldUpdateOperationsInput | number
   coordinatorName?: Prisma.StringFieldUpdateOperationsInput | string
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumActivityStatusFieldUpdateOperationsInput | $Enums.ActivityStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -502,6 +527,7 @@ export type ActivityUncheckedUpdateManyInput = {
   enrolled?: Prisma.IntFieldUpdateOperationsInput | number
   coordinatorId?: Prisma.StringFieldUpdateOperationsInput | string
   coordinatorName?: Prisma.StringFieldUpdateOperationsInput | string
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumActivityStatusFieldUpdateOperationsInput | $Enums.ActivityStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -518,6 +544,11 @@ export type ActivityOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
 }
 
+export type ActivityNullableScalarRelationFilter = {
+  is?: Prisma.ActivityWhereInput | null
+  isNot?: Prisma.ActivityWhereInput | null
+}
+
 export type ActivityCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   title?: Prisma.SortOrder
@@ -529,6 +560,7 @@ export type ActivityCountOrderByAggregateInput = {
   enrolled?: Prisma.SortOrder
   coordinatorId?: Prisma.SortOrder
   coordinatorName?: Prisma.SortOrder
+  image?: Prisma.SortOrder
   status?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -551,6 +583,7 @@ export type ActivityMaxOrderByAggregateInput = {
   enrolled?: Prisma.SortOrder
   coordinatorId?: Prisma.SortOrder
   coordinatorName?: Prisma.SortOrder
+  image?: Prisma.SortOrder
   status?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -568,6 +601,7 @@ export type ActivityMinOrderByAggregateInput = {
   enrolled?: Prisma.SortOrder
   coordinatorId?: Prisma.SortOrder
   coordinatorName?: Prisma.SortOrder
+  image?: Prisma.SortOrder
   status?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -626,6 +660,22 @@ export type ActivityUncheckedUpdateManyWithoutCoordinatorNestedInput = {
   deleteMany?: Prisma.ActivityScalarWhereInput | Prisma.ActivityScalarWhereInput[]
 }
 
+export type ActivityCreateNestedOneWithoutMessagesInput = {
+  create?: Prisma.XOR<Prisma.ActivityCreateWithoutMessagesInput, Prisma.ActivityUncheckedCreateWithoutMessagesInput>
+  connectOrCreate?: Prisma.ActivityCreateOrConnectWithoutMessagesInput
+  connect?: Prisma.ActivityWhereUniqueInput
+}
+
+export type ActivityUpdateOneWithoutMessagesNestedInput = {
+  create?: Prisma.XOR<Prisma.ActivityCreateWithoutMessagesInput, Prisma.ActivityUncheckedCreateWithoutMessagesInput>
+  connectOrCreate?: Prisma.ActivityCreateOrConnectWithoutMessagesInput
+  upsert?: Prisma.ActivityUpsertWithoutMessagesInput
+  disconnect?: Prisma.ActivityWhereInput | boolean
+  delete?: Prisma.ActivityWhereInput | boolean
+  connect?: Prisma.ActivityWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ActivityUpdateToOneWithWhereWithoutMessagesInput, Prisma.ActivityUpdateWithoutMessagesInput>, Prisma.ActivityUncheckedUpdateWithoutMessagesInput>
+}
+
 export type EnumActivityStatusFieldUpdateOperationsInput = {
   set?: $Enums.ActivityStatus
 }
@@ -668,12 +718,14 @@ export type ActivityCreateWithoutCoordinatorInput = {
   capacity: number
   enrolled?: number
   coordinatorName: string
+  image?: string | null
   status?: $Enums.ActivityStatus
   createdAt?: Date | string
   updatedAt?: Date | string
   category: string
   applications?: Prisma.ApplicationCreateNestedManyWithoutActivityInput
   attendance?: Prisma.AttendanceCreateNestedManyWithoutActivityInput
+  messages?: Prisma.MessageCreateNestedManyWithoutActivityInput
 }
 
 export type ActivityUncheckedCreateWithoutCoordinatorInput = {
@@ -686,12 +738,14 @@ export type ActivityUncheckedCreateWithoutCoordinatorInput = {
   capacity: number
   enrolled?: number
   coordinatorName: string
+  image?: string | null
   status?: $Enums.ActivityStatus
   createdAt?: Date | string
   updatedAt?: Date | string
   category: string
   applications?: Prisma.ApplicationUncheckedCreateNestedManyWithoutActivityInput
   attendance?: Prisma.AttendanceUncheckedCreateNestedManyWithoutActivityInput
+  messages?: Prisma.MessageUncheckedCreateNestedManyWithoutActivityInput
 }
 
 export type ActivityCreateOrConnectWithoutCoordinatorInput = {
@@ -734,10 +788,107 @@ export type ActivityScalarWhereInput = {
   enrolled?: Prisma.IntFilter<"Activity"> | number
   coordinatorId?: Prisma.StringFilter<"Activity"> | string
   coordinatorName?: Prisma.StringFilter<"Activity"> | string
+  image?: Prisma.StringNullableFilter<"Activity"> | string | null
   status?: Prisma.EnumActivityStatusFilter<"Activity"> | $Enums.ActivityStatus
   createdAt?: Prisma.DateTimeFilter<"Activity"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Activity"> | Date | string
   category?: Prisma.StringFilter<"Activity"> | string
+}
+
+export type ActivityCreateWithoutMessagesInput = {
+  id?: string
+  title: string
+  description: string
+  date: Date | string
+  time: string
+  location: string
+  capacity: number
+  enrolled?: number
+  coordinatorName: string
+  image?: string | null
+  status?: $Enums.ActivityStatus
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  category: string
+  coordinator: Prisma.UserCreateNestedOneWithoutActivitiesAsCoordinatorInput
+  applications?: Prisma.ApplicationCreateNestedManyWithoutActivityInput
+  attendance?: Prisma.AttendanceCreateNestedManyWithoutActivityInput
+}
+
+export type ActivityUncheckedCreateWithoutMessagesInput = {
+  id?: string
+  title: string
+  description: string
+  date: Date | string
+  time: string
+  location: string
+  capacity: number
+  enrolled?: number
+  coordinatorId: string
+  coordinatorName: string
+  image?: string | null
+  status?: $Enums.ActivityStatus
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  category: string
+  applications?: Prisma.ApplicationUncheckedCreateNestedManyWithoutActivityInput
+  attendance?: Prisma.AttendanceUncheckedCreateNestedManyWithoutActivityInput
+}
+
+export type ActivityCreateOrConnectWithoutMessagesInput = {
+  where: Prisma.ActivityWhereUniqueInput
+  create: Prisma.XOR<Prisma.ActivityCreateWithoutMessagesInput, Prisma.ActivityUncheckedCreateWithoutMessagesInput>
+}
+
+export type ActivityUpsertWithoutMessagesInput = {
+  update: Prisma.XOR<Prisma.ActivityUpdateWithoutMessagesInput, Prisma.ActivityUncheckedUpdateWithoutMessagesInput>
+  create: Prisma.XOR<Prisma.ActivityCreateWithoutMessagesInput, Prisma.ActivityUncheckedCreateWithoutMessagesInput>
+  where?: Prisma.ActivityWhereInput
+}
+
+export type ActivityUpdateToOneWithWhereWithoutMessagesInput = {
+  where?: Prisma.ActivityWhereInput
+  data: Prisma.XOR<Prisma.ActivityUpdateWithoutMessagesInput, Prisma.ActivityUncheckedUpdateWithoutMessagesInput>
+}
+
+export type ActivityUpdateWithoutMessagesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.StringFieldUpdateOperationsInput | string
+  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  time?: Prisma.StringFieldUpdateOperationsInput | string
+  location?: Prisma.StringFieldUpdateOperationsInput | string
+  capacity?: Prisma.IntFieldUpdateOperationsInput | number
+  enrolled?: Prisma.IntFieldUpdateOperationsInput | number
+  coordinatorName?: Prisma.StringFieldUpdateOperationsInput | string
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumActivityStatusFieldUpdateOperationsInput | $Enums.ActivityStatus
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  category?: Prisma.StringFieldUpdateOperationsInput | string
+  coordinator?: Prisma.UserUpdateOneRequiredWithoutActivitiesAsCoordinatorNestedInput
+  applications?: Prisma.ApplicationUpdateManyWithoutActivityNestedInput
+  attendance?: Prisma.AttendanceUpdateManyWithoutActivityNestedInput
+}
+
+export type ActivityUncheckedUpdateWithoutMessagesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.StringFieldUpdateOperationsInput | string
+  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  time?: Prisma.StringFieldUpdateOperationsInput | string
+  location?: Prisma.StringFieldUpdateOperationsInput | string
+  capacity?: Prisma.IntFieldUpdateOperationsInput | number
+  enrolled?: Prisma.IntFieldUpdateOperationsInput | number
+  coordinatorId?: Prisma.StringFieldUpdateOperationsInput | string
+  coordinatorName?: Prisma.StringFieldUpdateOperationsInput | string
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumActivityStatusFieldUpdateOperationsInput | $Enums.ActivityStatus
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  category?: Prisma.StringFieldUpdateOperationsInput | string
+  applications?: Prisma.ApplicationUncheckedUpdateManyWithoutActivityNestedInput
+  attendance?: Prisma.AttendanceUncheckedUpdateManyWithoutActivityNestedInput
 }
 
 export type ActivityCreateWithoutApplicationsInput = {
@@ -750,12 +901,14 @@ export type ActivityCreateWithoutApplicationsInput = {
   capacity: number
   enrolled?: number
   coordinatorName: string
+  image?: string | null
   status?: $Enums.ActivityStatus
   createdAt?: Date | string
   updatedAt?: Date | string
   category: string
   coordinator: Prisma.UserCreateNestedOneWithoutActivitiesAsCoordinatorInput
   attendance?: Prisma.AttendanceCreateNestedManyWithoutActivityInput
+  messages?: Prisma.MessageCreateNestedManyWithoutActivityInput
 }
 
 export type ActivityUncheckedCreateWithoutApplicationsInput = {
@@ -769,11 +922,13 @@ export type ActivityUncheckedCreateWithoutApplicationsInput = {
   enrolled?: number
   coordinatorId: string
   coordinatorName: string
+  image?: string | null
   status?: $Enums.ActivityStatus
   createdAt?: Date | string
   updatedAt?: Date | string
   category: string
   attendance?: Prisma.AttendanceUncheckedCreateNestedManyWithoutActivityInput
+  messages?: Prisma.MessageUncheckedCreateNestedManyWithoutActivityInput
 }
 
 export type ActivityCreateOrConnectWithoutApplicationsInput = {
@@ -802,12 +957,14 @@ export type ActivityUpdateWithoutApplicationsInput = {
   capacity?: Prisma.IntFieldUpdateOperationsInput | number
   enrolled?: Prisma.IntFieldUpdateOperationsInput | number
   coordinatorName?: Prisma.StringFieldUpdateOperationsInput | string
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumActivityStatusFieldUpdateOperationsInput | $Enums.ActivityStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   category?: Prisma.StringFieldUpdateOperationsInput | string
   coordinator?: Prisma.UserUpdateOneRequiredWithoutActivitiesAsCoordinatorNestedInput
   attendance?: Prisma.AttendanceUpdateManyWithoutActivityNestedInput
+  messages?: Prisma.MessageUpdateManyWithoutActivityNestedInput
 }
 
 export type ActivityUncheckedUpdateWithoutApplicationsInput = {
@@ -821,11 +978,13 @@ export type ActivityUncheckedUpdateWithoutApplicationsInput = {
   enrolled?: Prisma.IntFieldUpdateOperationsInput | number
   coordinatorId?: Prisma.StringFieldUpdateOperationsInput | string
   coordinatorName?: Prisma.StringFieldUpdateOperationsInput | string
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumActivityStatusFieldUpdateOperationsInput | $Enums.ActivityStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   category?: Prisma.StringFieldUpdateOperationsInput | string
   attendance?: Prisma.AttendanceUncheckedUpdateManyWithoutActivityNestedInput
+  messages?: Prisma.MessageUncheckedUpdateManyWithoutActivityNestedInput
 }
 
 export type ActivityCreateWithoutAttendanceInput = {
@@ -838,12 +997,14 @@ export type ActivityCreateWithoutAttendanceInput = {
   capacity: number
   enrolled?: number
   coordinatorName: string
+  image?: string | null
   status?: $Enums.ActivityStatus
   createdAt?: Date | string
   updatedAt?: Date | string
   category: string
   coordinator: Prisma.UserCreateNestedOneWithoutActivitiesAsCoordinatorInput
   applications?: Prisma.ApplicationCreateNestedManyWithoutActivityInput
+  messages?: Prisma.MessageCreateNestedManyWithoutActivityInput
 }
 
 export type ActivityUncheckedCreateWithoutAttendanceInput = {
@@ -857,11 +1018,13 @@ export type ActivityUncheckedCreateWithoutAttendanceInput = {
   enrolled?: number
   coordinatorId: string
   coordinatorName: string
+  image?: string | null
   status?: $Enums.ActivityStatus
   createdAt?: Date | string
   updatedAt?: Date | string
   category: string
   applications?: Prisma.ApplicationUncheckedCreateNestedManyWithoutActivityInput
+  messages?: Prisma.MessageUncheckedCreateNestedManyWithoutActivityInput
 }
 
 export type ActivityCreateOrConnectWithoutAttendanceInput = {
@@ -890,12 +1053,14 @@ export type ActivityUpdateWithoutAttendanceInput = {
   capacity?: Prisma.IntFieldUpdateOperationsInput | number
   enrolled?: Prisma.IntFieldUpdateOperationsInput | number
   coordinatorName?: Prisma.StringFieldUpdateOperationsInput | string
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumActivityStatusFieldUpdateOperationsInput | $Enums.ActivityStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   category?: Prisma.StringFieldUpdateOperationsInput | string
   coordinator?: Prisma.UserUpdateOneRequiredWithoutActivitiesAsCoordinatorNestedInput
   applications?: Prisma.ApplicationUpdateManyWithoutActivityNestedInput
+  messages?: Prisma.MessageUpdateManyWithoutActivityNestedInput
 }
 
 export type ActivityUncheckedUpdateWithoutAttendanceInput = {
@@ -909,11 +1074,13 @@ export type ActivityUncheckedUpdateWithoutAttendanceInput = {
   enrolled?: Prisma.IntFieldUpdateOperationsInput | number
   coordinatorId?: Prisma.StringFieldUpdateOperationsInput | string
   coordinatorName?: Prisma.StringFieldUpdateOperationsInput | string
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumActivityStatusFieldUpdateOperationsInput | $Enums.ActivityStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   category?: Prisma.StringFieldUpdateOperationsInput | string
   applications?: Prisma.ApplicationUncheckedUpdateManyWithoutActivityNestedInput
+  messages?: Prisma.MessageUncheckedUpdateManyWithoutActivityNestedInput
 }
 
 export type ActivityCreateManyCoordinatorInput = {
@@ -926,6 +1093,7 @@ export type ActivityCreateManyCoordinatorInput = {
   capacity: number
   enrolled?: number
   coordinatorName: string
+  image?: string | null
   status?: $Enums.ActivityStatus
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -942,12 +1110,14 @@ export type ActivityUpdateWithoutCoordinatorInput = {
   capacity?: Prisma.IntFieldUpdateOperationsInput | number
   enrolled?: Prisma.IntFieldUpdateOperationsInput | number
   coordinatorName?: Prisma.StringFieldUpdateOperationsInput | string
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumActivityStatusFieldUpdateOperationsInput | $Enums.ActivityStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   category?: Prisma.StringFieldUpdateOperationsInput | string
   applications?: Prisma.ApplicationUpdateManyWithoutActivityNestedInput
   attendance?: Prisma.AttendanceUpdateManyWithoutActivityNestedInput
+  messages?: Prisma.MessageUpdateManyWithoutActivityNestedInput
 }
 
 export type ActivityUncheckedUpdateWithoutCoordinatorInput = {
@@ -960,12 +1130,14 @@ export type ActivityUncheckedUpdateWithoutCoordinatorInput = {
   capacity?: Prisma.IntFieldUpdateOperationsInput | number
   enrolled?: Prisma.IntFieldUpdateOperationsInput | number
   coordinatorName?: Prisma.StringFieldUpdateOperationsInput | string
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumActivityStatusFieldUpdateOperationsInput | $Enums.ActivityStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   category?: Prisma.StringFieldUpdateOperationsInput | string
   applications?: Prisma.ApplicationUncheckedUpdateManyWithoutActivityNestedInput
   attendance?: Prisma.AttendanceUncheckedUpdateManyWithoutActivityNestedInput
+  messages?: Prisma.MessageUncheckedUpdateManyWithoutActivityNestedInput
 }
 
 export type ActivityUncheckedUpdateManyWithoutCoordinatorInput = {
@@ -978,6 +1150,7 @@ export type ActivityUncheckedUpdateManyWithoutCoordinatorInput = {
   capacity?: Prisma.IntFieldUpdateOperationsInput | number
   enrolled?: Prisma.IntFieldUpdateOperationsInput | number
   coordinatorName?: Prisma.StringFieldUpdateOperationsInput | string
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumActivityStatusFieldUpdateOperationsInput | $Enums.ActivityStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -992,11 +1165,13 @@ export type ActivityUncheckedUpdateManyWithoutCoordinatorInput = {
 export type ActivityCountOutputType = {
   applications: number
   attendance: number
+  messages: number
 }
 
 export type ActivityCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   applications?: boolean | ActivityCountOutputTypeCountApplicationsArgs
   attendance?: boolean | ActivityCountOutputTypeCountAttendanceArgs
+  messages?: boolean | ActivityCountOutputTypeCountMessagesArgs
 }
 
 /**
@@ -1023,6 +1198,13 @@ export type ActivityCountOutputTypeCountAttendanceArgs<ExtArgs extends runtime.T
   where?: Prisma.AttendanceWhereInput
 }
 
+/**
+ * ActivityCountOutputType without action
+ */
+export type ActivityCountOutputTypeCountMessagesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.MessageWhereInput
+}
+
 
 export type ActivitySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1035,6 +1217,7 @@ export type ActivitySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   enrolled?: boolean
   coordinatorId?: boolean
   coordinatorName?: boolean
+  image?: boolean
   status?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -1042,6 +1225,7 @@ export type ActivitySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   coordinator?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   applications?: boolean | Prisma.Activity$applicationsArgs<ExtArgs>
   attendance?: boolean | Prisma.Activity$attendanceArgs<ExtArgs>
+  messages?: boolean | Prisma.Activity$messagesArgs<ExtArgs>
   _count?: boolean | Prisma.ActivityCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["activity"]>
 
@@ -1056,6 +1240,7 @@ export type ActivitySelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exte
   enrolled?: boolean
   coordinatorId?: boolean
   coordinatorName?: boolean
+  image?: boolean
   status?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -1074,6 +1259,7 @@ export type ActivitySelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
   enrolled?: boolean
   coordinatorId?: boolean
   coordinatorName?: boolean
+  image?: boolean
   status?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -1092,17 +1278,19 @@ export type ActivitySelectScalar = {
   enrolled?: boolean
   coordinatorId?: boolean
   coordinatorName?: boolean
+  image?: boolean
   status?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   category?: boolean
 }
 
-export type ActivityOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "description" | "date" | "time" | "location" | "capacity" | "enrolled" | "coordinatorId" | "coordinatorName" | "status" | "createdAt" | "updatedAt" | "category", ExtArgs["result"]["activity"]>
+export type ActivityOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "description" | "date" | "time" | "location" | "capacity" | "enrolled" | "coordinatorId" | "coordinatorName" | "image" | "status" | "createdAt" | "updatedAt" | "category", ExtArgs["result"]["activity"]>
 export type ActivityInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   coordinator?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   applications?: boolean | Prisma.Activity$applicationsArgs<ExtArgs>
   attendance?: boolean | Prisma.Activity$attendanceArgs<ExtArgs>
+  messages?: boolean | Prisma.Activity$messagesArgs<ExtArgs>
   _count?: boolean | Prisma.ActivityCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ActivityIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1118,6 +1306,7 @@ export type $ActivityPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     coordinator: Prisma.$UserPayload<ExtArgs>
     applications: Prisma.$ApplicationPayload<ExtArgs>[]
     attendance: Prisma.$AttendancePayload<ExtArgs>[]
+    messages: Prisma.$MessagePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1130,6 +1319,7 @@ export type $ActivityPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     enrolled: number
     coordinatorId: string
     coordinatorName: string
+    image: string | null
     status: $Enums.ActivityStatus
     createdAt: Date
     updatedAt: Date
@@ -1531,6 +1721,7 @@ export interface Prisma__ActivityClient<T, Null = never, ExtArgs extends runtime
   coordinator<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   applications<T extends Prisma.Activity$applicationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Activity$applicationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ApplicationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   attendance<T extends Prisma.Activity$attendanceArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Activity$attendanceArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AttendancePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  messages<T extends Prisma.Activity$messagesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Activity$messagesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MessagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1570,6 +1761,7 @@ export interface ActivityFieldRefs {
   readonly enrolled: Prisma.FieldRef<"Activity", 'Int'>
   readonly coordinatorId: Prisma.FieldRef<"Activity", 'String'>
   readonly coordinatorName: Prisma.FieldRef<"Activity", 'String'>
+  readonly image: Prisma.FieldRef<"Activity", 'String'>
   readonly status: Prisma.FieldRef<"Activity", 'ActivityStatus'>
   readonly createdAt: Prisma.FieldRef<"Activity", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Activity", 'DateTime'>
@@ -2015,6 +2207,30 @@ export type Activity$attendanceArgs<ExtArgs extends runtime.Types.Extensions.Int
   take?: number
   skip?: number
   distinct?: Prisma.AttendanceScalarFieldEnum | Prisma.AttendanceScalarFieldEnum[]
+}
+
+/**
+ * Activity.messages
+ */
+export type Activity$messagesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Message
+   */
+  select?: Prisma.MessageSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Message
+   */
+  omit?: Prisma.MessageOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.MessageInclude<ExtArgs> | null
+  where?: Prisma.MessageWhereInput
+  orderBy?: Prisma.MessageOrderByWithRelationInput | Prisma.MessageOrderByWithRelationInput[]
+  cursor?: Prisma.MessageWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.MessageScalarFieldEnum | Prisma.MessageScalarFieldEnum[]
 }
 
 /**

@@ -33,6 +33,7 @@ export type ApplicationMinAggregateOutputType = {
   appliedAt: Date | null
   status: $Enums.ApplicationStatus | null
   notes: string | null
+  isAdmin: boolean | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -46,6 +47,7 @@ export type ApplicationMaxAggregateOutputType = {
   appliedAt: Date | null
   status: $Enums.ApplicationStatus | null
   notes: string | null
+  isAdmin: boolean | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -59,6 +61,7 @@ export type ApplicationCountAggregateOutputType = {
   appliedAt: number
   status: number
   notes: number
+  isAdmin: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -74,6 +77,7 @@ export type ApplicationMinAggregateInputType = {
   appliedAt?: true
   status?: true
   notes?: true
+  isAdmin?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -87,6 +91,7 @@ export type ApplicationMaxAggregateInputType = {
   appliedAt?: true
   status?: true
   notes?: true
+  isAdmin?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -100,6 +105,7 @@ export type ApplicationCountAggregateInputType = {
   appliedAt?: true
   status?: true
   notes?: true
+  isAdmin?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -186,6 +192,7 @@ export type ApplicationGroupByOutputType = {
   appliedAt: Date
   status: $Enums.ApplicationStatus
   notes: string | null
+  isAdmin: boolean
   createdAt: Date
   updatedAt: Date
   _count: ApplicationCountAggregateOutputType | null
@@ -220,6 +227,7 @@ export type ApplicationWhereInput = {
   appliedAt?: Prisma.DateTimeFilter<"Application"> | Date | string
   status?: Prisma.EnumApplicationStatusFilter<"Application"> | $Enums.ApplicationStatus
   notes?: Prisma.StringNullableFilter<"Application"> | string | null
+  isAdmin?: Prisma.BoolFilter<"Application"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Application"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Application"> | Date | string
   activity?: Prisma.XOR<Prisma.ActivityScalarRelationFilter, Prisma.ActivityWhereInput>
@@ -236,6 +244,7 @@ export type ApplicationOrderByWithRelationInput = {
   appliedAt?: Prisma.SortOrder
   status?: Prisma.SortOrder
   notes?: Prisma.SortOrderInput | Prisma.SortOrder
+  isAdmin?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   activity?: Prisma.ActivityOrderByWithRelationInput
@@ -256,6 +265,7 @@ export type ApplicationWhereUniqueInput = Prisma.AtLeast<{
   appliedAt?: Prisma.DateTimeFilter<"Application"> | Date | string
   status?: Prisma.EnumApplicationStatusFilter<"Application"> | $Enums.ApplicationStatus
   notes?: Prisma.StringNullableFilter<"Application"> | string | null
+  isAdmin?: Prisma.BoolFilter<"Application"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Application"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Application"> | Date | string
   activity?: Prisma.XOR<Prisma.ActivityScalarRelationFilter, Prisma.ActivityWhereInput>
@@ -272,6 +282,7 @@ export type ApplicationOrderByWithAggregationInput = {
   appliedAt?: Prisma.SortOrder
   status?: Prisma.SortOrder
   notes?: Prisma.SortOrderInput | Prisma.SortOrder
+  isAdmin?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.ApplicationCountOrderByAggregateInput
@@ -291,6 +302,7 @@ export type ApplicationScalarWhereWithAggregatesInput = {
   appliedAt?: Prisma.DateTimeWithAggregatesFilter<"Application"> | Date | string
   status?: Prisma.EnumApplicationStatusWithAggregatesFilter<"Application"> | $Enums.ApplicationStatus
   notes?: Prisma.StringNullableWithAggregatesFilter<"Application"> | string | null
+  isAdmin?: Prisma.BoolWithAggregatesFilter<"Application"> | boolean
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Application"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Application"> | Date | string
 }
@@ -302,6 +314,7 @@ export type ApplicationCreateInput = {
   appliedAt: Date | string
   status?: $Enums.ApplicationStatus
   notes?: string | null
+  isAdmin?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   activity: Prisma.ActivityCreateNestedOneWithoutApplicationsInput
@@ -318,6 +331,7 @@ export type ApplicationUncheckedCreateInput = {
   appliedAt: Date | string
   status?: $Enums.ApplicationStatus
   notes?: string | null
+  isAdmin?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   attendance?: Prisma.AttendanceUncheckedCreateNestedOneWithoutApplicationInput
@@ -330,6 +344,7 @@ export type ApplicationUpdateInput = {
   appliedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   status?: Prisma.EnumApplicationStatusFieldUpdateOperationsInput | $Enums.ApplicationStatus
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   activity?: Prisma.ActivityUpdateOneRequiredWithoutApplicationsNestedInput
@@ -346,6 +361,7 @@ export type ApplicationUncheckedUpdateInput = {
   appliedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   status?: Prisma.EnumApplicationStatusFieldUpdateOperationsInput | $Enums.ApplicationStatus
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   attendance?: Prisma.AttendanceUncheckedUpdateOneWithoutApplicationNestedInput
@@ -360,6 +376,7 @@ export type ApplicationCreateManyInput = {
   appliedAt: Date | string
   status?: $Enums.ApplicationStatus
   notes?: string | null
+  isAdmin?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -371,6 +388,7 @@ export type ApplicationUpdateManyMutationInput = {
   appliedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   status?: Prisma.EnumApplicationStatusFieldUpdateOperationsInput | $Enums.ApplicationStatus
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -384,6 +402,7 @@ export type ApplicationUncheckedUpdateManyInput = {
   appliedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   status?: Prisma.EnumApplicationStatusFieldUpdateOperationsInput | $Enums.ApplicationStatus
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -412,6 +431,7 @@ export type ApplicationCountOrderByAggregateInput = {
   appliedAt?: Prisma.SortOrder
   status?: Prisma.SortOrder
   notes?: Prisma.SortOrder
+  isAdmin?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -425,6 +445,7 @@ export type ApplicationMaxOrderByAggregateInput = {
   appliedAt?: Prisma.SortOrder
   status?: Prisma.SortOrder
   notes?: Prisma.SortOrder
+  isAdmin?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -438,6 +459,7 @@ export type ApplicationMinOrderByAggregateInput = {
   appliedAt?: Prisma.SortOrder
   status?: Prisma.SortOrder
   notes?: Prisma.SortOrder
+  isAdmin?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -556,6 +578,7 @@ export type ApplicationCreateWithoutStudentInput = {
   appliedAt: Date | string
   status?: $Enums.ApplicationStatus
   notes?: string | null
+  isAdmin?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   activity: Prisma.ActivityCreateNestedOneWithoutApplicationsInput
@@ -570,6 +593,7 @@ export type ApplicationUncheckedCreateWithoutStudentInput = {
   appliedAt: Date | string
   status?: $Enums.ApplicationStatus
   notes?: string | null
+  isAdmin?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   attendance?: Prisma.AttendanceUncheckedCreateNestedOneWithoutApplicationInput
@@ -613,6 +637,7 @@ export type ApplicationScalarWhereInput = {
   appliedAt?: Prisma.DateTimeFilter<"Application"> | Date | string
   status?: Prisma.EnumApplicationStatusFilter<"Application"> | $Enums.ApplicationStatus
   notes?: Prisma.StringNullableFilter<"Application"> | string | null
+  isAdmin?: Prisma.BoolFilter<"Application"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Application"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Application"> | Date | string
 }
@@ -624,6 +649,7 @@ export type ApplicationCreateWithoutActivityInput = {
   appliedAt: Date | string
   status?: $Enums.ApplicationStatus
   notes?: string | null
+  isAdmin?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   student: Prisma.UserCreateNestedOneWithoutApplicationsInput
@@ -638,6 +664,7 @@ export type ApplicationUncheckedCreateWithoutActivityInput = {
   appliedAt: Date | string
   status?: $Enums.ApplicationStatus
   notes?: string | null
+  isAdmin?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   attendance?: Prisma.AttendanceUncheckedCreateNestedOneWithoutApplicationInput
@@ -676,6 +703,7 @@ export type ApplicationCreateWithoutAttendanceInput = {
   appliedAt: Date | string
   status?: $Enums.ApplicationStatus
   notes?: string | null
+  isAdmin?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   activity: Prisma.ActivityCreateNestedOneWithoutApplicationsInput
@@ -691,6 +719,7 @@ export type ApplicationUncheckedCreateWithoutAttendanceInput = {
   appliedAt: Date | string
   status?: $Enums.ApplicationStatus
   notes?: string | null
+  isAdmin?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -718,6 +747,7 @@ export type ApplicationUpdateWithoutAttendanceInput = {
   appliedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   status?: Prisma.EnumApplicationStatusFieldUpdateOperationsInput | $Enums.ApplicationStatus
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   activity?: Prisma.ActivityUpdateOneRequiredWithoutApplicationsNestedInput
@@ -733,6 +763,7 @@ export type ApplicationUncheckedUpdateWithoutAttendanceInput = {
   appliedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   status?: Prisma.EnumApplicationStatusFieldUpdateOperationsInput | $Enums.ApplicationStatus
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -745,6 +776,7 @@ export type ApplicationCreateManyStudentInput = {
   appliedAt: Date | string
   status?: $Enums.ApplicationStatus
   notes?: string | null
+  isAdmin?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -756,6 +788,7 @@ export type ApplicationUpdateWithoutStudentInput = {
   appliedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   status?: Prisma.EnumApplicationStatusFieldUpdateOperationsInput | $Enums.ApplicationStatus
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   activity?: Prisma.ActivityUpdateOneRequiredWithoutApplicationsNestedInput
@@ -770,6 +803,7 @@ export type ApplicationUncheckedUpdateWithoutStudentInput = {
   appliedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   status?: Prisma.EnumApplicationStatusFieldUpdateOperationsInput | $Enums.ApplicationStatus
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   attendance?: Prisma.AttendanceUncheckedUpdateOneWithoutApplicationNestedInput
@@ -783,6 +817,7 @@ export type ApplicationUncheckedUpdateManyWithoutStudentInput = {
   appliedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   status?: Prisma.EnumApplicationStatusFieldUpdateOperationsInput | $Enums.ApplicationStatus
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -795,6 +830,7 @@ export type ApplicationCreateManyActivityInput = {
   appliedAt: Date | string
   status?: $Enums.ApplicationStatus
   notes?: string | null
+  isAdmin?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -806,6 +842,7 @@ export type ApplicationUpdateWithoutActivityInput = {
   appliedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   status?: Prisma.EnumApplicationStatusFieldUpdateOperationsInput | $Enums.ApplicationStatus
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   student?: Prisma.UserUpdateOneRequiredWithoutApplicationsNestedInput
@@ -820,6 +857,7 @@ export type ApplicationUncheckedUpdateWithoutActivityInput = {
   appliedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   status?: Prisma.EnumApplicationStatusFieldUpdateOperationsInput | $Enums.ApplicationStatus
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   attendance?: Prisma.AttendanceUncheckedUpdateOneWithoutApplicationNestedInput
@@ -833,6 +871,7 @@ export type ApplicationUncheckedUpdateManyWithoutActivityInput = {
   appliedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   status?: Prisma.EnumApplicationStatusFieldUpdateOperationsInput | $Enums.ApplicationStatus
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -848,6 +887,7 @@ export type ApplicationSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   appliedAt?: boolean
   status?: boolean
   notes?: boolean
+  isAdmin?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   activity?: boolean | Prisma.ActivityDefaultArgs<ExtArgs>
@@ -864,6 +904,7 @@ export type ApplicationSelectCreateManyAndReturn<ExtArgs extends runtime.Types.E
   appliedAt?: boolean
   status?: boolean
   notes?: boolean
+  isAdmin?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   activity?: boolean | Prisma.ActivityDefaultArgs<ExtArgs>
@@ -879,6 +920,7 @@ export type ApplicationSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.E
   appliedAt?: boolean
   status?: boolean
   notes?: boolean
+  isAdmin?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   activity?: boolean | Prisma.ActivityDefaultArgs<ExtArgs>
@@ -894,11 +936,12 @@ export type ApplicationSelectScalar = {
   appliedAt?: boolean
   status?: boolean
   notes?: boolean
+  isAdmin?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type ApplicationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "studentId" | "studentName" | "activityId" | "activityTitle" | "appliedAt" | "status" | "notes" | "createdAt" | "updatedAt", ExtArgs["result"]["application"]>
+export type ApplicationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "studentId" | "studentName" | "activityId" | "activityTitle" | "appliedAt" | "status" | "notes" | "isAdmin" | "createdAt" | "updatedAt", ExtArgs["result"]["application"]>
 export type ApplicationInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   activity?: boolean | Prisma.ActivityDefaultArgs<ExtArgs>
   student?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -929,6 +972,7 @@ export type $ApplicationPayload<ExtArgs extends runtime.Types.Extensions.Interna
     appliedAt: Date
     status: $Enums.ApplicationStatus
     notes: string | null
+    isAdmin: boolean
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["application"]>
@@ -1365,6 +1409,7 @@ export interface ApplicationFieldRefs {
   readonly appliedAt: Prisma.FieldRef<"Application", 'DateTime'>
   readonly status: Prisma.FieldRef<"Application", 'ApplicationStatus'>
   readonly notes: Prisma.FieldRef<"Application", 'String'>
+  readonly isAdmin: Prisma.FieldRef<"Application", 'Boolean'>
   readonly createdAt: Prisma.FieldRef<"Application", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Application", 'DateTime'>
 }

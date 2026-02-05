@@ -1223,9 +1223,12 @@ export const MessageScalarFieldEnum = {
   metadata: 'metadata',
   senderId: 'senderId',
   receiverId: 'receiverId',
+  groupId: 'groupId',
   createdAt: 'createdAt',
   read: 'read',
-  replyTo: 'replyTo'
+  replyTo: 'replyTo',
+  hiddenBy: 'hiddenBy',
+  isDeleted: 'isDeleted'
 } as const
 
 export type MessageScalarFieldEnum = (typeof MessageScalarFieldEnum)[keyof typeof MessageScalarFieldEnum]
@@ -1279,6 +1282,7 @@ export const ActivityScalarFieldEnum = {
   enrolled: 'enrolled',
   coordinatorId: 'coordinatorId',
   coordinatorName: 'coordinatorName',
+  image: 'image',
   status: 'status',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
@@ -1297,6 +1301,7 @@ export const ApplicationScalarFieldEnum = {
   appliedAt: 'appliedAt',
   status: 'status',
   notes: 'notes',
+  isAdmin: 'isAdmin',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const

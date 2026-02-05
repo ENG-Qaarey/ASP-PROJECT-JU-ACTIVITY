@@ -20,21 +20,12 @@ import {
   UIManager,
   PanResponder,
 } from 'react-native';
-import { 
-  GestureHandlerRootView, 
-  GestureDetector, 
-  Gesture,
-} from 'react-native-gesture-handler';
-import Reanimated, { 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withSpring,
-  withTiming,
-} from 'react-native-reanimated';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import Reanimated from 'react-native-reanimated';
 import { BlurView as ExpoBlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
-import { ArrowLeft, Send, Paperclip, Smile, Camera, Mic, Info, MoreVertical, Play, Pause, Square, Trash2, Clock, Reply, X, Star, Pin, Share2, FilePlus, Image as ImageIcon, FileText, Download, File, User, Search, Ban, Settings, Bell, BellOff } from 'lucide-react-native';
+import { ArrowLeft, ChevronDown, Send, Paperclip, Smile, Camera, Mic, Info, MoreVertical, Play, Pause, Square, Trash2, Clock, Reply, X, Star, Pin, Share2, FilePlus, Image as ImageIcon, FileText, Download, File, User, Search, Ban, Settings, Bell, BellOff, Users, Zap, Plus } from 'lucide-react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useColorScheme } from '@/src/hooks/use-color-scheme';
 import { Colors } from '@/src/data/theme';
@@ -54,160 +45,9 @@ import { getAvatarUrl } from '@/src/lib/media';
 import { IMAGE_BASE } from '@/src/lib/config';
 import dayjs from 'dayjs';
 import { SwipeableMessage } from '@/src/components/SwipeableMessage';
+import { VoiceMessagePlayer } from '@/src/components/chat/VoiceMessagePlayer';
+import { ZoomableImageViewer } from '@/src/components/chat/ZoomableImageViewer';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-const VoiceMessage = ({ messageId, url, isMe, theme, avatar, colorScheme, activeId, onPlay }: { messageId: string; url: string; isMe: boolean; theme: any, avatar?: string, colorScheme: 'light' | 'dark', activeId: string | null, onPlay: (id: string | null) => void }) => {
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [duration, setDuration] = useState<number | null>(null);
-  const [position, setPosition] = useState(0);
-
-  useEffect(() => {
-    return () => {
-      if (sound) {
-        sound.unloadAsync();
-      }
-    };
-  }, [sound]);
-
-  // Stop playback if another message becomes active
-  useEffect(() => {
-    if (activeId !== messageId && isPlaying) {
-      if (sound) {
-        sound.pauseAsync();
-      }
-      setIsPlaying(false);
-    }
-  }, [activeId]);
-
-  const playPause = async () => {
-    try {
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: false,
-        interruptionModeIOS: InterruptionModeIOS.DuckOthers,
-        playsInSilentModeIOS: true,
-        staysActiveInBackground: false,
-        interruptionModeAndroid: InterruptionModeAndroid.DuckOthers,
-        shouldDuckAndroid: true,
-        playThroughEarpieceAndroid: false,
-      });
-
-      if (sound) {
-        if (isPlaying) {
-          await sound.pauseAsync();
-          setIsPlaying(false);
-          onPlay(null);
-        } else {
-          onPlay(messageId);
-          // Better detection for finished sound
-          const status = await sound.getStatusAsync();
-          if (status.isLoaded && (status.didJustFinish || (status.positionMillis >= (status.durationMillis || 0) - 100))) {
-            await sound.setPositionAsync(0);
-          }
-          await sound.playAsync();
-          setIsPlaying(true);
-        }
-      } else {
-        onPlay(messageId);
-        const fullUrl = url.startsWith('http') ? url : `${IMAGE_BASE}${url}`;
-        const { sound: newSound } = await Audio.Sound.createAsync(
-          { uri: fullUrl },
-          { shouldPlay: true, volume: 1.0 },
-          onPlaybackStatusUpdate
-        );
-        setSound(newSound);
-        setIsPlaying(true);
-      }
-    } catch (error) {
-      console.error('Failed to play audio', error);
-    }
-  };
-
-  const onPlaybackStatusUpdate = (status: any) => {
-    if (status.isLoaded) {
-      setDuration(status.durationMillis);
-      setPosition(status.positionMillis);
-      if (status.didJustFinish) {
-        setIsPlaying(false);
-        setPosition(0);
-        onPlay(null);
-        if (sound) {
-          sound.stopAsync().catch(() => {});
-          sound.setPositionAsync(0).catch(() => {});
-        }
-      }
-    }
-  };
-
-  const formatDuration = (millis: number) => {
-    const totalSeconds = millis / 1000;
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = Math.floor(totalSeconds % 60);
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  };
-
-  const accentColor = isMe ? '#FFF' : (colorScheme === 'dark' ? theme.primary : theme.primary);
-
-  return (
-    <View style={styles.voicePlayerContainer}>
-      {/* Play/Pause Button */}
-      <TouchableOpacity 
-        onPress={playPause} 
-        style={[
-          styles.voicePlayBtn, 
-          { backgroundColor: isMe ? 'rgba(255,255,255,0.2)' : (colorScheme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)') }
-        ]}
-      >
-        {isPlaying ? (
-          <Pause size={18} color={accentColor} fill={accentColor} />
-        ) : (
-          <Play size={18} color={accentColor} fill={accentColor} style={{ marginLeft: 2 }} />
-        )}
-      </TouchableOpacity>
-      
-      {/* Slider & Duration */}
-      <View style={styles.voiceSliderContainer}>
-        <View style={styles.voiceSliderTrackOutter}>
-           <View style={[
-             styles.voiceSliderTrackDotted, 
-             { 
-               borderColor: isMe 
-                ? 'rgba(255,255,255,0.3)' 
-                : (colorScheme === 'dark' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)') 
-             }
-           ]} />
-           <View 
-             style={[
-               styles.voiceSliderThumb, 
-               { 
-                 backgroundColor: accentColor,
-                 left: duration ? `${Math.min(100, (position / duration) * 100)}%` : '0%',
-                 width: 8, height: 8, borderRadius: 4, marginLeft: -4
-               }
-             ]} 
-           />
-        </View>
-        <View style={styles.voiceMetaRow}>
-            <Text style={[styles.voiceDurationText, { color: isMe ? 'rgba(255,255,255,0.7)' : theme.textSecondary }]}>
-                {isPlaying ? formatDuration(position) : (duration ? formatDuration(duration) : '0:00')}
-            </Text>
-        </View>
-      </View>
-
-      {/* Avatar Mini */}
-      <View style={styles.voiceAvatarContainer}>
-        <Image 
-          source={getAvatarUrl(avatar || '')} 
-          style={styles.voiceAvatar} 
-          contentFit="cover"
-        />
-        <View style={[styles.voiceMicIcon, { backgroundColor: isMe ? '#22C55E' : '#3B82F6', borderColor: isMe ? '#10B98100' : '#FFF0' }]}>
-          <Mic size={7} color="#FFF" />
-        </View>
-      </View>
-    </View>
-  );
-};
 
 const SentTail = ({ color }: { color: string }) => (
   <View style={styles.sentTailContainer}>
@@ -234,45 +74,6 @@ const ReceivedTail = ({ color }: { color: string }) => (
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-const ZoomableImage = ({ uri }: { uri: string }) => {
-  const scale = useSharedValue(1);
-  const savedScale = useSharedValue(1);
-
-  const pinchGesture = Gesture.Pinch()
-    .onUpdate((event) => {
-      scale.value = savedScale.value * event.scale;
-    })
-    .onEnd(() => {
-      if (scale.value < 1) {
-        scale.value = withSpring(1);
-        savedScale.value = 1;
-      } else if (scale.value > 5) {
-        scale.value = withSpring(5);
-        savedScale.value = 5;
-      } else {
-        savedScale.value = scale.value;
-      }
-    });
-
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: scale.value }],
-    };
-  });
-
-  return (
-    <GestureDetector gesture={pinchGesture}>
-      <Reanimated.View style={[{ width: '100%', height: '80%', justifyContent: 'center', alignItems: 'center' }, animatedStyle]}>
-        <Image 
-          source={{ uri }} 
-          style={{ width: SCREEN_WIDTH, height: '100%' }}
-          contentFit="contain"
-        />
-      </Reanimated.View>
-    </GestureDetector>
-  );
-};
-
 interface Message {
   id: string;
   text: string;
@@ -295,6 +96,9 @@ interface Message {
   fileSize?: string;
   fileExt?: string;
   pdfPages?: number;
+  isDeleted?: boolean;
+  senderName?: string;
+  senderAvatar?: string;
 }
 
 interface Contact {
@@ -303,6 +107,7 @@ interface Contact {
   avatar: string;
   isOnline: boolean;
   isTyping: boolean;
+  isRecording?: boolean;
 }
 
 const formatTime = (date: Date) => {
@@ -353,24 +158,36 @@ const mockContact: Contact = {
 
 export default function ChatScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, isGroup, title, image } = useLocalSearchParams<{ id: string; isGroup?: string; title?: string; image?: string }>();
   const { user } = useAuth();
-  const { socket, connected, sendMessage, emitTyping, emitStopTyping, onlineUsers } = useChat();
+  const { socket, connected, sendMessage, emitTyping, emitStopTyping, emitDeleteMessage, emitRecording, emitStopRecording, onlineUsers } = useChat();
   const colorScheme = useColorScheme() ?? 'light';
-  const theme = Colors[colorScheme];
+  const baseTheme = Colors[colorScheme];
+  
+  // Wallpaper & Theme State
+  const [wallpaper, setWallpaper] = useState<any>(null);
+  const [customThemeColor, setCustomThemeColor] = useState<string | null>(null);
+
+  const theme = useMemo(() => ({
+    ...baseTheme,
+    primary: customThemeColor || baseTheme.primary,
+  }), [baseTheme, customThemeColor]);
   const flatListRef = useRef<FlatList>(null);
   const insets = useSafeAreaInsets();
   
+  const isGroupChat = isGroup === 'true';
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [inputText, setInputText] = useState('');
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [contact, setContact] = useState<Contact>({
     id: id || '',
-    name: 'Loading...',
-    avatar: '',
-    isOnline: id ? onlineUsers.some(uid => String(uid) === String(id)) : false,
+    name: title || 'Loading...',
+    avatar: image || '',
+    isOnline: !isGroupChat && id ? onlineUsers.some(uid => String(uid) === String(id)) : false,
     isTyping: false,
+    isRecording: false,
   });
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
@@ -382,6 +199,12 @@ export default function ChatScreen() {
   const [activeMessageId, setActiveMessageId] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState(false);
   const [disappearingTimer, setDisappearingTimer] = useState('off');
+  
+  // Undo Deletion State
+  const [undoData, setUndoData] = useState<{ message: Message; type: 'me' | 'everyone'; timer: number } | null>(null);
+  const undoTimerRef = useRef<NodeJS.Timeout | number | null>(null);
+  const undoIntervalRef = useRef<NodeJS.Timeout | number | null>(null);
+  const recorderIntervalRef = useRef<NodeJS.Timeout | number | null>(null);
 
   const groupedMessages = useMemo(() => groupMessages(messages), [messages]);
 
@@ -403,10 +226,17 @@ export default function ChatScreen() {
           text: "Clear", 
           style: "destructive", 
           onPress: async () => {
-            setMessages([]);
-            // Save cleared state locally
-            if (id) {
-              await AsyncStorage.setItem(`chat_cleared_${id}`, Date.now().toString());
+            try {
+              if (id) {
+                await client.delete(`/chat/clear/${id}`);
+                setMessages([]);
+                // Save cleared state locally as a fallback
+                await AsyncStorage.setItem(`chat_cleared_${id}`, Date.now().toString());
+              }
+            } catch (err) {
+              console.error('Failed to clear chat on server:', err);
+              // Still clear locally for better UX
+              setMessages([]);
             }
           } 
         }
@@ -424,33 +254,133 @@ export default function ChatScreen() {
   const [waveData, setWaveData] = useState<number[]>(new Array(25).fill(4));
   const [viewerImageUrl, setViewerImageUrl] = useState<string | null>(null);
 
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadVisualSettings();
+    }, [id])
+  );
+
+  const loadVisualSettings = async () => {
+      if(!id) return;
+      try {
+        const wp = await AsyncStorage.getItem(`chat_wallpaper_${id}`);
+        const color = await AsyncStorage.getItem(`chat_theme_color_${id}`);
+        
+        if(wp) {
+            setWallpaper(JSON.parse(wp));
+        } else {
+            setWallpaper(null);
+        }
+        
+        if(color) {
+            setCustomThemeColor(color);
+        } else {
+            setCustomThemeColor(null);
+        }
+      } catch (e) {
+        console.error("Failed to load visual settings", e);
+      }
+  };
+
+  const clearUndoTimer = () => {
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    if (undoIntervalRef.current) clearInterval(undoIntervalRef.current);
+    undoTimerRef.current = null;
+    undoIntervalRef.current = null;
+  };
+
+  const clearRecorderInterval = () => {
+    if (recorderIntervalRef.current) {
+      clearInterval(recorderIntervalRef.current);
+      recorderIntervalRef.current = null;
+    }
+  };
+
+  const executeDelete = (msgId: string, type: 'me' | 'everyone') => {
+    emitDeleteMessage(msgId, String(id), type, isGroupChat);
+    setUndoData(null);
+    clearUndoTimer();
+  };
+
+  const handleUndo = () => {
+    if (undoData) {
+      setMessages(prev => {
+        // If it was 'everyone' delete, the message exists as a placeholder. We should replace it.
+        if (undoData.type === 'everyone') {
+          return prev.map(m => m.id === undoData.message.id ? undoData.message : m);
+        }
+        
+        // If it was 'me' delete, it was removed. We insert it back.
+        // Check if it somehow still exists to be safe
+        const exists = prev.find(m => m.id === undoData.message.id);
+        if (exists) return prev.map(m => m.id === undoData.message.id ? undoData.message : m);
+        
+        return [...prev, undoData.message].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+      });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+    setUndoData(null);
+    clearUndoTimer();
+  };
+
   const handleDeleteMessage = (msgId: string) => {
     const msg = messages.find(m => m.id === msgId);
     if (!msg) return;
 
     setIsContextMenuVisible(false);
 
+    const startUndoFlow = (type: 'me' | 'everyone') => {
+      clearUndoTimer();
+      const messageToUndo = { ...msg };
+      
+      // 1. Locally update state based on delete type
+      if (type === 'everyone') {
+        // Optimistic update for everyone delete: show placeholder
+        setMessages(prev => prev.map(m => 
+          m.id === msgId 
+            ? { ...m, isDeleted: true, text: "This message was deleted", type: 'text', pdfPages: undefined, replyTo: undefined } 
+            : m
+        ));
+      } else {
+        // Optimistic update for me delete: remove from view
+        setMessages(prev => prev.filter(m => m.id !== msgId));
+      }
+      
+      // 2. Set undo data
+      setUndoData({ message: messageToUndo, type, timer: 10 });
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+      // 3. Start countdown
+      undoIntervalRef.current = setInterval(() => {
+        setUndoData(prev => {
+          if (!prev || prev.timer <= 1) {
+            if (undoIntervalRef.current) clearInterval(undoIntervalRef.current);
+            return null;
+          }
+          return { ...prev, timer: prev.timer - 1 };
+        });
+      }, 1000);
+
+      // 4. Set final execution timer
+      undoTimerRef.current = setTimeout(() => {
+        executeDelete(msgId, type);
+      }, 10000);
+    };
+
     const options: { text: string; style?: 'default' | 'cancel' | 'destructive'; onPress: () => void }[] = [
       {
         text: 'Delete for Me',
         style: 'destructive' as const,
-        onPress: () => {
-          setMessages(prev => prev.filter(m => m.id !== msgId));
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        }
+        onPress: () => startUndoFlow('me')
       }
     ];
 
-    // Only allow "Delete for Everyone" if I am the sender
     if (msg.sender === 'me') {
       options.push({
         text: 'Delete for Everyone',
         style: 'destructive' as const,
-        onPress: () => {
-          // TODO: Socket emit 'deleteMessage' to handle everyone
-          setMessages(prev => prev.filter(m => m.id !== msgId));
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-        }
+        onPress: () => startUndoFlow('everyone')
       });
     }
 
@@ -553,21 +483,29 @@ export default function ChatScreen() {
     }
   }, []);
 
-  const fetchHistory = async () => {
+  const fetchHistory = async (showLoader = false) => {
+    if (showLoader) setLoading(true);
     if (!id) return;
     try {
-      const data = await client.get(`/chat/history/${id}`);
+      const endpoint = isGroupChat ? `/chat/ghistory/${id}` : `/chat/history/${id}`;
+      const data = await client.get(endpoint);
+      
+      if (!isGroupChat) {
+        client.post(`/chat/read/${id}`, {}).catch(err => console.error('Failed to mark as read:', err));
+      }
       
       // Check if chat was cleared locally
       const clearedTimeStr = await AsyncStorage.getItem(`chat_cleared_${id}`);
       const clearedTime = clearedTimeStr ? parseInt(clearedTimeStr) : 0;
 
-      const transformed: Message[] = data
+      const transformed: Message[] = (data as any[])
         .filter((msg: any) => new Date(msg.createdAt).getTime() > clearedTime)
         .map((msg: any) => ({
         id: msg.id,
         text: msg.content,
         sender: msg.senderId === user?.id ? 'me' : 'them',
+        senderName: msg.sender?.name,
+        senderAvatar: msg.sender?.avatar,
         timestamp: new Date(msg.createdAt),
         status: 'read',
         type: msg.type || 'text',
@@ -575,21 +513,32 @@ export default function ChatScreen() {
         fileExt: msg.metadata?.fileExt,
         pdfPages: msg.metadata?.pdfPages,
         replyTo: msg.replyTo,
+        isDeleted: msg.isDeleted,
       }));
       setMessages(transformed);
       
-      // Fetch user profile to get name and avatar
-      try {
-        const otherUser = await client.get(`/users/${id}`);
-        if (otherUser) {
-          setContact(prev => ({
-            ...prev,
-            name: otherUser.name,
-            avatar: otherUser.avatar,
-          }));
+      // Fetch profile / group info
+      if (isGroupChat) {
+        // For activity group chats, use the passed title and app icon
+        setContact(prev => ({
+          ...prev,
+          name: title || prev.name || 'Activity Group',
+          avatar: '', // icon is handled in header avatar
+          isOnline: false,
+        }));
+      } else {
+        try {
+          const otherUser = await client.get(`/users/${id}`);
+          if (otherUser) {
+            setContact(prev => ({
+              ...prev,
+              name: otherUser.name,
+              avatar: otherUser.avatar,
+            }));
+          }
+        } catch (err) {
+          console.error('Failed to fetch user profile:', err);
         }
-      } catch (err) {
-        console.error('Failed to fetch user profile:', err);
       }
     } catch (error) {
       console.error('Failed to fetch history:', error);
@@ -603,14 +552,21 @@ export default function ChatScreen() {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
     const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
 
-    const showSubscription = Keyboard.addListener(showEvent, () => setIsKeyboardVisible(true));
+    const showSubscription = Keyboard.addListener(showEvent, () => {
+      setIsKeyboardVisible(true);
+      // Auto-scroll to bottom when keyboard opens
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    });
     const hideSubscription = Keyboard.addListener(hideEvent, () => setIsKeyboardVisible(false));
 
-    fetchHistory();
+    fetchHistory(true);
 
     return () => {
       showSubscription.remove();
       hideSubscription.remove();
+      clearUndoTimer();
     };
   }, [id]);
 
@@ -618,8 +574,16 @@ export default function ChatScreen() {
     if (!socket || !connected) return;
 
     const onNewMessage = (msg: any) => {
-      // Only add if it's for this conversation
-      if (msg.senderId === id || msg.receiverId === id) {
+      // Logic for determining if message is for THIS chat
+      const isForThisChat = isGroupChat
+        ? msg.groupId === id
+        : (msg.senderId === id || msg.receiverId === id);
+
+      if (isForThisChat) {
+        // Mark as read if it's from them and we are in the chat (only for private chats)
+        if (!isGroupChat && msg.senderId === id) {
+          client.post(`/chat/read/${id}`, {}).catch(err => console.error('Failed to mark as read:', err));
+        }
         setMessages(prev => {
           // 1. Check if ID already exists (DB ID)
           if (prev.find(m => m.id === msg.id)) return prev;
@@ -628,8 +592,6 @@ export default function ChatScreen() {
 
           // 2. For 'me' messages, check if we have an optimistic message to replace
           if (isMe) {
-            // Find by temporary ID (numeric strings) or same content
-            // We search for EITHER 'sending' OR already reconciled but with same content to avoid duplicates from multiple events
             const optimisticIndex = prev.findIndex(m => 
               m.sender === 'me' && 
               (m.status === 'sending' || m.id === msg.id) && 
@@ -637,7 +599,6 @@ export default function ChatScreen() {
             );
 
             if (optimisticIndex !== -1) {
-              // If already has this ID, just return prev to avoid double update/flash
               if (prev[optimisticIndex].id === msg.id && prev[optimisticIndex].status === 'read') {
                 return prev;
               }
@@ -645,7 +606,7 @@ export default function ChatScreen() {
               const updated = [...prev];
               updated[optimisticIndex] = {
                 ...updated[optimisticIndex],
-                id: msg.id, // Set the real DB ID
+                id: msg.id,
                 status: 'read',
                 timestamp: new Date(msg.createdAt),
               };
@@ -657,6 +618,8 @@ export default function ChatScreen() {
             id: msg.id,
             text: msg.content,
             sender: isMe ? 'me' : 'them',
+            senderName: msg.sender?.name, // Important for group chat
+            senderAvatar: msg.sender?.avatar,
             timestamp: new Date(msg.createdAt),
             status: 'read',
             type: msg.type || 'text',
@@ -672,34 +635,75 @@ export default function ChatScreen() {
       }
     };
 
-    const onUserTyping = (data: { userId: string }) => {
-      if (data.userId === id) {
+    const onUserTyping = (data: { userId: string; groupId?: string }) => {
+      if (String(data.userId) === String(user?.id)) return;
+      const isRelevant = isGroupChat ? data.groupId === id : data.userId === id;
+      if (isRelevant) {
         setContact(prev => ({ ...prev, isTyping: true }));
       }
     };
 
-    const onUserStopTyping = (data: { userId: string }) => {
-      if (data.userId === id) {
+    const onUserStopTyping = (data: { userId: string; groupId?: string }) => {
+      if (String(data.userId) === String(user?.id)) return;
+      const isRelevant = isGroupChat ? data.groupId === id : data.userId === id;
+      if (isRelevant) {
         setContact(prev => ({ ...prev, isTyping: false }));
       }
+    };
+
+    const onUserRecording = (data: { userId: string; groupId?: string }) => {
+      if (String(data.userId) === String(user?.id)) return;
+      const isRelevant = isGroupChat ? data.groupId === id : data.userId === id;
+      if (isRelevant) {
+        setContact(prev => ({ ...prev, isRecording: true }));
+      }
+    };
+
+    const onUserStopRecording = (data: { userId: string; groupId?: string }) => {
+      if (String(data.userId) === String(user?.id)) return;
+      const isRelevant = isGroupChat ? data.groupId === id : data.userId === id;
+      if (isRelevant) {
+        setContact(prev => ({ ...prev, isRecording: false }));
+      }
+    };
+
+    const onMessageDeleted = (data: { messageId: string; deleteType?: 'me' | 'everyone'; groupId?: string }) => {
+      const isRelevant = isGroupChat ? data.groupId === id : true;
+      if (!isRelevant) return;
+      if (data.deleteType === 'everyone') {
+        setMessages(prev => prev.map(m => 
+          m.id === data.messageId 
+            ? { ...m, isDeleted: true, text: 'This message was deleted', type: 'text' } 
+            : m
+        ));
+      } else {
+        setMessages(prev => prev.filter(m => m.id !== data.messageId));
+      }
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     };
 
     socket.on('newMessage', onNewMessage);
     socket.on('messageSent', onNewMessage);
     socket.on('userTyping', onUserTyping);
     socket.on('userStopTyping', onUserStopTyping);
+    socket.on('userRecording', onUserRecording);
+    socket.on('userStopRecording', onUserStopRecording);
+    socket.on('messageDeleted', onMessageDeleted);
 
     return () => {
       socket.off('newMessage', onNewMessage);
       socket.off('messageSent', onNewMessage);
       socket.off('userTyping', onUserTyping);
       socket.off('userStopTyping', onUserStopTyping);
+      socket.off('userRecording', onUserRecording);
+      socket.off('userStopRecording', onUserStopRecording);
+      socket.off('messageDeleted', onMessageDeleted);
     };
   }, [socket, connected, id, user?.id]);
 
   // Update online status from context
   useEffect(() => {
-    if (id) {
+    if (id && !isGroupChat) {
       setContact(prev => ({
         ...prev,
         isOnline: onlineUsers.some(uid => String(uid) === String(id))
@@ -747,8 +751,8 @@ export default function ChatScreen() {
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    sendMessage(id, content, 'text', newMessage.replyTo);
-    emitStopTyping(id);
+    sendMessage(id, content, 'text', newMessage.replyTo, undefined, isGroupChat);
+    emitStopTyping(id, isGroupChat);
   };
 
   const onScroll = (event: any) => {
@@ -778,9 +782,9 @@ export default function ChatScreen() {
     if (!id) return;
     
     if (text.length > 0) {
-      emitTyping(id);
+      emitTyping(id, isGroupChat);
     } else {
-      emitStopTyping(id);
+      emitStopTyping(id, isGroupChat);
     }
 
   };
@@ -824,19 +828,27 @@ export default function ChatScreen() {
         playThroughEarpieceAndroid: false,
       });
 
-      const { recording } = await Audio.Recording.createAsync(
+      const { recording: newRecording } = await Audio.Recording.createAsync(
         Audio.RecordingOptionsPresets.HIGH_QUALITY
       );
       
-      setRecording(recording);
+      setRecording(newRecording);
       setIsRecording(true);
+      setIsPaused(false);
       setRecordingDuration(0);
       
+      // Emit start recording event
+      emitRecording(String(id), isGroupChat);
+
+      // Start duration timer
+      recorderIntervalRef.current = setInterval(() => {
+        if (!isPausedRef.current) {
+            setRecordingDuration(prev => prev + 1);
+        }
+      }, 1000);
+
       // Vibrate on start
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
-      // Simple duration timer is now handled by useEffect
-      (recording as any)._interval = null; // No longer manually managing interval on object
     } catch (err) {
       console.error('Failed to start recording', err);
     }
@@ -885,14 +897,20 @@ export default function ChatScreen() {
     setIsRecording(false);
     setIsPaused(false);
     // Interval cleared by useEffect
-
     try {
-      await recording.stopAndUnloadAsync();
-      const uri = recording.getURI();
-      setRecording(null);
+      if (recording) {
+        await recording.stopAndUnloadAsync();
+        const uri = recording.getURI(); 
+        setRecording(null);
+        clearRecorderInterval();
+        
+        // Emit stop recording event
+        emitStopRecording(String(id));
 
-      if (shouldSend && uri) {
-        uploadAndSendVoice(uri);
+        if (shouldSend && uri) {
+          // If duration is too short (< 1s), might be accidental tap
+          uploadAndSendVoice(uri);
+        }
       }
     } catch (err) {
       console.error('Failed to stop recording', err);
@@ -1155,7 +1173,14 @@ export default function ChatScreen() {
             {!isMe && (
               <View style={styles.avatarContainer}>
                 {isLastInGroup && (
-                  <Image source={getAvatarUrl(contact.avatar)} style={styles.avatarMini} />
+                  <Image
+                    source={
+                      isGroupChat
+                        ? getAvatarUrl(msgItem.senderAvatar || '', false)
+                        : getAvatarUrl(contact.avatar, false)
+                    }
+                    style={styles.avatarMini}
+                  />
                 )}
               </View>
             )}
@@ -1175,11 +1200,12 @@ export default function ChatScreen() {
                       getFormattedReplyText={getFormattedReplyText}
                       setViewerImageUrl={setViewerImageUrl}
                       handleOpenFile={handleOpenFile}
-                      VoiceMessageComponent={VoiceMessage}
+                      VoiceMessageComponent={VoiceMessagePlayer}
                       playingAudioId={playingAudioId}
                       setPlayingAudioId={setPlayingAudioId}
                       userAvatar={user?.avatar}
-                      contactAvatar={contact.avatar}
+                      contactAvatar={msgItem.senderAvatar || contact.avatar}
+                      isGroup={isGroupChat}
                     />
 
                     {msgItem.reactions && msgItem.reactions.length > 0 && (
@@ -1203,11 +1229,12 @@ export default function ChatScreen() {
                       getFormattedReplyText={getFormattedReplyText}
                       setViewerImageUrl={setViewerImageUrl}
                       handleOpenFile={handleOpenFile}
-                      VoiceMessageComponent={VoiceMessage}
+                      VoiceMessageComponent={VoiceMessagePlayer}
                       playingAudioId={playingAudioId}
                       setPlayingAudioId={setPlayingAudioId}
                       userAvatar={user?.avatar}
-                      contactAvatar={contact.avatar}
+                      contactAvatar={msgItem.senderAvatar || contact.avatar}
+                      isGroup={isGroupChat}
                     />
 
                     {msgItem.reactions && msgItem.reactions.length > 0 && (
@@ -1231,6 +1258,9 @@ export default function ChatScreen() {
   const typingDot2 = useRef(new RNAnimated.Value(0)).current;
   const typingDot3 = useRef(new RNAnimated.Value(0)).current;
   const typingScale = useRef(new RNAnimated.Value(0)).current;
+  const typingDotScale1 = useRef(new RNAnimated.Value(1)).current;
+  const typingDotScale2 = useRef(new RNAnimated.Value(1)).current;
+  const typingDotScale3 = useRef(new RNAnimated.Value(1)).current;
 
   useEffect(() => {
     if (contact.isTyping) {
@@ -1242,29 +1272,43 @@ export default function ChatScreen() {
         useNativeDriver: true,
       }).start();
 
-      // Bouncing dots animation - wave effect
-      const createBounceAnimation = (animValue: RNAnimated.Value, delay: number) => {
+      // Enhanced bouncing dots animation with scale
+      const createBounceAnimation = (animValue: RNAnimated.Value, scaleValue: RNAnimated.Value, delay: number) => {
         return RNAnimated.loop(
           RNAnimated.sequence([
             RNAnimated.delay(delay),
-            RNAnimated.timing(animValue, {
-              toValue: -8,
-              duration: 300,
-              useNativeDriver: true,
-            }),
-            RNAnimated.timing(animValue, {
-              toValue: 0,
-              duration: 300,
-              useNativeDriver: true,
-            }),
+            RNAnimated.parallel([
+              RNAnimated.timing(animValue, {
+                toValue: -6,
+                duration: 350,
+                useNativeDriver: true,
+              }),
+              RNAnimated.timing(scaleValue, {
+                toValue: 1.2,
+                duration: 350,
+                useNativeDriver: true,
+              }),
+            ]),
+            RNAnimated.parallel([
+              RNAnimated.timing(animValue, {
+                toValue: 0,
+                duration: 350,
+                useNativeDriver: true,
+              }),
+              RNAnimated.timing(scaleValue, {
+                toValue: 1,
+                duration: 350,
+                useNativeDriver: true,
+              }),
+            ]),
             RNAnimated.delay(600 - delay),
           ])
         );
       };
 
-      const anim1 = createBounceAnimation(typingDot1, 0);
-      const anim2 = createBounceAnimation(typingDot2, 150);
-      const anim3 = createBounceAnimation(typingDot3, 300);
+      const anim1 = createBounceAnimation(typingDot1, typingDotScale1, 0);
+      const anim2 = createBounceAnimation(typingDot2, typingDotScale2, 150);
+      const anim3 = createBounceAnimation(typingDot3, typingDotScale3, 300);
 
       anim1.start();
       anim2.start();
@@ -1285,91 +1329,83 @@ export default function ChatScreen() {
       typingDot1.setValue(0);
       typingDot2.setValue(0);
       typingDot3.setValue(0);
+      typingDotScale1.setValue(1);
+      typingDotScale2.setValue(1);
+      typingDotScale3.setValue(1);
     }
   }, [contact.isTyping]);
 
   const renderTypingIndicator = () => {
-    if (!contact.isTyping) return null;
+    if (!contact.isTyping && !contact.isRecording) return null;
+
+    if (contact.isRecording) {
+      return (
+        <RNAnimated.View 
+          style={[
+            styles.typingContainerClean,
+            {
+              opacity: typingScale,
+              transform: [{ scale: typingScale }],
+            }
+          ]}
+        >
+          <Mic size={12} color="#EC4899" style={{ marginRight: 8 }} />
+          <Text style={{ fontSize: 12, color: '#EC4899', fontWeight: '500' }}>
+            Recording audio...
+          </Text>
+        </RNAnimated.View>
+      );
+    }
 
     return (
       <RNAnimated.View 
         style={[
-          styles.typingContainer,
+          styles.typingContainerClean,
           {
             opacity: typingScale,
             transform: [{ scale: typingScale }],
           }
         ]}
       >
-        {/* Avatar with gradient ring */}
-        <View style={styles.typingAvatarWrapper}>
-          <LinearGradient
-            colors={['#0EA5E9', '#8B5CF6', '#EC4899']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.typingAvatarRing}
-          >
-            <View style={[styles.typingAvatarInner, { backgroundColor: colorScheme === 'dark' ? '#0F172A' : '#F8FAFC' }]}>
-              <Image 
-                source={getAvatarUrl(contact.avatar)} 
-                style={styles.typingAvatar}
-                contentFit="cover"
-              />
-            </View>
-          </LinearGradient>
-          <View style={[styles.typingOnlineDot, { borderColor: colorScheme === 'dark' ? '#0F172A' : '#FFFFFF' }]} />
-        </View>
-
-        {/* Typing bubble with glassmorphism */}
-        <View style={styles.typingBubbleWrapper}>
-          <ExpoBlurView 
-            intensity={colorScheme === 'dark' ? 40 : 60} 
+        <View style={styles.typingDotsContainer}>
+          <RNAnimated.View 
             style={[
-              styles.typingBubble,
+              styles.typingDot,
               { 
-                backgroundColor: colorScheme === 'dark' ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.9)',
-                borderColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+                backgroundColor: theme.textSecondary,
+                opacity: 0.6,
+                transform: [
+                  { translateY: typingDot1 },
+                  { scale: typingDotScale1 }
+                ],
               }
-            ]}
-            tint={colorScheme === 'dark' ? 'dark' : 'light'}
-          >
-            <View style={styles.typingDotsContainer}>
-              <RNAnimated.View 
-                style={[
-                  styles.typingDot, 
-                  { 
-                    backgroundColor: theme.primary,
-                    transform: [{ translateY: typingDot1 }],
-                  }
-                ]} 
-              />
-              <RNAnimated.View 
-                style={[
-                  styles.typingDot, 
-                  { 
-                    backgroundColor: theme.primary,
-                    transform: [{ translateY: typingDot2 }],
-                  }
-                ]} 
-              />
-              <RNAnimated.View 
-                style={[
-                  styles.typingDot, 
-                  { 
-                    backgroundColor: theme.primary,
-                    transform: [{ translateY: typingDot3 }],
-                  }
-                ]} 
-              />
-            </View>
-          </ExpoBlurView>
+            ]} 
+          />
           
-          {/* Bubble tail */}
-          <View 
+          <RNAnimated.View 
             style={[
-              styles.typingBubbleTail, 
+              styles.typingDot,
               { 
-                borderRightColor: colorScheme === 'dark' ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.9)',
+                backgroundColor: theme.textSecondary,
+                opacity: 0.6,
+                transform: [
+                  { translateY: typingDot2 },
+                  { scale: typingDotScale2 }
+                ],
+              }
+            ]} 
+          />
+          
+          <RNAnimated.View 
+            style={[
+              styles.typingDot,
+              { 
+                backgroundColor: theme.textSecondary,
+                opacity: 0.6,
+                transform: [
+                  { translateY: typingDot3 },
+                  { scale: typingDotScale3 }
+                ],
               }
             ]} 
           />
@@ -1380,6 +1416,18 @@ export default function ChatScreen() {
 
   return (
     <GradientBackground>
+      {wallpaper && (
+        wallpaper.type === 'gradient' ? (
+             <LinearGradient 
+                colors={(colorScheme === 'dark' && wallpaper.darkColors) ? wallpaper.darkColors : wallpaper.colors} 
+                style={StyleSheet.absoluteFill} 
+                start={wallpaper.start || { x: 0, y: 0 }} 
+                end={wallpaper.end || { x: 1, y: 1 }}
+             />
+        ) : wallpaper.type === 'solid' ? (
+             <View style={[StyleSheet.absoluteFill, { backgroundColor: colorScheme === 'dark' ? (wallpaper.dark || wallpaper.color) : (wallpaper.light || wallpaper.color) }]} />
+        ) : null
+      )}
       <Stack.Screen
         options={{
           headerShown: false,
@@ -1406,11 +1454,29 @@ export default function ChatScreen() {
               </TouchableOpacity>
               
               <View style={styles.pillMainInfo}>
-                <View style={styles.avatarWrapperMini}>
-                  <Image 
-                    source={getAvatarUrl(contact.avatar)} 
-                    style={styles.headerAvatar} 
-                  />
+                <View style={[
+                  styles.avatarWrapperMini, 
+                  isGroupChat && { overflow: 'hidden', borderWidth: 1, borderColor: colorScheme === 'dark' ? theme.primary + '30' : 'rgba(0,0,0,0.05)' }
+                ]}>
+                  {isGroupChat && !contact.avatar ? (
+                    <>
+                      <LinearGradient
+                        colors={colorScheme === 'dark' ? [theme.primary, '#0369A1'] : ['#E0F2FE', '#BAE6FD']}
+                        style={StyleSheet.absoluteFill}
+                      />
+                      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                        <Users size={22} color={colorScheme === 'dark' ? '#FFF' : theme.primary} strokeWidth={2} />
+                        <View style={{ position: 'absolute', bottom: 2, right: 2, backgroundColor: theme.primary, borderRadius: 5, padding: 0.5, borderWidth: 1, borderColor: colorScheme === 'dark' ? '#1E293B' : '#FFF' }}>
+                           <Zap size={6} color="#FFF" fill="#FFF" />
+                        </View>
+                      </View>
+                    </>
+                  ) : (
+                    <Image 
+                      source={getAvatarUrl(contact.avatar, isGroupChat)} 
+                      style={styles.headerAvatar} 
+                    />
+                  )}
                   <RNAnimated.View 
                     style={[
                       styles.headerPulseDot, 
@@ -1430,8 +1496,12 @@ export default function ChatScreen() {
                       <Clock size={12} color={theme.primary} strokeWidth={2.5} />
                     )}
                   </View>
-                  <Text style={[styles.headerSubtext, { color: theme.textSecondary }]}>
-                    {contact.id === user?.id ? 'Message yourself' : (contact.isTyping ? 'typing...' : (contact.isOnline ? 'Online' : 'Offline'))}
+                  <Text style={[styles.headerSubtext, { color: (contact.isRecording || contact.isTyping) ? (contact.isRecording ? '#EC4899' : theme.primary) : theme.textSecondary }]}>
+                    {isGroupChat ? 'Activity Group Chat' :
+                      contact.id === user?.id ? 'Message yourself' : 
+                       contact.isRecording ? 'Recording audio...' : 
+                       contact.isTyping ? 'typing...' : 
+                       contact.isOnline ? 'Online' : 'Offline'}
                   </Text>
                 </View>
               </View>
@@ -1467,14 +1537,15 @@ export default function ChatScreen() {
           styles.scrollToBottom,
           { 
             transform: [{ translateY: scrollAnim.interpolate({ inputRange: [0, 1], outputRange: [100, 0] }) }],
-            opacity: scrollAnim 
+            opacity: scrollAnim,
+            pointerEvents: showScrollToBottom ? 'auto' : 'none'
           }
         ]}>
           <TouchableOpacity 
             style={[styles.scrollBtn, { backgroundColor: theme.primary }]}
             onPress={scrollToBottom}
           >
-            <ArrowLeft size={20} color="white" style={{ transform: [{ rotate: '-90deg' }] }} />
+            <ChevronDown size={24} color="white" />
           </TouchableOpacity>
         </RNAnimated.View>
         <View style={[
@@ -1514,13 +1585,10 @@ export default function ChatScreen() {
 
           <View style={styles.inputActionsRow}>
             <TouchableOpacity 
-              style={[
-                styles.plusBtn, 
-                { backgroundColor: colorScheme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }
-              ]}
+              style={styles.plusBtn}
               onPress={() => setShowAttachmentMenu(!showAttachmentMenu)}
             >
-              <Paperclip size={22} color={colorScheme === 'dark' ? '#FFF' : theme.text} />
+              <Plus size={26} color={theme.primary} />
             </TouchableOpacity>
 
             {isRecording ? (
@@ -1573,7 +1641,7 @@ export default function ChatScreen() {
               </View>
             ) : (
               <>
-                <View style={[styles.whatsappInputFrame, { backgroundColor: colorScheme === 'dark' ? '#0F172A' : '#f0f2f5', borderColor: 'transparent' }]}>
+                <View style={[styles.whatsappInputFrame, { backgroundColor: colorScheme === 'dark' ? '#1E293B' : '#FFF', borderColor: colorScheme === 'dark' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)' }]}>
                   <TextInput
                     style={[styles.chatInput, { color: theme.text }]}
                     placeholder="Message..."
@@ -1583,9 +1651,6 @@ export default function ChatScreen() {
                     multiline
                     keyboardAppearance={colorScheme === 'dark' ? 'dark' : 'light'}
                   />
-                  <TouchableOpacity style={styles.stickerBtn}>
-                    <Smile size={24} color={theme.textSecondary} />
-                  </TouchableOpacity>
                 </View>
 
                 {!inputText.trim() ? (
@@ -1594,7 +1659,7 @@ export default function ChatScreen() {
                       <Camera size={24} color={theme.primary} />
                     </TouchableOpacity>
                     <TouchableOpacity 
-                      style={[styles.inputActionBtn, { backgroundColor: theme.primary + '20', borderRadius: 20 }]} 
+                      style={styles.inputActionBtn} 
                       onPress={startRecording}
                     >
                       <Mic size={24} color={theme.primary} />
@@ -1624,11 +1689,15 @@ export default function ChatScreen() {
           onPress={() => setShowOptionsMenu(false)}
         >
           <View style={[styles.headerMenuContainer, { backgroundColor: colorScheme === 'dark' ? '#1E293B' : '#FFF' }]}>
-            <TouchableOpacity 
+              <TouchableOpacity 
               style={styles.contextActionItem} 
               onPress={() => {
                 setShowOptionsMenu(false);
-                router.push({ pathname: '/chat/settings', params: { id } });
+                if (isGroupChat) {
+                  router.push({ pathname: '/chat/group-settings', params: { id, title } });
+                } else {
+                  router.push({ pathname: '/chat/settings', params: { id } });
+                }
               }}
             >
               <Text style={[styles.contextActionText, { color: theme.text }]}>Chat Settings</Text>
@@ -1798,11 +1867,102 @@ export default function ChatScreen() {
               <X size={28} color="#FFF" />
             </TouchableOpacity>
             {viewerImageUrl && (
-              <ZoomableImage uri={viewerImageUrl} />
+              <ZoomableImageViewer uri={viewerImageUrl} />
             )}
           </View>
         </GestureHandlerRootView>
       </Modal>
+
+      {/* Undo Delete Snackbar */}
+      {undoData && (
+        <RNAnimated.View 
+          style={[
+            styles.undoSnackbar,
+            { 
+              bottom: isKeyboardVisible ? 10 : 100,
+            }
+          ]}
+        >
+          {/* Blur Background */}
+          <ExpoBlurView 
+            intensity={colorScheme === 'dark' ? 80 : 95} 
+            style={[StyleSheet.absoluteFill, { borderRadius: 20 }]} 
+            tint={colorScheme === 'dark' ? 'dark' : 'light'} 
+          />
+          
+          {/* Vibrant Gradient Border */}
+          <LinearGradient
+            colors={
+              colorScheme === 'dark' 
+                ? ['rgba(14, 165, 233, 0.6)', 'rgba(6, 182, 212, 0.4)', 'rgba(14, 165, 233, 0.6)']
+                : ['rgba(14, 165, 233, 0.8)', 'rgba(6, 182, 212, 0.6)', 'rgba(14, 165, 233, 0.8)']
+            }
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[StyleSheet.absoluteFill, { borderRadius: 20, padding: 1.5 }]}
+          >
+            <View style={[
+              StyleSheet.absoluteFill, 
+              { 
+                backgroundColor: colorScheme === 'dark' 
+                  ? 'rgba(15, 23, 42, 0.95)' 
+                  : 'rgba(255, 255, 255, 0.95)',
+                borderRadius: 18.5,
+                margin: 1.5,
+              }
+            ]} />
+          </LinearGradient>
+          
+          <View style={styles.undoContent}>
+            {/* Icon with vibrant gradient */}
+            <LinearGradient
+              colors={
+                colorScheme === 'dark'
+                  ? ['#0EA5E9', '#06B6D4', '#0284C7']
+                  : ['#0284C7', '#0EA5E9', '#06B6D4']
+              }
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.undoIconGradient}
+            >
+              <Trash2 size={16} color="#FFF" strokeWidth={2.5} />
+            </LinearGradient>
+            
+            <View style={{ flex: 1 }}>
+              <Text style={[
+                styles.undoLabel,
+                { color: colorScheme === 'dark' ? '#FFFFFF' : '#0F172A' }
+              ]}>
+                Message deleted
+              </Text>
+              <Text style={[
+                styles.undoSubtext,
+                { color: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.6)' : 'rgba(15, 23, 42, 0.6)' }
+              ]}>
+                Undoing in {undoData.timer}s...
+              </Text>
+            </View>
+          </View>
+          
+          <TouchableOpacity 
+            style={styles.undoBtn} 
+            onPress={handleUndo}
+          >
+            <LinearGradient
+              colors={
+                colorScheme === 'dark'
+                  ? ['#0EA5E9', '#06B6D4']
+                  : ['#0284C7', '#0EA5E9']
+              }
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.undoBtnGradient}
+            >
+              <Text style={styles.undoBtnText}>UNDO</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </RNAnimated.View>
+      )}
 
     </GradientBackground>
   );
@@ -1897,67 +2057,79 @@ const styles = StyleSheet.create({
   },
   whatsappInputWrapper: {
     paddingHorizontal: 12,
-    paddingTop: 6,
-    paddingBottom: 15,
-    borderTopWidth: 1,
+    paddingTop: 8,
+    borderTopWidth: 0,
     zIndex: 100,
   },
   inputActionsRow: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
-    paddingBottom: 2,
-    marginBottom: 8,
+    alignItems: 'center',
+    paddingBottom: 6,
+    marginBottom: 4,
+    marginHorizontal: 4,
+    gap: 0,
   },
    plusBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 36,
+    height: 36,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 4,
   },
   whatsappInputFrame: {
     flex: 1,
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     backgroundColor: '#FFF',
-    borderRadius: 22,
-    paddingHorizontal: 8,
-    marginHorizontal: 7,
-    minHeight: 40,
+    borderRadius: 16,
+    paddingHorizontal: 10,
+    minHeight: 32,
     borderWidth: 1,
-    borderColor: '#CCC',
+    borderColor: 'rgba(0,0,0,0.1)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 1,
+    elevation: 1,
+    paddingVertical: 0,
+    marginHorizontal: 4,
   },
   chatInput: {
     flex: 1,
-    paddingVertical: 6,
-    fontSize: 16,
+    paddingVertical: 4,
+    paddingTop: 0,
+    paddingBottom: 0,
+    fontSize: 14,
+    lineHeight: 18,
     color: '#000',
-    maxHeight: 127,
+    maxHeight: 100,
+    textAlignVertical: 'center',
   },
   stickerBtn: {
-    padding: 4,
+    padding: 8,
+    marginBottom: 2,
   },
   inputRightActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 4,
+    marginLeft: 0,
   },
   inputActionBtn: {
-    width: 40,
-    height: 40,
+    width: 36,
+    height: 36,
     justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: 18,
   },
   whatsappSendBtn: {
-    width: 40,
-    height: 40,
+    width: 36,
+    height: 36,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 2,
+    marginLeft: 0,
   },
   whatsappSendIcon: {
-    color: '#0EA5E9',
+    color: '#FFF',
   },
   messagesList: {
     paddingHorizontal: 16,
@@ -1966,9 +2138,9 @@ const styles = StyleSheet.create({
   },
   scrollToBottom: {
     position: 'absolute',
-    bottom: 80,
+    bottom: 90,
     right: 15,
-    zIndex: 10,
+    zIndex: 9999,
   },
   scrollBtn: {
     width: 36,
@@ -2734,92 +2906,90 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   // Enhanced Typing Indicator Styles
-  typingContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 8,
-  },
-  typingAvatarWrapper: {
-    position: 'relative',
-  },
-  typingAvatarRing: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    padding: 2,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  typingAvatarInner: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    padding: 2,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  typingAvatar: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: '#E2E8F0',
-  },
-  typingOnlineDot: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#22C55E',
-    borderWidth: 2,
-  },
-  typingBubbleWrapper: {
-    position: 'relative',
-  },
-  typingBubble: {
+  typingContainerClean: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 20,
-    borderTopLeftRadius: 4,
-    borderWidth: 1,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  typingBubbleTail: {
-    position: 'absolute',
-    bottom: 0,
-    left: -6,
-    width: 0,
-    height: 0,
-    borderStyle: 'solid',
-    borderTopWidth: 0,
-    borderRightWidth: 10,
-    borderBottomWidth: 10,
-    borderLeftWidth: 0,
-    borderTopColor: 'transparent',
-    borderLeftColor: 'transparent',
-    borderBottomColor: 'transparent',
+    paddingVertical: 8,
+    marginBottom: 8,
   },
   typingDotsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 5,
+    gap: 4,
     height: 12,
   },
   typingDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  // Undo Deletion Styles
+  undoSnackbar: {
+    position: 'absolute',
+    left: 20,
+    right: 20,
+    height: 60,
+    borderRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    zIndex: 10000,
+    shadowColor: '#0EA5E9',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
+    elevation: 15,
+    overflow: 'hidden',
+  },
+  undoContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  undoIconGradient: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#0EA5E9',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  undoLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  undoSubtext: {
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  undoBtn: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: '#0EA5E9',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  undoBtnGradient: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 16,
+  },
+  undoBtnText: {
+    color: '#FFF',
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
 });

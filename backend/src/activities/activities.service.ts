@@ -117,6 +117,7 @@ export class ActivitiesService implements OnModuleInit {
     capacity: number;
     coordinatorId: string;
     coordinatorName: string;
+    image?: string;
   }, actorId?: string) {
     const parsedDate = new Date(activityData.date);
     if (Number.isNaN(parsedDate.getTime())) {
@@ -144,6 +145,7 @@ export class ActivitiesService implements OnModuleInit {
         enrolled: 0,
         coordinatorId: activityData.coordinatorId,
         coordinatorName: activityData.coordinatorName,
+        image: activityData.image,
         status: ActivityStatus.upcoming,
       },
     });
@@ -201,6 +203,7 @@ export class ActivitiesService implements OnModuleInit {
     capacity?: number;
     enrolled?: number;
     status?: string;
+    image?: string;
   }, actorId?: string) {
     const data: any = { ...updateData };
     if (updateData.date) {

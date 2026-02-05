@@ -13,17 +13,17 @@ import { Stack, useRouter } from 'expo-router';
 import { Search, ArrowLeft, MessageSquarePlus, Clock } from 'lucide-react-native';
 import { useColorScheme } from '@/src/hooks/use-color-scheme';
 import { Colors } from '@/src/data/theme';
-import { Image } from 'expo-image';
 import { GradientBackground } from '@/src/components/GradientBackground';
 import { ThemedText } from '@/src/components/themed-text';
 import { client } from '@/src/lib/api';
 import { useAuth } from '@/src/context/AuthContext';
+import { useChat } from '@/src/context/ChatContext';
 import { ActivityIndicator, RefreshControl } from 'react-native';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { getAvatarUrl } from '@/src/lib/media';
 import { useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ChatListItem } from './ChatListItem';
 
 dayjs.extend(relativeTime);
 
@@ -110,6 +110,7 @@ const mockChats: ChatPreview[] = [
 export default function ChatListScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { onlineUsers } = useChat();
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
   
@@ -122,43 +123,49 @@ export default function ChatListScreen() {
   const fetchChats = async () => {
     try {
       const data = await client.get('/chat/recent');
-      // Transform backend data to ChatPreview format
-      const transformedChats: ChatPreview[] = data.map((item: any) => {
-        const otherUser = item.user;
-        const lastMsg = item.lastMessage;
+      // Map over items and filter based on local clear status
+      const chatsWithClearStats = await Promise.all(data.map(async (item: any) => {
+        const clearedTimeStr = await AsyncStorage.getItem(`chat_cleared_${item.user.id}`);
+        const clearedTime = clearedTimeStr ? parseInt(clearedTimeStr) : 0;
+        const msgTime = new Date(item.lastMessage.createdAt).getTime();
         
-        // Format last message preview
-        let previewText = lastMsg.content;
-        if (lastMsg.type === 'image') {
-          previewText = '📷 Photo';
-        } else if (lastMsg.type === 'audio') {
-          previewText = '🎵 Voice message';
-        } else if (lastMsg.type === 'file') {
-          previewText = `📄 ${lastMsg.metadata?.fileName || 'Document'}`;
-        }
-        
-        return {
-          id: otherUser.id,
-          name: otherUser.name,
-          avatar: otherUser.avatar || otherUser.name.substring(0, 2).toUpperCase(),
-          lastMessage: previewText,
-          timestamp: dayjs(lastMsg.createdAt).fromNow(true)
-            .replace(' minutes', 'm')
-            .replace(' minute', 'm')
-            .replace(' hours', 'h')
-            .replace(' hour', 'h')
-            .replace(' days', 'd')
-            .replace(' day', 'd')
-            .replace(' month', 'mo')
-            .replace(' year', 'y')
-            .replace(' seconds', 's')
-            .replace(' a ', '1'),
-          isOnline: false, 
-          isRead: lastMsg.read,
-          unreadCount: 0, 
-          isSentByMe: lastMsg.senderId === user?.id,
-        };
-      });
+        if (msgTime <= clearedTime) return null;
+        return item;
+      }));
+
+      const transformedChats: ChatPreview[] = chatsWithClearStats
+        .filter(item => item !== null)
+        .map((item: any) => {
+          const otherUser = item.user;
+          const lastMsg = item.lastMessage;
+          
+          let previewText = lastMsg.content;
+          if (lastMsg.type === 'image') previewText = '📷 Photo';
+          else if (lastMsg.type === 'audio') previewText = '🎵 Voice message';
+          else if (lastMsg.type === 'file') previewText = `📄 ${lastMsg.metadata?.fileName || 'Document'}`;
+          
+          return {
+            id: otherUser.id,
+            name: otherUser.name,
+            avatar: otherUser.avatar || otherUser.name.substring(0, 2).toUpperCase(),
+            lastMessage: previewText,
+            timestamp: dayjs(lastMsg.createdAt).fromNow(true)
+              .replace(' minutes', 'm')
+              .replace(' minute', 'm')
+              .replace(' hours', 'h')
+              .replace(' hour', 'h')
+              .replace(' days', 'd')
+              .replace(' day', 'd')
+              .replace(' month', 'mo')
+              .replace(' year', 'y')
+              .replace(' seconds', 's')
+              .replace(' a ', '1'),
+            isOnline: false, 
+            isRead: lastMsg.read,
+            unreadCount: item.unreadCount || 0, 
+            isSentByMe: lastMsg.senderId === user?.id,
+          };
+        });
       setChats(transformedChats);
     } catch (error) {
       console.error('Failed to fetch chats:', error);
@@ -174,6 +181,7 @@ export default function ChatListScreen() {
 
   useFocusEffect(
     React.useCallback(() => {
+      fetchChats();
       const loadAllSettings = async () => {
         if (chats.length === 0) return;
         const settings: Record<string, boolean> = {};
@@ -195,83 +203,6 @@ export default function ChatListScreen() {
   const filteredChats = chats.filter(chat =>
     chat.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
-  const renderChatItem = ({ item }: { item: ChatPreview }) => {
-    const isAvatarText = item.avatar.length <= 2;
-
-    return (
-      <TouchableOpacity
-        style={[styles.chatItem, { backgroundColor: theme.card, borderColor: theme.border }]}
-        onPress={() => router.push(`/chat/${item.id}`)}
-        activeOpacity={0.7}
-      >
-        {/* Avatar */}
-        <View style={styles.avatarContainer}>
-          {isAvatarText ? (
-            <View style={[styles.avatarCircle, { backgroundColor: '#1F2937' }]}>
-              <Text style={styles.avatarText}>{item.avatar}</Text>
-            </View>
-          ) : (
-            <Image source={getAvatarUrl(item.avatar)} style={styles.avatar} />
-          )}
-          {item.isOnline && <View style={styles.onlineIndicator} />}
-        </View>
-
-        {/* Chat Info */}
-        <View style={styles.chatContent}>
-          <View style={styles.chatHeader}>
-            <ThemedText
-              style={[
-                styles.chatName,
-                !item.isRead && styles.unreadName,
-              ]}
-            >
-              {item.name}
-            </ThemedText>
-            <View style={styles.timestampContainer}>
-              {item.isRead && item.isSentByMe && (
-                <Text style={styles.checkmark}>✓✓</Text>
-              )}
-              <Text
-                style={[
-                  styles.timestamp,
-                  { color: !item.isRead ? theme.primary : theme.icon },
-                  !item.isRead && styles.unreadTime,
-                ]}
-              >
-                {item.timestamp}
-              </Text>
-              {disappearingSettings[item.id] && (
-                <Clock size={12} color={theme.primary} strokeWidth={2.5} />
-              )}
-            </View>
-          </View>
-
-          <View style={styles.messageRow}>
-            <ThemedText
-              style={[
-                styles.lastMessage,
-                !item.isRead && styles.unreadMessage,
-              ]}
-              numberOfLines={1}
-            >
-              {item.lastMessage}
-            </ThemedText>
-            {item.unreadCount && item.unreadCount > 0 ? (
-              <View style={styles.unreadBadge}>
-                <Text style={styles.unreadText}>{item.unreadCount}</Text>
-              </View>
-            ) : null}
-            {item.isPinned && (
-              <View style={styles.pinIcon}>
-                <Text style={styles.pinEmoji}>📌</Text>
-              </View>
-            )}
-          </View>
-        </View>
-      </TouchableOpacity>
-    );
-  };
 
   return (
     <GradientBackground>
@@ -333,7 +264,20 @@ export default function ChatListScreen() {
           ) : filteredChats.length > 0 ? (
             filteredChats.map((item, index) => (
               <View key={item.id}>
-                {renderChatItem({ item })}
+                <ChatListItem
+                  name={item.name}
+                  avatar={item.avatar}
+                  lastMessage={item.lastMessage}
+                  timestamp={item.timestamp}
+                  unreadCount={item.unreadCount}
+                  isOnline={onlineUsers.some(uid => String(uid) === String(item.id))}
+                  isRead={item.isRead}
+                  isPinned={item.isPinned}
+                  isSentByMe={item.isSentByMe}
+                  showDisappearingTimer={!!disappearingSettings[item.id]}
+                  theme={theme}
+                  onPress={() => router.push(`/chat/${item.id}`)}
+                />
                 {index < filteredChats.length - 1 && (
                   <View style={[styles.separator, { backgroundColor: theme.border }]} />
                 )}
@@ -393,113 +337,6 @@ const styles = StyleSheet.create({
   
   chatList: {
     flex: 1,
-  },
-  
-  chatItem: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    gap: 12,
-    alignItems: 'center',
-  },
-  
-  avatarContainer: {
-    position: 'relative',
-  },
-  avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 14,
-  },
-  avatarCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  onlineIndicator: {
-    position: 'absolute',
-    bottom: 2,
-    right: 2,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: '#22C55E',
-    borderWidth: 2,
-    borderColor: 'white',
-  },
-  
-  chatContent: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  chatHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  chatName: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  unreadName: {
-    fontWeight: '800',
-  },
-  timestampContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-   gap: 4,
-  },
-  checkmark: {
-    fontSize: 12,
-    color: '#8B5CF6',
-  },
-  timestamp: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  unreadTime: {
-    fontWeight: '700',
-  },
-  
-  messageRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  lastMessage: {
-    fontSize: 14,
-    flex: 1,
-  },
-  unreadMessage: {
-    fontWeight: '600',
-  },
-  unreadBadge: {
-    backgroundColor: '#F97316',
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 6,
-  },
-  unreadText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  pinIcon: {
-    marginLeft: 4,
-  },
-  pinEmoji: {
-    fontSize: 14,
   },
   separator: {
     height: 1,

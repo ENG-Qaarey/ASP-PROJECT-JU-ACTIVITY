@@ -23,7 +23,7 @@ export class ActivitiesController {
   constructor(
     private readonly activitiesService: ActivitiesService,
     private readonly prisma: PrismaService,
-  ) {}
+  ) { }
 
   @Get()
   findAll(
@@ -81,9 +81,9 @@ export class ActivitiesController {
 
     return this.activitiesService.create(
       {
-      ...activityData,
-      coordinatorId,
-      coordinatorName,
+        ...activityData,
+        coordinatorId,
+        coordinatorName,
       },
       user.id,
     );
@@ -91,8 +91,8 @@ export class ActivitiesController {
 
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('coordinator')
-  update(
+  @Roles('admin', 'coordinator')
+  async update(
     @Param('id') id: string,
     @Req() req: any,
     @Body()
@@ -106,17 +106,18 @@ export class ActivitiesController {
       capacity?: number;
       enrolled?: number;
       status?: string;
+      image?: string;
     },
   ) {
     const user = req.user as { id: string; role: string };
+
     if (user.role === 'coordinator') {
-      return this.activitiesService.findOne(id).then((activity) => {
-        if (activity.coordinatorId !== user.id) {
-          throw new ForbiddenException('You can only modify your own activities');
-        }
-        return this.activitiesService.update(id, updateData, user.id);
-      });
+      const activity = await this.activitiesService.findOne(id);
+      if (activity.coordinatorId !== user.id) {
+        throw new ForbiddenException('You can only modify your own activities');
+      }
     }
+
     return this.activitiesService.update(id, updateData, user.id);
   }
 
@@ -134,5 +135,88 @@ export class ActivitiesController {
       });
     }
     return this.activitiesService.delete(id, user.id);
+  }
+
+  @Get(':id/members')
+  @UseGuards(JwtAuthGuard)
+  async getMembers(@Param('id') id: string) {
+    const activity = await this.prisma.activity.findUnique({
+      where: { id },
+      include: {
+        coordinator: {
+          select: { id: true, name: true, email: true, role: true, avatar: true }
+        },
+        applications: {
+          where: { status: 'approved' },
+          select: {
+            id: true,
+            isAdmin: true,
+            student: {
+              select: { id: true, name: true, email: true, role: true, avatar: true }
+            }
+          }
+        }
+      }
+    });
+
+    if (!activity) throw new BadRequestException('Activity not found');
+
+    const members = [
+      { ...activity.coordinator, isGroupAdmin: true },
+      ...activity.applications.map(app => ({
+        ...app.student,
+        isGroupAdmin: app.isAdmin,
+        applicationId: app.id
+      }))
+    ];
+
+    return members;
+  }
+
+  @Post(':id/admin/:studentId')
+  @UseGuards(JwtAuthGuard)
+  async toggleAdmin(
+    @Param('id') id: string,
+    @Param('studentId') studentId: string,
+    @Req() req: any
+  ) {
+    const userId = req.user.id;
+    const userRole = req.user.role;
+
+    // Check if requester is coordinator or already an admin in this group
+    const activity = await this.prisma.activity.findUnique({
+      where: { id },
+      select: { coordinatorId: true }
+    });
+
+    if (!activity) throw new BadRequestException('Activity not found');
+
+    let canManage = userRole === 'admin' || activity.coordinatorId === userId;
+
+    if (!canManage) {
+      const requesterApp = await this.prisma.application.findUnique({
+        where: { studentId_activityId: { studentId: userId, activityId: id } }
+      });
+      if (requesterApp?.isAdmin) {
+        canManage = true;
+      }
+    }
+
+    if (!canManage) {
+      throw new ForbiddenException('You do not have permission to manage admins in this group');
+    }
+
+    const targetApp = await this.prisma.application.findUnique({
+      where: { studentId_activityId: { studentId, activityId: id } }
+    });
+
+    if (!targetApp || targetApp.status !== 'approved') {
+      throw new BadRequestException('Student is not an approved member of this group');
+    }
+
+    return this.prisma.application.update({
+      where: { id: targetApp.id },
+      data: { isAdmin: !targetApp.isAdmin }
+    });
   }
 }

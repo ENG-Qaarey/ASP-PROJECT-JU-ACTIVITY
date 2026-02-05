@@ -2,7 +2,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Image } from 'expo-image';
-import { FileText, Clock, Pin } from 'lucide-react-native';
+import { FileText, Clock, Pin, Ban } from 'lucide-react-native';
 import { Svg, Path } from 'react-native-svg';
 
 import { IMAGE_BASE } from '@/src/lib/config';
@@ -45,6 +45,7 @@ interface MessageBubbleProps {
   setPlayingAudioId: (id: string | null) => void;
   userAvatar?: string;
   contactAvatar?: string;
+  isGroup?: boolean;
 }
 
 export const PremiumMessageBubble = ({
@@ -63,9 +64,10 @@ export const PremiumMessageBubble = ({
   setPlayingAudioId,
   userAvatar,
   contactAvatar,
+  isGroup,
 }: MessageBubbleProps) => {
   const bubbleColor = isMe 
-    ? '#0084FF' 
+    ? theme.primary 
     : (colorScheme === 'dark' ? '#333336' : '#E9E9EB');
   
   const textColor = isMe 
@@ -87,6 +89,12 @@ export const PremiumMessageBubble = ({
       {isMe && isLastInGroup && <SentTail color={bubbleColor} />}
       {!isMe && isLastInGroup && <ReceivedTail color={bubbleColor} />}
 
+      {isGroup && !isMe && msgItem.senderName && (
+        <Text style={[styles.senderName, { color: colorScheme === 'dark' ? theme.primary : theme.primary }]}>
+          {msgItem.senderName}
+        </Text>
+      )}
+
       {msgItem.replyTo && (
         <View style={[
           styles.replyContainer, 
@@ -104,7 +112,14 @@ export const PremiumMessageBubble = ({
         </View>
       )}
 
-      {msgItem.type === 'audio' ? (
+      {msgItem.isDeleted ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, opacity: 0.7 }}>
+          <Ban size={14} color={textColor} />
+          <Text style={{ color: textColor, fontStyle: 'italic', fontSize: 14 }}>
+            This message was deleted
+          </Text>
+        </View>
+      ) : msgItem.type === 'audio' ? (
         <VoiceMessageComponent 
           messageId={msgItem.id}
           url={msgItem.text} 
@@ -183,6 +198,11 @@ const styles = StyleSheet.create({
   messageText: {
     fontSize: 16,
     lineHeight: 22,
+  },
+  senderName: {
+    fontSize: 12,
+    fontWeight: '700',
+    marginBottom: 4,
   },
   footer: {
     flexDirection: 'row',
