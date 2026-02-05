@@ -25,7 +25,7 @@ import Reanimated from 'react-native-reanimated';
 import { BlurView as ExpoBlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
-import { ArrowLeft, ChevronDown, Send, Paperclip, Smile, Camera, Mic, Info, MoreVertical, Play, Pause, Square, Trash2, Clock, Reply, X, Star, Pin, Share2, FilePlus, Image as ImageIcon, FileText, Download, File, User, Search, Ban, Settings, Bell, BellOff, Users, Zap, Plus } from 'lucide-react-native';
+import { ArrowLeft, ChevronDown, Send, Paperclip, Smile, Camera, Mic, Info, MoreVertical, Play, Pause, Square, Trash2, Clock, Reply, X, Star, Pin, Share2, FilePlus, Image as ImageIcon, FileText, Download, File, User, Search, Ban, Settings, Bell, BellOff, Users, Zap, Plus, Keyboard as KeyboardIcon, MapPin, Calendar, BarChart2 } from 'lucide-react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useColorScheme } from '@/src/hooks/use-color-scheme';
 import { Colors } from '@/src/data/theme';
@@ -1067,6 +1067,31 @@ export default function ChatScreen() {
     }
   };
 
+  const handleCamera = async () => {
+    try {
+      setShowAttachmentMenu(false);
+      const permission = await ImagePicker.requestCameraPermissionsAsync();
+      
+      if (permission.status !== 'granted') {
+          Alert.alert('Permission needed', 'Camera permission is required to take photos.');
+          return;
+      }
+      
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ['images', 'videos'],
+        allowsEditing: false,
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        uploadAndSendMessage(asset.uri, asset.type === 'video' ? 'video' as any : 'image');
+      }
+    } catch (err) {
+      console.error('Camera launch failed', err);
+    }
+  };
+
   const handlePickImage = async () => {
     try {
       setShowAttachmentMenu(false);
@@ -1586,9 +1611,21 @@ export default function ChatScreen() {
           <View style={styles.inputActionsRow}>
             <TouchableOpacity 
               style={styles.plusBtn}
-              onPress={() => setShowAttachmentMenu(!showAttachmentMenu)}
+              onPress={() => {
+                if (showAttachmentMenu) {
+                   setShowAttachmentMenu(false);
+                   // Optionally focus input here if ref is available
+                } else {
+                   Keyboard.dismiss();
+                   setTimeout(() => setShowAttachmentMenu(true), 50);
+                }
+              }}
             >
-              <Plus size={26} color={theme.primary} />
+              {showAttachmentMenu ? (
+                <KeyboardIcon size={26} color={theme.text} />
+              ) : (
+                <Plus size={26} color={theme.primary} />
+              )}
             </TouchableOpacity>
 
             {isRecording ? (
@@ -1675,6 +1712,32 @@ export default function ChatScreen() {
           </View>
         </View>
       </KeyboardAvoidingView>
+
+      {showAttachmentMenu && (
+        <View style={[styles.attachmentGrid, { backgroundColor: theme.card }]}>
+          {[
+            { id: 'camera', label: 'Camera', icon: Camera, color: '#EC407A', onPress: handleCamera },
+            { id: 'photos', label: 'Photos', icon: ImageIcon, color: '#AB47BC', onPress: handlePickImage },
+            { id: 'document', label: 'Document', icon: FileText, color: '#5C6BC0', onPress: handlePickDocument },
+            { id: 'location', label: 'Location', icon: MapPin, color: '#26A69A', onPress: () => {} },
+            { id: 'contact', label: 'Contact', icon: User, color: '#42A5F5', onPress: () => {} },
+            { id: 'poll', label: 'Poll', icon: BarChart2, color: '#FBC02D', onPress: () => {} },
+            { id: 'event', label: 'Event', icon: Calendar, color: '#EF5350', onPress: () => {} },
+            { id: 'quick', label: 'Quick replies', icon: Zap, color: '#FF9800', onPress: () => {} },
+          ].map((item, index) => (
+            <TouchableOpacity key={item.id} style={styles.gridItem} onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              item.onPress();
+              setShowAttachmentMenu(false);
+            }}>
+              <View style={[styles.iconCircle, { backgroundColor: item.color }]}>
+                <item.icon size={26} color="#FFF" />
+              </View>
+              <Text style={[styles.gridLabel, { color: theme.text }]}>{item.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
 
       {/* Header Options Menu Modal */}
       <Modal
@@ -1813,42 +1876,6 @@ export default function ChatScreen() {
         </TouchableOpacity>
       </Modal>
 
-      {/* Attachment Menu */}
-      {showAttachmentMenu && (
-        <>
-          <TouchableOpacity 
-            style={styles.menuOverlay} 
-            activeOpacity={1} 
-            onPress={() => setShowAttachmentMenu(false)}
-          />
-          <View style={[styles.attachmentMenu, { backgroundColor: theme.card, borderColor: theme.border }]}>
-            <TouchableOpacity 
-              style={styles.menuItem} 
-              onPress={handlePickDocument}
-            >
-              <View style={[styles.menuIconCircle, { backgroundColor: '#3B82F6' }]}>
-                <FilePlus size={20} color="#FFF" />
-              </View>
-              <Text style={[styles.menuItemText, { color: theme.text }]}>Add file</Text>
-            </TouchableOpacity>
-
-            <View style={[styles.menuDivider, { backgroundColor: theme.border }]} />
-
-            <TouchableOpacity 
-              style={styles.menuItem} 
-              onPress={handlePickImage}
-            >
-              <View style={[styles.menuIconCircle, { backgroundColor: '#10B981' }]}>
-                <FileText size={20} color="#FFF" />
-              </View>
-              <View>
-                <Text style={[styles.menuItemText, { color: theme.text }]}>Upload / attach document</Text>
-                <Text style={[styles.menuItemSubtext, { color: theme.textSecondary }]}>Images, PDFs, files, etc.</Text>
-              </View>
-            </TouchableOpacity>
-          </View>
-        </>
-      )}
 
       {/* Full Screen Image Viewer */}
       <Modal
@@ -2991,5 +3018,38 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '800',
     letterSpacing: 0.5,
+  },
+  // Attachment Menu Grid Styles
+  attachmentGrid: {
+    width: '100%',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingVertical: 20,
+    paddingHorizontal: 10,
+    minHeight: 330,
+    paddingBottom: 40,
+  },
+  gridItem: {
+    width: '25%', 
+    alignItems: 'center',
+    marginVertical: 12,
+  },
+  iconCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  gridLabel: {
+    fontSize: 12,
+    textAlign: 'center',
+    fontWeight: '500',
   },
 });
