@@ -794,8 +794,15 @@ export default function ChatScreen() {
     let interval: any;
     if (isRecording && !isPaused) {
       interval = setInterval(() => {
-        setWaveData(new Array(25).fill(0).map(() => Math.max(4, Math.random() * 24 + 4)));
-      }, 100);
+        LayoutAnimation.configureNext(LayoutAnimation.create(70, LayoutAnimation.Types.linear, LayoutAnimation.Properties.opacity));
+        setWaveData(new Array(30).fill(0).map((_, i) => {
+            const t = Date.now() / 150;
+            const wave1 = Math.sin(t + i / 5) * 8;
+            const wave2 = Math.cos(t * 1.5 - i / 3) * 5;
+            const noise = Math.random() * 4;
+            return Math.max(2, 12 + wave1 + wave2 + noise); 
+        }));
+      }, 70);
     } else if (!isRecording) {
       setWaveData(new Array(25).fill(4));
     }
@@ -1644,8 +1651,8 @@ export default function ChatScreen() {
                             style={[
                               styles.liveWaveBar, 
                               { 
-                                height: isPaused ? 4 : height,
-                                backgroundColor: theme.textSecondary 
+                                height: isPaused ? 2 : height,
+                                backgroundColor: isPaused ? '#475569' : '#E2E8F0',
                               }
                             ]} 
                           />
@@ -1656,23 +1663,23 @@ export default function ChatScreen() {
                 {/* Bottom Row: Controls */}
                 <View style={styles.recordingBottomRow}>
                     <TouchableOpacity onPress={() => stopRecording(false)} style={styles.recordActionBtn}>
-                      <Trash2 size={24} color={theme.text} />
+                      <Trash2 size={24} color="#CBD5E1" />
                     </TouchableOpacity>
 
                     <TouchableOpacity onPress={togglePause} style={styles.recordPauseBtn}>
                        {isPaused ? (
-                          <View style={styles.resumeCircle}>
-                             <View style={styles.resumeTriangle} />
+                          <View style={[styles.resumeCircle, { backgroundColor: 'transparent', borderWidth: 2, borderColor: '#EF4444' }]}>
+                             <Mic size={20} color="#EF4444" />
                           </View>
                        ) : (
-                          <View style={styles.pauseCircle}>
-                             <Pause size={18} color="#EF4444" fill="#EF4444" />
+                          <View style={[styles.pauseCircle, { backgroundColor: 'transparent', borderWidth: 2, borderColor: '#EF4444' }]}>
+                             <Pause size={20} color="#EF4444" fill="#EF4444" />
                           </View>
                        )}
                     </TouchableOpacity>
 
-                    <TouchableOpacity onPress={() => stopRecording(true)} style={styles.recordSendBtn}>
-                      <Send size={20} color="#FFF" />
+                    <TouchableOpacity onPress={() => stopRecording(true)} style={[styles.recordSendBtn, { backgroundColor: '#FFF', width: 48, height: 48, borderRadius: 24 }]}>
+                      <Send size={22} color="#000" fill="#000" />
                     </TouchableOpacity>
                 </View>
               </View>
@@ -1692,7 +1699,7 @@ export default function ChatScreen() {
 
                 {!inputText.trim() ? (
                   <View style={styles.inputRightActions}>
-                    <TouchableOpacity style={styles.inputActionBtn}>
+                    <TouchableOpacity style={styles.inputActionBtn} onPress={handleCamera}>
                       <Camera size={24} color={theme.primary} />
                     </TouchableOpacity>
                     <TouchableOpacity 
@@ -2445,9 +2452,12 @@ const styles = StyleSheet.create({
   },
   recordingTimerText: {
     fontSize: 24,
-    fontWeight: '300',
-    marginRight: 20,
-    fontVariant: ['tabular-nums'],
+    fontWeight: '400', // Monospace usually needs normal weight
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    width: 80, 
+    textAlign: 'left',
+    marginRight: 6,
+    color: '#F1F5F9',
   },
   liveWaveform: {
     flex: 1,
@@ -2458,8 +2468,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   liveWaveBar: {
-    width: 3,
-    borderRadius: 1.5,
+    width: 2,
+    borderRadius: 1,
+    marginHorizontal: 1,
   },
   recordingBottomRow: {
     flexDirection: 'row',
@@ -2474,50 +2485,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   recordPauseBtn: {
-    width: 56,
-    height: 56,
+    width: 44,
+    height: 44,
     justifyContent: 'center',
     alignItems: 'center',
   },
   pauseCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    borderWidth: 2,
-    borderColor: '#EF4444',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#EF4444',
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4, elevation: 2
   },
   resumeCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    borderWidth: 2,
-    borderColor: '#EF4444',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.1)',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'transparent',
-  },
-  resumeTriangle: {
-    width: 0,
-    height: 0,
-    backgroundColor: 'transparent',
-    borderStyle: 'solid',
-    borderLeftWidth: 14,
-    borderRightWidth: 0,
-    borderBottomWidth: 10,
-    borderTopWidth: 10,
-    borderLeftColor: '#EF4444',
-    borderRightColor: 'transparent',
-    borderBottomColor: 'transparent',
-    borderTopColor: 'transparent',
-    marginLeft: 4, 
   },
 
   recordSendBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: '#0F172A', // Dark/Black color
     justifyContent: 'center',
     alignItems: 'center',
