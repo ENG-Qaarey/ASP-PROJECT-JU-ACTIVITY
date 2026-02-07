@@ -78,9 +78,16 @@ export default function UserDirectoryScreen() {
   const insets = useSafeAreaInsets();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<'all' | 'groups'>('all');
   const pulseAnim = React.useRef(new Animated.Value(1)).current;
+
+  // Ref to track the current page during async operations
+  const pageRef = React.useRef(1);
+  const fetchingRef = React.useRef(false);
 
   const getGroupedData = () => {
     const activityGroups: { [key: string]: Group } = {};
@@ -144,37 +151,36 @@ export default function UserDirectoryScreen() {
     ).start();
   }, []);
 
-  const fetchUsers = async (showLoader = false) => {
-    // Only use loader if we don't have a cache or if explicitly searching
-    let shouldUseLoader = showLoader;
+  const fetchUsers = async (isInitial = false, isLoadMore = false) => {
+    if (fetchingRef.current) return;
+    
+    // Prevent loading more if we already know there's no more data
+    if (isLoadMore && !hasMore) return;
 
-    if (showLoader && !searchQuery) {
-        // Try to load cache first
-        const cache = await AsyncStorage.getItem('cached_users_directory');
-        if (cache) {
-            setUsers(JSON.parse(cache));
-            setLoading(false);
-            shouldUseLoader = false; // Don't show loader since we have data
-        }
+    fetchingRef.current = true;
+
+    if (isInitial) {
+        setLoading(true);
+        setPage(1);
+        pageRef.current = 1;
+        setHasMore(true);
+    } else if (isLoadMore) {
+        setLoadingMore(true);
     }
 
-    if (shouldUseLoader) setLoading(true);
-
-    const timeoutPromise = (ms: number) => new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms));
+    const currentPage = isLoadMore ? page + 1 : 1;
+    const limit = 20;
 
     const startTime = Date.now();
     try {
-      // Race the network request against a 5000ms timeout (increased from 2s to allow for 2s min display)
-      const [usersData, recentChatsData] = await Promise.race([
-          Promise.all([
-            client.get(`/users/chat-directory${searchQuery ? `?search=${searchQuery}` : ''}`),
-            client.get('/chat/recent')
-          ]),
-          timeoutPromise(5000)
-      ]) as [any, any];
+      // Removing manual race timeout to allow native network timeouts to handle it
+      const [usersData, recentChatsData] = await Promise.all([
+        client.get(`/users/chat-directory?page=${currentPage}&limit=${limit}${searchQuery ? `&search=${searchQuery}` : ''}`),
+        client.get('/chat/recent')
+      ]);
 
-      const usersWithCounts = usersData.map((u: User) => {
-        const recent = recentChatsData.find((chat: any) => 
+      const usersWithCounts = (usersData as User[]).map((u: User) => {
+        const recent = (recentChatsData as any[]).find((chat: any) => 
           String(chat.user?.id) === String(u.id)
         );
         
@@ -191,35 +197,43 @@ export default function UserDirectoryScreen() {
       });
 
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      setUsers(usersWithCounts);
       
-      // Cache the result if this is the main list (no search)
-      if (!searchQuery) {
-          await AsyncStorage.setItem('cached_users_directory', JSON.stringify(usersWithCounts));
+      if (isLoadMore) {
+          setUsers(prev => [...prev, ...usersWithCounts]);
+          setPage(currentPage);
+          pageRef.current = currentPage;
+      } else {
+          setUsers(usersWithCounts);
       }
 
+      setHasMore(usersData.length === limit);
+
     } catch (error: any) {
-      if (error.message === 'Timeout') {
-          console.log('User fetch timed out (5s limit)');
-      } else {
-          console.error('Failed to fetch users and counts:', error);
-      }
+      console.error('Failed to fetch users:', error);
     } finally {
-      if (shouldUseLoader) {
+      if (isInitial) {
         const elapsed = Date.now() - startTime;
-        const minDelay = 2000;
+        const minDelay = 1500;
         if (elapsed < minDelay) {
           await new Promise(resolve => setTimeout(resolve, minDelay - elapsed));
         }
       }
       setLoading(false);
+      setLoadingMore(false);
+      fetchingRef.current = false;
     }
   };
 
-  // Initial load with loader
+  const handleLoadMore = () => {
+      if (!loading && !loadingMore && hasMore && activeFilter === 'all') {
+          fetchUsers(false, true);
+      }
+  };
+
+  // Initial load or search query change
   useEffect(() => {
     fetchUsers(true);
-  }, [searchQuery]);
+  }, [searchQuery, activeFilter]);
 
   useEffect(() => {
     if (!socket || !connected) return;
@@ -557,9 +571,18 @@ export default function UserDirectoryScreen() {
                 </TouchableOpacity>
               );
             }}
-            keyExtractor={item => item.id}
+            keyExtractor={item => `${item.id}-${activeFilter}`}
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
+            onEndReached={handleLoadMore}
+            onEndReachedThreshold={0.5}
+            ListFooterComponent={() => (
+              loadingMore ? (
+                <View style={[styles.footerLoader, { paddingVertical: 20 }]}>
+                  <ActivityIndicator size="small" color={theme.primary} />
+                </View>
+              ) : null
+            )}
             ListEmptyComponent={() => (
               <View style={styles.emptyContainer}>
                 <Text style={[styles.emptyText, { color: theme.textSecondary }]}>No users found</Text>
@@ -575,6 +598,10 @@ export default function UserDirectoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  footerLoader: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   floatingHeaderWrapper: {
     paddingHorizontal: 8,

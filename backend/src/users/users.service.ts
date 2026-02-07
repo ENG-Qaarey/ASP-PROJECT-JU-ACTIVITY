@@ -70,7 +70,7 @@ export class UsersService {
     });
   }
 
-  async getChatDirectory(excludeUserId: string, search?: string) {
+  async getChatDirectory(excludeUserId: string, search?: string, page = 1, limit = 20) {
     // Get the requesting user's activities to filter visibility
     const currentUser = await this.prisma.user.findUnique({
       where: { id: excludeUserId },
@@ -141,6 +141,8 @@ export class UsersService {
       ];
     }
 
+    const skip = (page - 1) * limit;
+
     return this.prisma.user.findMany({
       where,
       select: {
@@ -180,7 +182,8 @@ export class UsersService {
       orderBy: {
         name: 'asc',
       },
-      take: 100,
+      skip,
+      take: limit,
     });
   }
 

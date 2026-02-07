@@ -159,17 +159,22 @@ export class ChatService {
         const combinedRecent: any[] = [];
         const uniqueEntries = new Map<string, any>();
 
+        // Pre-calculate unread counts for all senders
+        const unreadCounts = new Map<string, number>();
+        for (const m of (messages as any[])) {
+            if (m.receiverId === userId && !m.read) {
+                const senderId = m.senderId;
+                unreadCounts.set(senderId, (unreadCounts.get(senderId) || 0) + 1);
+            }
+        }
+
         // Process 1-to-1 chats
         for (const msg of (messages as any[])) {
             const otherUser = msg.senderId === userId ? msg.receiver : msg.sender;
             if (!otherUser) continue;
 
             if (!uniqueEntries.has('user_' + otherUser.id)) {
-                const unreadCount = messages.filter((m: any) =>
-                    m.senderId === otherUser.id &&
-                    m.receiverId === userId &&
-                    !m.read
-                ).length;
+                const unreadCount = unreadCounts.get(otherUser.id) || 0;
 
                 uniqueEntries.set('user_' + otherUser.id, {
                     type: 'individual',

@@ -33,8 +33,18 @@ export class UsersController {
   }
 
   @Get('chat-directory')
-  chatDirectory(@Req() req: any, @Query('search') search?: string) {
-    return this.usersService.getChatDirectory(req.user.id, search);
+  chatDirectory(
+    @Req() req: any,
+    @Query('search') search?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string
+  ) {
+    return this.usersService.getChatDirectory(
+      req.user.id,
+      search,
+      page ? parseInt(page, 10) : 1,
+      limit ? parseInt(limit, 10) : 20
+    );
   }
 
   @Patch('me')
