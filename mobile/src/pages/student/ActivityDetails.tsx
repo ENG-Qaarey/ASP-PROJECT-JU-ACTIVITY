@@ -49,7 +49,7 @@ export default function ActivityDetails() {
             setApplied(true);
         }
     } catch (error) {
-        console.error('Failed to check application status:', error);
+        console.log('Failed to check application status:', error);
     } finally {
         setCheckingStatus(false);
     }
@@ -77,7 +77,7 @@ export default function ActivityDetails() {
         setApplied(true);
         Alert.alert('Success', 'Your application has been submitted and is pending review!');
     } catch (error: any) {
-        console.error('Application failed:', error);
+        console.log('Application failed:', error);
         Alert.alert('Error', error.message || 'Failed to apply for activity');
     } finally {
         setIsApplying(false);

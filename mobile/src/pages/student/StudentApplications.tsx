@@ -39,7 +39,7 @@ export default function StudentApplications() {
             setApplications(data);
         }
     } catch (error) {
-        console.error('Failed to fetch applications:', error);
+        console.log('Failed to fetch applications:', error);
     } finally {
         setLoading(false);
     }

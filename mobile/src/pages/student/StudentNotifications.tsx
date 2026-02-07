@@ -58,7 +58,7 @@ export default function StudentNotifications() {
       const data = await client.get('/notifications');
       setNotifications(data);
     } catch (error) {
-      console.error('Error fetching notifications:', error);
+      console.log('Error fetching notifications:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -117,7 +117,7 @@ export default function StudentNotifications() {
       await client.put(`/notifications/${id}/read`, {});
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
     } catch (error) {
-      console.error('Error marking read:', error);
+      console.log('Error marking read:', error);
     }
   };
 

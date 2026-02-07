@@ -32,7 +32,11 @@ import {
   Camera,
   Edit2,
   ArrowLeft,
-  X
+  X,
+  BarChart3,
+  TrendingUp,
+  Activity as ActivityIcon,
+  Clock
 } from 'lucide-react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -41,6 +45,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { getAvatarUrl } from '@/src/lib/media';
 import { client } from '@/src/lib/api';
 import { BlurView as ExpoBlurView } from 'expo-blur';
+import Svg, { Path } from 'react-native-svg';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -338,6 +343,17 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 15,
   },
+  miniChartBox: {
+    padding: 16,
+    borderRadius: 16,
+    marginTop: 8,
+  },
+  miniChartTitle: {
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
 });
 
 const AlertModal = ({ visible, onClose, title, children, theme }: any) => (
@@ -444,6 +460,7 @@ export const GroupChatSettings = ({
   const [selectedMember, setSelectedMember] = React.useState<any>(null);
   const [searchQuery, setSearchQuery] = React.useState('');
   const [showSearch, setShowSearch] = React.useState(false);
+  const [showAnalysis, setShowAnalysis] = React.useState(false);
   const [editingField, setEditingField] = React.useState<{ type: 'title' | 'description', value: string } | null>(null);
 
   // Sort and filter members
@@ -572,7 +589,7 @@ export const GroupChatSettings = ({
         Alert.alert('Success', 'Group profile image updated!');
       }
     } catch (err) {
-      console.error('Failed to update group image:', err);
+      console.log('Failed to update group image:', err);
       Alert.alert('Error', 'Failed to update group image.');
     }
   };
@@ -632,7 +649,7 @@ export const GroupChatSettings = ({
             <QuickBtn icon={Megaphone} label="Announce" color="#F59E0B" />
             <QuickBtn icon={FileText} label="Materials" color="#3B82F6" />
             <QuickBtn icon={Shield} label="Guidelines" color="#10B981" />
-            <QuickBtn icon={SettingsIcon} label="Tools" color="#6366F1" />
+            <QuickBtn icon={BarChart3} label="Analyze" color="#0EA5E9" onPress={() => setShowAnalysis(true)} />
         </View>
       </View>
 
@@ -811,17 +828,63 @@ export const GroupChatSettings = ({
           }}
         />
       )}
+
+      {showAnalysis && (
+        <AlertModal
+          visible={showAnalysis}
+          onClose={() => setShowAnalysis(false)}
+          title="Group Analysis"
+          theme={theme}
+        >
+          <View style={{ gap: 16 }}>
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <AnalysisCard label="Activity" value="84%" icon={TrendingUp} color="#10B981" theme={theme} />
+              <AnalysisCard label="Messages" value="1.2k" icon={MessageSquare} color="#0EA5E9" theme={theme} />
+            </View>
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <AnalysisCard label="Engagement" value="High" icon={ActivityIcon} color="#8B5CF6" theme={theme} />
+              <AnalysisCard label="Response" value="2m" icon={Clock} color="#F59E0B" theme={theme} />
+            </View>
+
+            <View style={[styles.miniChartBox, { backgroundColor: theme.background, borderColor: theme.border, borderWidth: 1 }]}>
+               <Text style={[styles.miniChartTitle, { color: theme.textSecondary }]}>Weekly Engagement Trend</Text>
+               <View style={{ height: 60, marginTop: 10 }}>
+                  <Svg height="100%" width="100%" viewBox="0 0 200 60">
+                     <Path d="M0,50 Q25,45 50,30 T100,20 T150,40 T200,10" fill="none" stroke={theme.primary} strokeWidth="2" />
+                  </Svg>
+               </View>
+            </View>
+
+            <TouchableOpacity 
+              style={[styles.modalBtn, { backgroundColor: theme.primary, marginTop: 10, alignItems: 'center' }]} 
+              onPress={() => setShowAnalysis(false)}
+            >
+              <Text style={[styles.modalBtnText, { color: '#FFF' }]}>Close Analysis</Text>
+            </TouchableOpacity>
+          </View>
+        </AlertModal>
+      )}
     </ScrollView>
   );
 };
 
-const QuickBtn = ({ icon: Icon, label, color }: any) => (
-  <TouchableOpacity style={styles.quickBtn}>
+const QuickBtn = ({ icon: Icon, label, color, onPress }: any) => (
+  <TouchableOpacity style={styles.quickBtn} onPress={onPress}>
     <View style={[styles.quickIconCircle, { backgroundColor: color + '15' }]}>
       <Icon size={20} color={color} />
     </View>
     <Text style={styles.quickLabel}>{label}</Text>
   </TouchableOpacity>
+);
+
+const AnalysisCard = ({ label, value, icon: Icon, color, theme }: any) => (
+  <View style={{ flex: 1, backgroundColor: theme.background, padding: 12, borderRadius: 16, borderSize: 1, borderColor: theme.border, borderWidth: 1 }}>
+    <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: color + '15', justifyContent: 'center', alignItems: 'center', marginBottom: 8 }}>
+      <Icon size={16} color={color} />
+    </View>
+    <Text style={{ fontSize: 18, fontWeight: '800', color: theme.text }}>{value}</Text>
+    <Text style={{ fontSize: 10, fontWeight: '600', color: theme.textSecondary }}>{label}</Text>
+  </View>
 );
 
 const OptionItem = ({ icon: Icon, label, theme, right, onPress, body }: any) => (

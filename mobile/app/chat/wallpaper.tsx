@@ -127,7 +127,7 @@ export default function WallpaperSettingsScreen() {
         setSelectedThemeColor(storedTheme);
       }
     } catch (e) {
-      console.error("Failed to load settings", e);
+      console.log("Failed to load settings", e);
     }
   };
 
@@ -149,7 +149,7 @@ export default function WallpaperSettingsScreen() {
 
       router.back();
     } catch (error) {
-      console.error('Error saving wallpaper', error);
+      console.log('Error saving wallpaper', error);
     } finally {
       setSaving(false);
     }

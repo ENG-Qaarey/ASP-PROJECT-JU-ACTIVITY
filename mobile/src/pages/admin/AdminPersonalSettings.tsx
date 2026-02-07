@@ -50,7 +50,7 @@ export default function AdminPersonalSettings() {
           });
         }
       } catch (e) {
-        console.error('Failed to fetch admin profile', e);
+        console.log('Failed to fetch admin profile', e);
       } finally {
         setFetching(false);
       }
@@ -126,7 +126,7 @@ export default function AdminPersonalSettings() {
         ]
       );
     } catch (e) {
-      console.error('Pick image error:', e);
+      console.log('Pick image error:', e);
       Alert.alert('Error', 'Failed to open image picker.');
     }
   };
@@ -149,7 +149,7 @@ export default function AdminPersonalSettings() {
           Alert.alert('Success', 'Profile photo updated successfully.');
       }
     } catch (e: any) {
-      console.error('Photo upload failed:', e);
+      console.log('Photo upload failed:', e);
       Alert.alert('Error', 'Failed to upload photo: ' + (e.message || 'Unknown error'));
     } finally {
       setLoading(false);

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -40,7 +40,7 @@ export default function GroupChatSettingsScreen() {
   const [groupTitle, setGroupTitle] = useState(title || 'Activity Group');
 
   useFocusEffect(
-    React.useCallback(() => {
+    useCallback(() => {
       if (id) {
         fetchGroupDetails();
         loadSettings();
@@ -61,7 +61,7 @@ export default function GroupChatSettingsScreen() {
       const membersData = await client.get(`/activities/${id}/members`);
       setMembers(membersData);
     } catch (error) {
-      console.error('Failed to fetch group details:', error);
+      console.log('Failed to fetch group details:', error);
     } finally {
       setLoading(false);
     }
@@ -73,7 +73,7 @@ export default function GroupChatSettingsScreen() {
       setGroupTitle(newTitle);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
-      console.error('Failed to update title:', error);
+      console.log('Failed to update title:', error);
       Alert.alert('Error', 'Failed to update group name');
     }
   };
@@ -84,7 +84,7 @@ export default function GroupChatSettingsScreen() {
       setGroupDescription(newDesc);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
-      console.error('Failed to update description:', error);
+      console.log('Failed to update description:', error);
       Alert.alert('Error', 'Failed to update group description');
     }
   };
@@ -112,7 +112,7 @@ export default function GroupChatSettingsScreen() {
       // Wait a bit then refresh to be sure
       setTimeout(() => fetchGroupDetails(), 1000);
     } catch (error) {
-      console.error('Failed to remove member:', error);
+      console.log('Failed to remove member:', error);
       Alert.alert('Error', 'Failed to remove member. Restoring list.');
       setMembers(originalMembers);
     }
@@ -124,7 +124,7 @@ export default function GroupChatSettingsScreen() {
       const muted = await AsyncStorage.getItem(`chat_muted_${id}`);
       setIsMuted(!!muted);
     } catch (error) {
-      console.error('Failed to load group settings:', error);
+      console.log('Failed to load group settings:', error);
     }
   };
 
@@ -156,7 +156,7 @@ export default function GroupChatSettingsScreen() {
                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                // router.replace('/chat'); 
             } catch (err) {
-               console.error('Failed to clear chat:', err);
+               console.log('Failed to clear chat:', err);
                // Fallback to local clear
                await AsyncStorage.setItem(`chat_cleared_${id}`, Date.now().toString());
                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -184,7 +184,7 @@ export default function GroupChatSettingsScreen() {
       setMembers(membersData);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
-      console.error('Failed to toggle admin:', error);
+      console.log('Failed to toggle admin:', error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert('Error', 'Failed to update admin privileges. Please try again.');
       

@@ -72,7 +72,7 @@ export default function AdminNotifications() {
         setNotifications([]);
       }
     } catch (error: any) {
-      console.error('Mobile: Error fetching admin inbox:', error);
+      console.log('Mobile: Error fetching admin inbox:', error);
       setErrorStatus(error.message || "Failed to sync with terminal");
     } finally {
       setLoading(false);
@@ -103,7 +103,7 @@ export default function AdminNotifications() {
       await client.put(`/notifications/${id}/read`, {});
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
     } catch (e) {
-      console.error("Local: Mark read error:", e);
+      console.log("Local: Mark read error:", e);
     }
   };
 

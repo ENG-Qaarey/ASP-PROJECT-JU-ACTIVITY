@@ -68,7 +68,7 @@ export default function CoordinatorAttendance() {
         }
       }
     } catch (error) {
-      console.error('Failed to fetch activities:', error);
+      console.log('Failed to fetch activities:', error);
     } finally {
       setLoading(false);
     }
@@ -93,7 +93,7 @@ export default function CoordinatorAttendance() {
       });
       setAttendance(attendanceMap);
     } catch (error) {
-      console.error('Failed to fetch students/attendance:', error);
+      console.log('Failed to fetch students/attendance:', error);
     } finally {
       setFetchingStudents(false);
     }
@@ -137,7 +137,7 @@ export default function CoordinatorAttendance() {
       });
       Alert.alert('Success', 'Attendance session successfully recorded!');
     } catch (error: any) {
-      console.error('Failed to save attendance:', error);
+      console.log('Failed to save attendance:', error);
       Alert.alert('Error', error.message || 'Failed to record attendance');
     } finally {
       setSaving(false);

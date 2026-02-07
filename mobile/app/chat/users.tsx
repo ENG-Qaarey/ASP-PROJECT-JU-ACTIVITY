@@ -1,18 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  FlatList,
-  StatusBar,
-  ActivityIndicator,
-  TextInput,
-  Platform,
-  LayoutAnimation,
-  Animated,
-  Easing,
-} from 'react-native';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, StatusBar, ActivityIndicator, TextInput, Platform, LayoutAnimation, Animated, Easing, UIManager } from 'react-native';
+
+// Enable LayoutAnimation for Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
 import { Stack, useRouter, useFocusEffect } from 'expo-router';
 import { ArrowLeft, Search, MessageSquare, MoreVertical, UserPlus, Plus, Users, Zap } from 'lucide-react-native';
 import { useColorScheme } from '@/src/hooks/use-color-scheme';
@@ -83,23 +76,26 @@ export default function UserDirectoryScreen() {
   const [hasMore, setHasMore] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<'all' | 'groups'>('all');
-  const pulseAnim = React.useRef(new Animated.Value(1)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
 
   // Ref to track the current page during async operations
-  const pageRef = React.useRef(1);
-  const fetchingRef = React.useRef(false);
+  const pageRef = useRef(1);
+  const fetchingRef = useRef(false);
 
-  const getGroupedData = () => {
+  // Optimized grouped data calculation
+  const groupedData = useMemo(() => {
     const activityGroups: { [key: string]: Group } = {};
-    const admins = users.filter(u => u.role === 'admin');
+    const admins = users.filter(u => u.role?.toLowerCase() === 'admin');
 
     users.forEach(user => {
       // Students
       user.applications?.forEach(app => {
+        if (!app.activityId || !app.activity) return;
+
         if (!activityGroups[app.activityId]) {
           activityGroups[app.activityId] = {
             id: app.activityId,
-            title: app.activity.title,
+            title: app.activity.title || 'Untitled Activity',
             image: app.activity.image,
             type: 'group',
             members: [...admins],
@@ -113,10 +109,12 @@ export default function UserDirectoryScreen() {
 
       // Coordinators
       user.activitiesAsCoordinator?.forEach(act => {
+        if (!act.id) return;
+
         if (!activityGroups[act.id]) {
           activityGroups[act.id] = {
             id: act.id,
-            title: act.title,
+            title: act.title || 'Untitled Activity',
             image: act.image,
             type: 'group',
             members: [...admins],
@@ -130,7 +128,7 @@ export default function UserDirectoryScreen() {
     });
 
     return Object.values(activityGroups);
-  };
+  }, [users]);
 
   useEffect(() => {
     Animated.loop(
@@ -168,19 +166,21 @@ export default function UserDirectoryScreen() {
         setLoadingMore(true);
     }
 
-    const currentPage = isLoadMore ? page + 1 : 1;
+    const currentPage = isLoadMore ? pageRef.current + 1 : 1;
     const limit = 20;
 
     const startTime = Date.now();
     try {
-      // Removing manual race timeout to allow native network timeouts to handle it
       const [usersData, recentChatsData] = await Promise.all([
         client.get(`/users/chat-directory?page=${currentPage}&limit=${limit}${searchQuery ? `&search=${searchQuery}` : ''}`),
         client.get('/chat/recent')
       ]);
 
-      const usersWithCounts = (usersData as User[]).map((u: User) => {
-        const recent = (recentChatsData as any[]).find((chat: any) => 
+      const safeUsers = Array.isArray(usersData) ? usersData : [];
+      const safeRecentChats = Array.isArray(recentChatsData) ? recentChatsData : [];
+
+      const usersWithCounts = safeUsers.map((u: User) => {
+        const recent = safeRecentChats.find((chat: any) => 
           String(chat.user?.id) === String(u.id)
         );
         
@@ -196,24 +196,32 @@ export default function UserDirectoryScreen() {
         };
       });
 
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      if (isLoadMore || isInitial) {
+          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      }
       
       if (isLoadMore) {
           setUsers(prev => [...prev, ...usersWithCounts]);
           setPage(currentPage);
           pageRef.current = currentPage;
       } else {
+          // If it's a refresh while we are on a higher page, we reset page back to 1 
+          // to keep UI consistent with the new 20 items.
           setUsers(usersWithCounts);
+          if (!isInitial) {
+             setPage(1);
+             pageRef.current = 1;
+          }
       }
 
-      setHasMore(usersData.length === limit);
+      setHasMore(safeUsers.length === limit);
 
     } catch (error: any) {
-      console.error('Failed to fetch users:', error);
+      console.log('Failed to fetch users:', error.message || error);
     } finally {
       if (isInitial) {
         const elapsed = Date.now() - startTime;
-        const minDelay = 1500;
+        const minDelay = 1000;
         if (elapsed < minDelay) {
           await new Promise(resolve => setTimeout(resolve, minDelay - elapsed));
         }
@@ -225,7 +233,7 @@ export default function UserDirectoryScreen() {
   };
 
   const handleLoadMore = () => {
-      if (!loading && !loadingMore && hasMore && activeFilter === 'all') {
+      if (!loading && !loadingMore && hasMore) {
           fetchUsers(false, true);
       }
   };
@@ -293,7 +301,7 @@ export default function UserDirectoryScreen() {
 
   // Background refresh on focus without showing loader
   useFocusEffect(
-    React.useCallback(() => {
+    useCallback(() => {
       fetchUsers(false);
     }, [searchQuery])
   );
@@ -391,9 +399,9 @@ export default function UserDirectoryScreen() {
             <ActivityIndicator size="large" color={theme.primary} />
           </View>
         ) : (
-          <FlatList<any>
-            data={activeFilter === 'groups' ? getGroupedData() : users}
-            renderItem={({ item }) => {
+          <FlatList<User | Group>
+            data={activeFilter === 'groups' ? groupedData : users}
+            renderItem={({ item }: { item: User | Group }) => {
               // Handle Group Rendering
               if ('type' in item && item.type === 'group') {
                 return (
@@ -571,7 +579,7 @@ export default function UserDirectoryScreen() {
                 </TouchableOpacity>
               );
             }}
-            keyExtractor={item => `${item.id}-${activeFilter}`}
+            keyExtractor={(item: User | Group) => `${item.id}-${activeFilter}`}
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
             onEndReached={handleLoadMore}

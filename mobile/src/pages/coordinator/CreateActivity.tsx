@@ -63,7 +63,7 @@ export default function CoordinatorCreateActivity() {
             capacity: data.capacity.toString()
         });
     } catch (error) {
-        console.error('Failed to fetch activity details:', error);
+        console.log('Failed to fetch activity details:', error);
         Alert.alert('Error', 'Failed to load activity details');
     } finally {
         setFetching(false);
@@ -637,7 +637,7 @@ export default function CoordinatorCreateActivity() {
                         }
                         router.back();
                     } catch (error: any) {
-                        console.error('Submission failed:', error);
+                        console.log('Submission failed:', error);
                         Alert.alert('Submission Error', error.message || 'Failed to submit proposal');
                     } finally {
                         setLoading(false);

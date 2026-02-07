@@ -131,7 +131,7 @@ function FeedModal({ visible, activity, onClose, theme }: any) {
                     const apps = await client.get(`/applications?activityId=${activity.id}`);
                     setFeedData(Array.isArray(apps) ? apps : []);
                 } catch (e) {
-                    console.error('Error fetching activity feed:', e);
+                    console.log('Error fetching activity feed:', e);
                 } finally {
                     setLoading(false);
                 }

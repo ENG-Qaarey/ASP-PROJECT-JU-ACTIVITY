@@ -49,7 +49,7 @@ export const client = {
 
             return responseBody as T;
         } catch (error: any) {
-            // Skip console.error for specific scenarios:
+            // Skip console.log for specific scenarios:
             // 1. 404s on DELETE (often handled naturally)
             // 2. "User not found" on profile fetch (happens after DB resets/session expiry)
             const msg = error.message?.toLowerCase() || '';
@@ -58,7 +58,8 @@ export const client = {
             const isMissingUser = msg.includes('user not found') || msg.includes('unauthorized');
 
             if (!isExpected404 && !(isProfileFetch && isMissingUser)) {
-                console.error(`API Request Failed: ${method} ${url}`, error);
+                // Log to terminal only, avoid triggering RedBox on mobile screen
+                console.log(`❌ API Request Failed: ${method} ${url}`, error.message || error);
             }
             throw error;
         }

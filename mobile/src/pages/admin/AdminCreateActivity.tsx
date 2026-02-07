@@ -105,7 +105,7 @@ export default function AdminCreateActivity() {
       }
       router.back();
     } catch (e: any) {
-      console.error('Submit failed:', e);
+      console.log('Submit failed:', e);
       Alert.alert('Error', 'Failed to publish activity: ' + (e.message || 'Unknown error'));
     } finally {
       setLoading(false);

@@ -115,7 +115,7 @@ export const VoiceMessagePlayer: React.FC<VoiceMessagePlayerProps> = ({
         setIsPlaying(true);
       }
     } catch (error) {
-      console.error('Failed to play audio', error);
+      console.log('Failed to play audio', error);
     }
   };
 

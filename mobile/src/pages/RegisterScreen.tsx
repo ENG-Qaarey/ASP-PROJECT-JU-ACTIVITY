@@ -18,6 +18,7 @@ import { BlurView } from 'expo-blur';
 import { client } from '@/src/lib/api';
 import { ENDPOINTS } from '@/src/lib/config';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useToast } from '@/src/context/ToastContext';
 import { Mail, Lock, User, CreditCard, ShieldCheck, Eye, EyeOff } from 'lucide-react-native';
 
 const { width, height } = Dimensions.get('window');
@@ -63,8 +64,15 @@ function FloatingOrb({ size, x, y, duration, delay }: any) {
 }
 
 export default function Register() {
+  const { showToast } = useToast();
   const fade = useRef(new Animated.Value(0)).current;
   const slide = useRef(new Animated.Value(40)).current;
+
+  const nameRef = useRef<any>(null);
+  const studentIdRef = useRef<any>(null);
+  const emailRef = useRef<any>(null);
+  const passwordRef = useRef<any>(null);
+  const confirmPasswordRef = useRef<any>(null);
   
   const [name, setName] = useState('');
   const [studentId, setStudentId] = useState('');
@@ -73,6 +81,7 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
     Animated.parallel([
@@ -93,8 +102,37 @@ export default function Register() {
   const [focused, setFocused] = useState<string | null>(null);
 
   const handleRegister = async () => {
+      setSubmitted(true);
       setError('');
+
+      if (!name.trim()) {
+          nameRef.current?.focus();
+          showToast({ message: 'Please enter your name', type: 'error', duration: 3000 });
+          return;
+      }
+      if (!studentId.trim()) {
+          studentIdRef.current?.focus();
+          showToast({ message: 'Please enter your student ID', type: 'error', duration: 3000 });
+          return;
+      }
+      if (!email.trim()) {
+          emailRef.current?.focus();
+          showToast({ message: 'Please enter your email', type: 'error', duration: 3000 });
+          return;
+      }
+      if (!password.trim()) {
+          passwordRef.current?.focus();
+          showToast({ message: 'Please enter your password', type: 'error', duration: 3000 });
+          return;
+      }
+      if (!confirmPassword.trim()) {
+          confirmPasswordRef.current?.focus();
+          showToast({ message: 'Please confirm your password', type: 'error', duration: 3000 });
+          return;
+      }
+
       if (password !== confirmPassword) {
+          confirmPasswordRef.current?.focus();
           setError("Passwords don't match");
           return;
       }
@@ -165,6 +203,7 @@ export default function Register() {
 
               <Label text="Full Name" />
               <Input
+                ref={nameRef}
                 icon={User}
                 placeholder="Enter your full name"
                 value={name}
@@ -172,10 +211,14 @@ export default function Register() {
                 focused={focused === 'name'}
                 onFocus={() => setFocused('name')}
                 onBlur={() => setFocused(null)}
+                error={submitted && !name.trim()}
+                returnKeyType="next"
+                onSubmitEditing={() => studentIdRef.current?.focus()}
               />
 
               <Label text="Student ID" />
               <Input
+                ref={studentIdRef}
                 icon={CreditCard}
                 placeholder="Enter your student ID"
                 value={studentId}
@@ -183,10 +226,14 @@ export default function Register() {
                 focused={focused === 'id'}
                 onFocus={() => setFocused('id')}
                 onBlur={() => setFocused(null)}
+                error={submitted && !studentId.trim()}
+                returnKeyType="next"
+                onSubmitEditing={() => emailRef.current?.focus()}
               />
 
               <Label text="Email Address" />
               <Input
+                ref={emailRef}
                 icon={Mail}
                 placeholder="student@jazeerauniversity.edu.so"
                 keyboardType="email-address"
@@ -196,10 +243,14 @@ export default function Register() {
                 focused={focused === 'email'}
                 onFocus={() => setFocused('email')}
                 onBlur={() => setFocused(null)}
+                error={submitted && !email.trim()}
+                returnKeyType="next"
+                onSubmitEditing={() => passwordRef.current?.focus()}
               />
 
               <Label text="Password" />
               <Input
+                ref={passwordRef}
                 icon={Lock}
                 isPassword
                 placeholder="Create password"
@@ -208,10 +259,14 @@ export default function Register() {
                 focused={focused === 'password'}
                 onFocus={() => setFocused('password')}
                 onBlur={() => setFocused(null)}
+                error={submitted && !password.trim()}
+                returnKeyType="next"
+                onSubmitEditing={() => confirmPasswordRef.current?.focus()}
               />
 
               <Label text="Confirm Password" />
               <Input
+                ref={confirmPasswordRef}
                 icon={ShieldCheck}
                 isPassword
                 placeholder="Re-enter password"
@@ -220,6 +275,9 @@ export default function Register() {
                 focused={focused === 'confirm'}
                 onFocus={() => setFocused('confirm')}
                 onBlur={() => setFocused(null)}
+                error={submitted && !confirmPassword.trim()}
+                returnKeyType="done"
+                onSubmitEditing={handleRegister}
               />
 
               <Text style={styles.hint}>
@@ -266,14 +324,19 @@ function Label({ text }: { text: string }) {
   return <Text style={styles.label}>{text}</Text>;
 }
 
-function Input({ focused, icon: Icon, isPassword, ...props }: any) {
+const Input = React.forwardRef(({ focused, error, icon: Icon, isPassword, ...props }: any, ref: any) => {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <View style={[styles.inputContainer, focused && styles.inputFocused]}>
-      {Icon && <Icon size={20} color={focused ? '#0EA5E9' : '#94A3B8'} style={styles.inputIcon} />}
+    <View style={[
+      styles.inputContainer, 
+      focused && styles.inputFocused,
+      error && styles.inputError
+    ]}>
+      {Icon && <Icon size={20} color={error ? '#EF4444' : (focused ? '#0EA5E9' : '#94A3B8')} style={styles.inputIcon} />}
       <TextInput
         {...props}
+        ref={ref}
         secureTextEntry={isPassword ? !showPassword : props.secureTextEntry}
         style={styles.input}
         placeholderTextColor="#94A3B8"
@@ -289,7 +352,7 @@ function Input({ focused, icon: Icon, isPassword, ...props }: any) {
       )}
     </View>
   );
-}
+});
 
 /* ---------------- STYLES ---------------- */
 
@@ -346,6 +409,10 @@ const styles = StyleSheet.create({
   inputFocused: {
     borderColor: '#0EA5E9',
     backgroundColor: '#FFFFFF',
+  },
+  inputError: {
+    borderColor: '#EF4444',
+    backgroundColor: '#FEF2F2',
   },
   input: {
     flex: 1,

@@ -31,7 +31,7 @@ export default function CoordinatorActivities() {
       const data = await client.get(`/activities?coordinatorId=${user?.id}`);
       setActivities(data);
     } catch (error) {
-      console.error('Failed to fetch coordinator activities:', error);
+      console.log('Failed to fetch coordinator activities:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);

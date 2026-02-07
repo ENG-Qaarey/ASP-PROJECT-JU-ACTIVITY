@@ -1,16 +1,21 @@
 {
-  "extends": "expo/tsconfig.base",
+  "extends": "expo/tsconfig.base.json",
   "compilerOptions": {
     "strict": true,
+    "baseUrl": ".",
     "paths": {
       "@/*": [
         "./*"
       ]
-    }
+    },
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowSyntheticDefaultImports": true
   },
   "include": [
     "**/*.ts",
     "**/*.tsx",
+    "global.d.ts",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
   ]

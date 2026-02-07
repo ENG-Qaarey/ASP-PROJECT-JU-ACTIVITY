@@ -3,12 +3,23 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import 'react-native-reanimated';
+import { LogBox } from 'react-native';
+
+// Ignore specific logs that should only appear in terminal, not as mobile overlays
+LogBox.ignoreLogs([
+  'Network request failed',
+  'Invalid email or password',
+  'API Request Failed',
+  'Failed to fetch users',
+  'Timeout'
+]);
 
 import { useColorScheme } from '@/src/hooks/use-color-scheme';
 import { Colors } from '@/src/data/theme';
 import { ThemeProvider } from '@/src/context/ThemeContext';
 import { AuthProvider } from '@/src/context/AuthContext';
 import { ChatProvider } from '@/src/context/ChatContext';
+import { ToastProvider } from '@/src/context/ToastContext';
  
 function RootLayoutNav() {
   const colorScheme = useColorScheme() ?? 'light';
@@ -63,9 +74,11 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider>
         <AuthProvider>
-          <ChatProvider>
-            <RootLayoutNav />
-          </ChatProvider>
+          <ToastProvider>
+            <ChatProvider>
+              <RootLayoutNav />
+            </ChatProvider>
+          </ToastProvider>
         </AuthProvider>
       </ThemeProvider>
     </GestureHandlerRootView>

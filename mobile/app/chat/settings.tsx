@@ -78,7 +78,7 @@ export default function ChatSettingsScreen() {
         setContact(data);
       }
     } catch (error) {
-      console.error('Failed to fetch chat details:', error);
+      console.log('Failed to fetch chat details:', error);
     } finally {
       setLoading(false);
     }
@@ -96,7 +96,7 @@ export default function ChatSettingsScreen() {
         setDisappearingTimer(labels[timer] || 'Off');
       }
     } catch (error) {
-      console.error('Failed to load local settings:', error);
+      console.log('Failed to load local settings:', error);
     }
   };
 

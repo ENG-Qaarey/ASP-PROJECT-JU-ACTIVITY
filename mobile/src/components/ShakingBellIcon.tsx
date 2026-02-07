@@ -25,7 +25,7 @@ export function ShakingBellIcon({ size = 20, color = '#0EA5E9', badgeColor = '#E
       const unread = Array.isArray(data) ? data.filter((n: any) => !n.read) : [];
       setUnreadCount(unread.length);
     } catch (err) {
-      console.error('Failed to fetch notifications:', err);
+      console.log('Failed to fetch notifications:', err);
     }
   }, []);
 

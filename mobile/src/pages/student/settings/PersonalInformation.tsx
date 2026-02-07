@@ -95,7 +95,7 @@ export default function PersonalInformation() {
             ]
         );
     } catch (error) {
-        console.error('Pick image error:', error);
+        console.log('Pick image error:', error);
         Alert.alert('Error', 'An unexpected error occurred while picking an image.');
     }
   };

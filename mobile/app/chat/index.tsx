@@ -168,7 +168,7 @@ export default function ChatListScreen() {
         });
       setChats(transformedChats);
     } catch (error) {
-      console.error('Failed to fetch chats:', error);
+      console.log('Failed to fetch chats:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);

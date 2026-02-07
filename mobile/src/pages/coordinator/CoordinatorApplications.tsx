@@ -29,7 +29,7 @@ export default function CoordinatorApplications() {
       const data = await client.get('/applications');
       setApplications(data);
     } catch (error) {
-      console.error('Failed to fetch applications:', error);
+      console.log('Failed to fetch applications:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -48,7 +48,7 @@ export default function CoordinatorApplications() {
         app.id === id ? { ...app, status } : app
       ));
     } catch (error) {
-      console.error(`Failed to update application ${id} to ${status}:`, error);
+      console.log(`Failed to update application ${id} to ${status}:`, error);
       alert('Failed to update status');
     }
   };

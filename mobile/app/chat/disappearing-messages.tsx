@@ -52,7 +52,7 @@ export default function DisappearingMessagesScreen() {
         setSelectedTimer(savedTimer);
       }
     } catch (error) {
-      console.error('Failed to load timer:', error);
+      console.log('Failed to load timer:', error);
     }
   };
 
@@ -63,7 +63,7 @@ export default function DisappearingMessagesScreen() {
     try {
       await AsyncStorage.setItem(`chat_disappearing_${id}`, value);
     } catch (error) {
-       console.error('Failed to save timer:', error);
+       console.log('Failed to save timer:', error);
     }
   };
 

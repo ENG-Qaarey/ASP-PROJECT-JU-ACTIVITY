@@ -65,7 +65,7 @@ export default function CoordinatorDashboard() {
       setHasUnread(unreadCount > 0);
 
     } catch (error) {
-      console.error('Failed to load dashboard data:', error);
+      console.log('Failed to load dashboard data:', error);
     } finally {
       setLoading(false);
     }

@@ -20,6 +20,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useTheme } from "@/src/context/ThemeContext";
 import { useAuth } from '@/src/context/AuthContext';
+import { useToast } from '@/src/context/ToastContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -65,9 +66,10 @@ function FloatingOrb({ size, x, y, duration, delay }: any) {
   );
 }
 
-export default function Login() {
+  export default function Login() {
   const { refreshTheme } = useTheme();
   const { setUser, refreshProfile } = useAuth();
+  const { showToast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -76,6 +78,9 @@ export default function Login() {
 
   const fade = useRef(new Animated.Value(0)).current;
   const slide = useRef(new Animated.Value(40)).current;
+
+  const emailRef = useRef<any>(null);
+  const passwordRef = useRef<any>(null);
 
   useEffect(() => {
     Animated.parallel([
@@ -94,13 +99,24 @@ export default function Login() {
   }, []);
 
   /* ---------------- LOGIN LOGIC ---------------- */
-  /* ---------------- LOGIN LOGIC ---------------- */
-  /* ---------------- LOGIN LOGIC ---------------- */
   const handleLogin = async () => {
     setSubmitted(true);
     setError('');
 
+    // Sequential Field Validation & Focus
+    if (!email.trim()) {
+      emailRef.current?.focus();
+      showToast({ message: 'Please enter your email', type: 'error', duration: 3000 });
+      return;
+    }
+    if (!password.trim()) {
+      passwordRef.current?.focus();
+      showToast({ message: 'Please enter your password', type: 'error', duration: 3000 });
+      return;
+    }
+
     const loginSuccess = async (target: string, userEmail: string) => {
+      showToast({ message: 'Login successful! Welcome back.', type: 'success' });
       await AsyncStorage.setItem('current-user', userEmail);
       await refreshTheme();
       router.push(target as any);
@@ -127,11 +143,17 @@ export default function Login() {
           else if (role === 'coordinator') await loginSuccess('/(coordinator)/dashboard', email);
           else await loginSuccess('/(student)/home', email);
       } else {
-          setError('Invalid server response');
+          showToast({ message: 'Invalid server response', type: 'error' });
       }
     } catch (err: any) {
       console.log('API Login failed:', err.message);
-      setError(err.message || 'Login failed. Please check your connection.');
+      showToast({ 
+        message: err.message || 'Invalid email or password', 
+        type: 'error',
+        duration: 4000
+      });
+      // Set secondary internal error for input highlighting if needed
+      setError(err.message);
     }
   };
 
@@ -180,6 +202,7 @@ export default function Login() {
 
               <Label text="Email Address" />
               <Input
+                ref={emailRef}
                 icon={Mail}
                 placeholder="Enter your email"
                 keyboardType="email-address"
@@ -192,10 +215,14 @@ export default function Login() {
                 focused={focused === 'email'}
                 onFocus={() => setFocused('email')}
                 onBlur={() => setFocused(null)}
+                error={submitted && !email.trim()}
+                returnKeyType="next"
+                onSubmitEditing={() => passwordRef.current?.focus()}
               />
 
               <Label text="Password" />
               <Input
+                ref={passwordRef}
                 icon={Lock}
                 isPassword
                 placeholder="Enter your password"
@@ -207,12 +234,10 @@ export default function Login() {
                 focused={focused === 'password'}
                 onFocus={() => setFocused('password')}
                 onBlur={() => setFocused(null)}
+                error={submitted && !password.trim()}
+                returnKeyType="done"
+                onSubmitEditing={handleLogin}
               />
-              {submitted && error ? (
-                <View style={styles.errorBox}>
-                  <Text style={styles.errorText}>{error}</Text>
-                </View>
-              ) : null}
 
               <TouchableOpacity 
                 style={{ alignSelf: 'flex-end', marginTop: 12, marginBottom: 4 }}
@@ -256,14 +281,19 @@ function Label({ text }: { text: string }) {
   return <Text style={styles.label}>{text}</Text>;
 }
 
-function Input({ focused, icon: Icon, isPassword, ...props }: any) {
+const Input = React.forwardRef(({ focused, error, icon: Icon, isPassword, ...props }: any, ref: any) => {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <View style={[styles.inputContainer, focused && styles.inputFocused]}>
-      {Icon && <Icon size={20} color={focused ? '#0EA5E9' : '#94A3B8'} style={styles.inputIcon} />}
+    <View style={[
+      styles.inputContainer, 
+      focused && styles.inputFocused,
+      error && styles.inputError
+    ]}>
+      {Icon && <Icon size={20} color={error ? '#EF4444' : (focused ? '#0EA5E9' : '#94A3B8')} style={styles.inputIcon} />}
       <TextInput
         {...props}
+        ref={ref}
         secureTextEntry={isPassword ? !showPassword : props.secureTextEntry}
         style={styles.input}
         placeholderTextColor="#94A3B8"
@@ -279,7 +309,7 @@ function Input({ focused, icon: Icon, isPassword, ...props }: any) {
       )}
     </View>
   );
-}
+});
 
 /* ---------------- STYLES ---------------- */
 
@@ -339,6 +369,10 @@ const styles = StyleSheet.create({
   inputFocused: {
     borderColor: '#0EA5E9',
     backgroundColor: '#FFFFFF',
+  },
+  inputError: {
+    borderColor: '#EF4444',
+    backgroundColor: '#FEF2F2',
   },
   input: {
     flex: 1,
