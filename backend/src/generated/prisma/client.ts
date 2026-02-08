@@ -87,3 +87,8 @@ export type Attendance = Prisma.AttendanceModel
  * 
  */
 export type AuditLog = Prisma.AuditLogModel
+/**
+ * Model PushToken
+ * 
+ */
+export type PushToken = Prisma.PushTokenModel

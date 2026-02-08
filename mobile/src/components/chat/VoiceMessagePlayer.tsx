@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Audio, InterruptionModeAndroid, InterruptionModeIOS } from 'expo-av';
+import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { Pause, Play, Mic } from 'lucide-react-native';
 import { Image } from 'expo-image';
 import { getAvatarUrl } from '@/src/lib/media';
@@ -27,44 +27,14 @@ export const VoiceMessagePlayer: React.FC<VoiceMessagePlayerProps> = ({
   activeId,
   onPlay,
 }) => {
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const fullUrl = url.startsWith('http') ? url : `${IMAGE_BASE}${url}`;
+  const player = useAudioPlayer(fullUrl);
+  const status = useAudioPlayerStatus(player);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [duration, setDuration] = useState<number | null>(null);
-  const [position, setPosition] = useState(0);
 
   useEffect(() => {
-    return () => {
-      if (sound) {
-        sound.unloadAsync();
-      }
-    };
-  }, [sound]);
-
-  // Stop playback if another message becomes active
-  useEffect(() => {
-    if (activeId !== messageId && isPlaying) {
-      if (sound) {
-        sound.pauseAsync();
-      }
-      setIsPlaying(false);
-    }
-  }, [activeId]);
-
-  const onPlaybackStatusUpdate = (status: any) => {
-    if (status.isLoaded) {
-      setDuration(status.durationMillis);
-      setPosition(status.positionMillis);
-      if (status.didJustFinish) {
-        setIsPlaying(false);
-        setPosition(0);
-        onPlay(null);
-        if (sound) {
-          sound.stopAsync().catch(() => {});
-          sound.setPositionAsync(0).catch(() => {});
-        }
-      }
-    }
-  };
+    setIsPlaying(status.playing);
+  }, [status.playing]);
 
   const formatDuration = (millis: number) => {
     const totalSeconds = millis / 1000;
@@ -75,49 +45,20 @@ export const VoiceMessagePlayer: React.FC<VoiceMessagePlayerProps> = ({
 
   const playPause = async () => {
     try {
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: false,
-        interruptionModeIOS: InterruptionModeIOS.DuckOthers,
-        playsInSilentModeIOS: true,
-        staysActiveInBackground: false,
-        interruptionModeAndroid: InterruptionModeAndroid.DuckOthers,
-        shouldDuckAndroid: true,
-        playThroughEarpieceAndroid: false,
-      });
-
-      if (sound) {
-        if (isPlaying) {
-          await sound.pauseAsync();
-          setIsPlaying(false);
+      if (player.playing) {
+          player.pause();
           onPlay(null);
-        } else {
-          onPlay(messageId);
-          const status = await sound.getStatusAsync();
-          if (
-            status.isLoaded &&
-            (status.didJustFinish ||
-              (status.positionMillis >= (status.durationMillis || 0) - 100))
-          ) {
-            await sound.setPositionAsync(0);
-          }
-          await sound.playAsync();
-          setIsPlaying(true);
-        }
       } else {
-        onPlay(messageId);
-        const fullUrl = url.startsWith('http') ? url : `${IMAGE_BASE}${url}`;
-        const { sound: newSound } = await Audio.Sound.createAsync(
-          { uri: fullUrl },
-          { shouldPlay: true, volume: 1.0 },
-          onPlaybackStatusUpdate
-        );
-        setSound(newSound);
-        setIsPlaying(true);
+          onPlay(messageId);
+          player.play();
       }
     } catch (error) {
       console.log('Failed to play audio', error);
     }
   };
+
+  const position = status.currentTime || 0;
+  const duration = status.duration || 0;
 
   const accentColor = isMe ? '#FFF' : theme.primary;
 

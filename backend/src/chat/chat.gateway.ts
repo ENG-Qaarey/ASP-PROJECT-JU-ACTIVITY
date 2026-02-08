@@ -10,6 +10,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { ChatService } from './chat.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { Injectable, Logger } from '@nestjs/common';
 import * as jwt from 'jsonwebtoken';
 import { ConfigService } from '@nestjs/config';
@@ -33,6 +34,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     constructor(
         private readonly chatService: ChatService,
         private readonly configService: ConfigService,
+        private readonly notificationsService: NotificationsService,
     ) { }
 
     async handleConnection(client: Socket) {
@@ -126,6 +128,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
             if (receiverSocketId) {
                 this.server.to(receiverSocketId).emit('newMessage', message);
             }
+
+            // Send push notification as well (cinematic experience)
+            this.notificationsService.sendPush(
+                payload.receiverId,
+                `New message from ${message.sender?.name || 'Someone'}`,
+                payload.type === 'text' ? payload.content : `[${payload.type}]`,
+                { type: 'chat', senderId, messageId: message.id }
+            ).catch(err => this.logger.error(`Push notify error: ${err.message}`));
         }
 
         // Emit back to sender (confirm sent)

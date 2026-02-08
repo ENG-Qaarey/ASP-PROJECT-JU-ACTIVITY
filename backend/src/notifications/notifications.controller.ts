@@ -20,7 +20,7 @@ import { RolesGuard } from '../authz/roles.guard';
 @Controller('notifications')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class NotificationsController {
-  constructor(private readonly notificationsService: NotificationsService) {}
+  constructor(private readonly notificationsService: NotificationsService) { }
 
   @Get()
   findAll(
@@ -92,6 +92,15 @@ export class NotificationsController {
       recipientId = user.id;
     }
     return this.notificationsService.markAllAsRead(recipientId);
+  }
+
+  @Post('push-token')
+  registerPushToken(
+    @Req() req: any,
+    @Body() payload: { token: string },
+  ) {
+    const user = req.user as { id: string };
+    return this.notificationsService.registerPushToken(user.id, payload.token);
   }
 
   @Delete(':id')

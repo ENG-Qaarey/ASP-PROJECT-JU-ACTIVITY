@@ -99,7 +99,7 @@ export default function SplashScreen() {
   const progressLine = useSharedValue(0);
   const textFloating = useSharedValue(0);
 
-  // Auto-redirect logic (10s cinematic hold)
+  // Auto-redirect logic (5s cinematic hold)
   React.useEffect(() => {
     if (!loading) {
         const timer = setTimeout(() => {
@@ -112,7 +112,7 @@ export default function SplashScreen() {
             } else {
                 router.replace('/login' as any);
             }
-        }, 10000);
+        }, 5000);
         return () => clearTimeout(timer);
     }
   }, [user, loading]);
@@ -123,11 +123,11 @@ export default function SplashScreen() {
     contentOpacity.value = withTiming(1, { duration: 2000 });
     
     // Constant Progress
-    progressLine.value = withTiming(1, { duration: 10000, easing: Easing.linear });
+    progressLine.value = withTiming(1, { duration: 5000, easing: Easing.linear });
 
     // Rhythmic Floating for Branding
     textFloating.value = withRepeat(
-        withTiming(-12, { duration: 4500, easing: Easing.inOut(Easing.sin) }),
+        withTiming(-12, { duration: 2500, easing: Easing.inOut(Easing.sin) }),
         -1,
         true
     );

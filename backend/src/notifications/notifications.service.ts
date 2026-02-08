@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { NotificationType, UserRole } from '../generated/prisma';
 import { Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { Expo, ExpoPushMessage } from 'expo-server-sdk';
 
 interface NotificationFilters {
   recipientId?: string;
@@ -11,7 +12,10 @@ interface NotificationFilters {
 
 @Injectable()
 export class NotificationsService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(NotificationsService.name);
+  private expo = new Expo();
+
+  constructor(private readonly prisma: PrismaService) { }
 
   async findAll(filters: NotificationFilters = {}) {
     const where: Prisma.NotificationWhereInput = {};
@@ -56,8 +60,9 @@ export class NotificationsService {
     type: NotificationType;
     recipientId: string;
     senderRole?: UserRole | null;
+    meta?: any;
   }) {
-    return this.prisma.notification.create({
+    const notification = await this.prisma.notification.create({
       data: {
         title: data.title,
         message: data.message,
@@ -68,6 +73,57 @@ export class NotificationsService {
         createdAt: new Date(),
       },
     });
+
+    // Also send actual Push Notification
+    await this.sendPush(data.recipientId, data.title, data.message, data.meta);
+
+    return notification;
+  }
+
+  async registerPushToken(userId: string, token: string) {
+    return this.prisma.pushToken.upsert({
+      where: { token },
+      update: { userId },
+      create: { userId, token },
+    });
+  }
+
+  async sendPush(recipientId: string, title: string, body: string, data?: any) {
+    const tokens = await this.prisma.pushToken.findMany({
+      where: { userId: recipientId },
+    });
+
+    if (tokens.length === 0) {
+      this.logger.debug(`No push tokens found for user ${recipientId}`);
+      return;
+    }
+
+    const messages: ExpoPushMessage[] = [];
+    for (const pushToken of tokens) {
+      if (!Expo.isExpoPushToken(pushToken.token)) {
+        this.logger.warn(`Push token ${pushToken.token} is not a valid Expo push token`);
+        continue;
+      }
+
+      messages.push({
+        to: pushToken.token,
+        sound: 'default',
+        title,
+        body,
+        data: data || {},
+      });
+    }
+
+    const chunks = this.expo.chunkPushNotifications(messages);
+    const tickets = [];
+    for (const chunk of chunks) {
+      try {
+        const ticketChunk = await this.expo.sendPushNotificationsAsync(chunk);
+        tickets.push(...ticketChunk);
+      } catch (error) {
+        this.logger.error('Error sending push notification chunk', error);
+      }
+    }
   }
 
   async createBatch(
@@ -77,19 +133,33 @@ export class NotificationsService {
       type: NotificationType;
       recipientId: string;
       senderRole?: UserRole | null;
+      meta?: any;
     }>,
   ) {
     if (notifications.length === 0) {
       return [];
     }
     const payload = notifications.map(item => ({
-      ...item,
+      title: item.title,
+      message: item.message,
+      type: item.type,
+      recipientId: item.recipientId,
+      senderRole: item.senderRole ?? null,
       read: false,
       createdAt: new Date(),
     }));
+
     await this.prisma.notification.createMany({
       data: payload,
     });
+
+    // Send pushes in background
+    for (const n of notifications) {
+      this.sendPush(n.recipientId, n.title, n.message, n.meta).catch(e =>
+        this.logger.error(`Failed to send batch push for ${n.recipientId}`, e)
+      );
+    }
+
     return notifications;
   }
 

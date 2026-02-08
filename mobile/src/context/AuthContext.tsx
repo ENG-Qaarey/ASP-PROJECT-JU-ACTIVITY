@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { client } from '@/src/lib/api';
+import { NotificationService } from '@/src/lib/NotificationService';
 
 interface User {
   id: string;
@@ -100,6 +101,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     fetchProfile();
   }, []);
+
+  useEffect(() => {
+    if (user?.id) {
+      NotificationService.syncPushTokenWithBackend();
+    }
+  }, [user?.id]);
 
   const refreshProfile = async () => {
     await fetchProfile();

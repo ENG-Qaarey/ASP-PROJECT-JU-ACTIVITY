@@ -20,9 +20,29 @@ import { ThemeProvider } from '@/src/context/ThemeContext';
 import { AuthProvider } from '@/src/context/AuthContext';
 import { ChatProvider } from '@/src/context/ChatContext';
 import { ToastProvider } from '@/src/context/ToastContext';
+import { NotificationProvider } from '@/src/context/NotificationContext';
+import { NotificationService } from '@/src/lib/NotificationService';
+import { useRouter } from 'expo-router';
+import { useEffect } from 'react';
  
 function RootLayoutNav() {
   const colorScheme = useColorScheme() ?? 'light';
+  const router = useRouter();
+
+  useEffect(() => {
+    // Handle notification when app is minimized/backgrounded
+    const subscription = NotificationService.addNotificationResponseReceivedListener(response => {
+      const data = response.notification.request.content.data;
+      if (data?.type === 'chat') {
+        const id = data.groupId || data.senderId;
+        if (id) router.push(`/chat/${id}`);
+      } else if (data?.type === 'approval' || data?.type === 'rejection') {
+        router.push('/notifications' as any);
+      }
+    });
+
+    return () => subscription.remove();
+  }, []);
 
   const CustomDefaultTheme = {
     ...NavDefaultTheme,
@@ -74,11 +94,13 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider>
         <AuthProvider>
-          <ToastProvider>
-            <ChatProvider>
-              <RootLayoutNav />
-            </ChatProvider>
-          </ToastProvider>
+          <NotificationProvider>
+            <ToastProvider>
+              <ChatProvider>
+                <RootLayoutNav />
+              </ChatProvider>
+            </ToastProvider>
+          </NotificationProvider>
         </AuthProvider>
       </ThemeProvider>
     </GestureHandlerRootView>
