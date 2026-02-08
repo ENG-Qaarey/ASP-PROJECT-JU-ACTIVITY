@@ -2,7 +2,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Image } from 'expo-image';
-import { FileText, Clock, Pin, Ban } from 'lucide-react-native';
+import { FileText, Clock, Pin, Ban, Play } from 'lucide-react-native';
 import { Svg, Path } from 'react-native-svg';
 
 import { IMAGE_BASE } from '@/src/lib/config';
@@ -39,6 +39,7 @@ interface MessageBubbleProps {
   formatTime: (ts: any) => string;
   getFormattedReplyText: (reply: any) => string;
   setViewerImageUrl: (url: string) => void;
+  setViewerVideoUrl?: (url: string | null) => void;
   handleOpenFile: (url: string) => void;
   VoiceMessageComponent: any;
   playingAudioId: string | null;
@@ -58,6 +59,7 @@ export const PremiumMessageBubble = ({
   formatTime,
   getFormattedReplyText,
   setViewerImageUrl,
+  setViewerVideoUrl,
   handleOpenFile,
   VoiceMessageComponent,
   playingAudioId,
@@ -137,6 +139,19 @@ export const PremiumMessageBubble = ({
             style={styles.image}
             contentFit="cover"
           />
+        </TouchableOpacity>
+      ) : msgItem.type === 'video' ? (
+        <TouchableOpacity
+          style={styles.videoPreview}
+          onPress={() => setViewerVideoUrl?.(msgItem.text.startsWith('http') ? msgItem.text : `${IMAGE_BASE}${msgItem.text}`)}
+          activeOpacity={0.9}
+        >
+          <View style={styles.videoPreviewPlaceholder} />
+          <View style={styles.videoPlayOverlay}>
+            <View style={styles.videoPlayCircle}>
+              <Play size={36} color="#FFF" fill="#FFF" />
+            </View>
+          </View>
         </TouchableOpacity>
       ) : msgItem.type === 'file' ? (
         <TouchableOpacity 
@@ -247,6 +262,32 @@ const styles = StyleSheet.create({
     height: 180,
     borderRadius: 12,
     marginBottom: 4,
+  },
+  videoPreview: {
+    width: 250,
+    height: 180,
+    borderRadius: 12,
+    marginBottom: 4,
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  videoPreviewPlaceholder: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.75)',
+  },
+  videoPlayOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  videoPlayCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(255,255,255,0.35)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   fileContainer: {
     flexDirection: 'row',

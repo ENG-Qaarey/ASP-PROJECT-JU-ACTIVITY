@@ -49,6 +49,7 @@ import { SwipeableMessage } from '@/src/components/SwipeableMessage';
 import { VoiceMessagePlayer } from '@/src/components/chat/VoiceMessagePlayer';
 import { ZoomableImageViewer } from '@/src/components/chat/ZoomableImageViewer';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useVideoPlayer, VideoView } from 'expo-video';
 
 const SentTail = ({ color }: { color: string }) => (
   <View style={styles.sentTailContainer}>
@@ -148,6 +149,39 @@ const getFormattedReplyText = (replyTo: any) => {
   if (replyTo.type === 'file') return '📁 File';
   return replyTo.text;
 };
+
+function ChatVideoPlayerContent({ url, onClose }: { url: string; onClose: () => void }) {
+  const player = useVideoPlayer(url, (p) => {
+    p.muted = false;
+  });
+  return (
+    <>
+      <VideoView
+        player={player}
+        style={StyleSheet.absoluteFill}
+        nativeControls={true}
+        contentFit="contain"
+      />
+      <TouchableOpacity
+        onPress={onClose}
+        style={{
+          position: 'absolute',
+          top: Platform.OS === 'ios' ? 60 : 40,
+          right: 20,
+          width: 44,
+          height: 44,
+          borderRadius: 22,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 10,
+        }}
+      >
+        <X size={28} color="#FFF" />
+      </TouchableOpacity>
+    </>
+  );
+}
 
 const mockContact: Contact = {
   id: '1',
@@ -259,7 +293,7 @@ export default function ChatScreen() {
   const [isUploadingVoice, setIsUploadingVoice] = useState(false);
   const [waveData, setWaveData] = useState<number[]>(new Array(25).fill(4));
   const [viewerImageUrl, setViewerImageUrl] = useState<string | null>(null);
-
+  const [viewerVideoUrl, setViewerVideoUrl] = useState<string | null>(null);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -531,6 +565,7 @@ export default function ChatScreen() {
         timestamp: new Date(msg.createdAt),
         status: 'read',
         type: msg.type || 'text',
+        fileName: msg.metadata?.fileName,
         fileSize: msg.metadata?.fileSize,
         fileExt: msg.metadata?.fileExt,
         pdfPages: msg.metadata?.pdfPages,
@@ -631,11 +666,16 @@ export default function ChatScreen() {
               }
 
               const updated = [...prev];
+              const meta = msg.metadata || {};
               updated[optimisticIndex] = {
                 ...updated[optimisticIndex],
                 id: msg.id,
                 status: 'read',
                 timestamp: new Date(msg.createdAt),
+                fileName: meta.fileName ?? updated[optimisticIndex].fileName,
+                fileSize: meta.fileSize ?? updated[optimisticIndex].fileSize,
+                fileExt: meta.fileExt ?? updated[optimisticIndex].fileExt,
+                pdfPages: meta.pdfPages ?? updated[optimisticIndex].pdfPages,
               };
               return updated;
             }
@@ -1016,12 +1056,14 @@ export default function ChatScreen() {
     }
   };
 
-  const uploadAndSendMessage = async (uri: string, type: 'image' | 'file' | 'audio', originalName?: string, size?: number) => {
+  const uploadAndSendMessage = async (uri: string, type: 'image' | 'video' | 'file' | 'audio', originalName?: string, size?: number) => {
     if (!id || !connected) return;
-    
+
     const localId = Date.now().toString();
-    const filename = originalName || uri.split('/').pop() || `file.${type === 'image' ? 'jpg' : 'bin'}`;
-    
+    const ext = (originalName || uri.split('/').pop() || '').split('.').pop()?.toLowerCase();
+    const defaultName = type === 'image' ? 'image.jpg' : type === 'video' ? 'video.mp4' : type === 'audio' ? 'audio.m4a' : 'file.bin';
+    const filename = originalName || uri.split('/').pop() || defaultName;
+
     const formatSize = (bytes?: number) => {
       if (!bytes) return '0 KB';
       const k = 1024;
@@ -1033,10 +1075,10 @@ export default function ChatScreen() {
     const optimisticMessage: Message = {
       id: localId,
       localId: localId,
-      text: uri, 
-      fileName: type === 'file' ? filename : undefined,
+      text: uri,
+      fileName: type === 'file' || type === 'video' ? filename : undefined,
       fileSize: formatSize(size),
-      fileExt: filename.split('.').pop()?.toLowerCase(),
+      fileExt: ext,
       pdfPages: filename.endsWith('.pdf') ? 72 : undefined,
       sender: 'me',
       timestamp: new Date(),
@@ -1052,20 +1094,23 @@ export default function ChatScreen() {
       } : {}),
     };
 
-    // 1. Show message immediately
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setMessages(prev => [...prev, optimisticMessage]);
     setReplyTo(null);
 
     try {
-      // 2. Prepare form data
       const formData = new FormData();
       let mimeType = 'application/octet-stream';
       if (type === 'image') mimeType = 'image/jpeg';
       else if (type === 'audio') mimeType = 'audio/m4a';
-      else {
-        const ext = filename.split('.').pop()?.toLowerCase();
-        const mimes: { [key: string]: string } = {
+      else if (type === 'video') {
+        const videoMimes: Record<string, string> = {
+          'mp4': 'video/mp4', 'mov': 'video/quicktime', 'm4v': 'video/x-m4v',
+          'webm': 'video/webm', '3gp': 'video/3gpp',
+        };
+        mimeType = (ext && videoMimes[ext]) ? videoMimes[ext] : 'video/mp4';
+      } else {
+        const mimes: Record<string, string> = {
           'pdf': 'application/pdf',
           'doc': 'application/msword',
           'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -1085,28 +1130,33 @@ export default function ChatScreen() {
         type: mimeType,
       } as any);
 
-      // 3. Upload to server
-      const response = await client.post('/chat/upload', formData);
-      const fileUrl = response.url;
+      const response = await client.post<{ url: string; mimetype?: string; size?: number }>('/chat/upload', formData);
+      const fileUrl = response?.url;
+      if (!fileUrl) {
+        throw new Error('Server did not return a file URL');
+      }
 
-      // 4. Update state with real URL - keep it 'sending' until socket confirms
-      setMessages(prev => prev.map(m => 
+      setMessages(prev => prev.map(m =>
         m.localId === localId ? { ...m, text: fileUrl } : m
       ));
-      
-      // 5. Send via socket
-      sendMessage(id, fileUrl, type, optimisticMessage.replyTo, { 
-        fileName: optimisticMessage.fileName, 
+
+      sendMessage(id, fileUrl, type, optimisticMessage.replyTo, {
+        fileName: optimisticMessage.fileName,
         fileSize: optimisticMessage.fileSize,
         fileExt: optimisticMessage.fileExt,
         pdfPages: optimisticMessage.pdfPages
       });
-     
+
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    } catch (err) {
+    } catch (err: any) {
       console.error('File upload failed', err);
-      // Mark as failed in UI
-      Alert.alert('Upload Failed', 'There was an error uploading your file. Please try again.');
+      setMessages(prev => prev.filter(m => m.localId !== localId));
+      const msg = err?.message || '';
+      if (msg.includes('413') || msg.toLowerCase().includes('too large')) {
+        Alert.alert('Upload Failed', 'File is too large. Maximum size is 100 MB.');
+      } else {
+        Alert.alert('Upload Failed', 'There was an error uploading your file. Please try again.');
+      }
     }
   };
 
@@ -1128,7 +1178,10 @@ export default function ChatScreen() {
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
-        uploadAndSendMessage(asset.uri, asset.type === 'video' ? 'video' as any : 'image');
+        const mediaType = asset.type === 'video' ? 'video' : 'image';
+        const name = (asset as any).fileName ?? (mediaType === 'video' ? 'video.mp4' : 'image.jpg');
+        const size = (asset as any).fileSize;
+        uploadAndSendMessage(asset.uri, mediaType, name, size);
       }
     } catch (err) {
       console.error('Camera launch failed', err);
@@ -1146,7 +1199,10 @@ export default function ChatScreen() {
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
-        uploadAndSendMessage(asset.uri, asset.type === 'video' ? 'video' as any : 'image');
+        const mediaType = asset.type === 'video' ? 'video' : 'image';
+        const name = (asset as any).fileName ?? (mediaType === 'video' ? 'video.mp4' : 'image.jpg');
+        const size = (asset as any).fileSize;
+        uploadAndSendMessage(asset.uri, mediaType, name, size);
       }
     } catch (err) {
       console.error('Image picking failed', err);
@@ -1267,6 +1323,7 @@ export default function ChatScreen() {
                       formatTime={formatTime}
                       getFormattedReplyText={getFormattedReplyText}
                       setViewerImageUrl={setViewerImageUrl}
+                      setViewerVideoUrl={setViewerVideoUrl}
                       handleOpenFile={handleOpenFile}
                       VoiceMessageComponent={VoiceMessagePlayer}
                       playingAudioId={playingAudioId}
@@ -1296,6 +1353,7 @@ export default function ChatScreen() {
                       formatTime={formatTime}
                       getFormattedReplyText={getFormattedReplyText}
                       setViewerImageUrl={setViewerImageUrl}
+                      setViewerVideoUrl={setViewerVideoUrl}
                       handleOpenFile={handleOpenFile}
                       VoiceMessageComponent={VoiceMessagePlayer}
                       playingAudioId={playingAudioId}
@@ -1951,6 +2009,21 @@ export default function ChatScreen() {
             )}
           </View>
         </GestureHandlerRootView>
+      </Modal>
+
+      {/* Full Screen Video Player */}
+      <Modal
+        visible={!!viewerVideoUrl}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setViewerVideoUrl(null)}
+      >
+        <View style={styles.viewerContainer}>
+          <ExpoBlurView intensity={30} style={StyleSheet.absoluteFill} tint="dark" />
+          {viewerVideoUrl ? (
+            <ChatVideoPlayerContent url={viewerVideoUrl} onClose={() => setViewerVideoUrl(null)} />
+          ) : null}
+        </View>
       </Modal>
 
       {/* Undo Delete Snackbar */}

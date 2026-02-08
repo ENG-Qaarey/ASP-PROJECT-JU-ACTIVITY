@@ -14,6 +14,10 @@ config();
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Increase global body size limits for Express
+  app.use(express.json({ limit: '100mb' }));
+  app.use(express.urlencoded({ limit: '100mb', extended: true }));
+
   const isPrivateIpv4 = (hostname: string) => {
     if (isIP(hostname) !== 4) return false;
     const [a, b] = hostname.split('.').map((n) => Number(n));
