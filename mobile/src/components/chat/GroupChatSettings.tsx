@@ -36,7 +36,8 @@ import {
   BarChart3,
   TrendingUp,
   Activity as ActivityIcon,
-  Clock
+  Clock,
+  MoreVertical
 } from 'lucide-react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -201,6 +202,10 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '900',
   },
+  rightActionDots: {
+    padding: 4,
+    opacity: 0.6,
+  },
   memberMore: {
     padding: 8,
   },
@@ -354,20 +359,85 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
+  modalCloseBtn: {
+    marginTop: 4,
+    paddingVertical: 12,
+    borderRadius: 16,
+    alignItems: 'center',
+  },
+  modalCloseText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  modalProfileHeader: {
+    alignItems: 'center',
+    paddingBottom: 15,
+    borderBottomWidth: 1,
+    marginBottom: 4,
+  },
+  modalLargeAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    borderWidth: 2,
+    borderColor: '#FFF',
+  },
+  modalProfileName: {
+    fontSize: 17,
+    fontWeight: '800',
+  },
+  modalProfileRole: {
+    fontSize: 10,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    marginTop: 2,
+  },
+  modalActionList: {
+    marginTop: 4,
+  },
+  modalActionItemPremium: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    gap: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.03)',
+  },
+  actionIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalActionTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  modalActionSub: {
+    fontSize: 11,
+    fontWeight: '500',
+    marginTop: 0,
+  },
 });
 
 const AlertModal = ({ visible, onClose, title, children, theme }: any) => (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={onClose}>
-            <View style={[styles.modalContent, { backgroundColor: theme.card, borderColor: theme.border }]}>
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+        <View style={styles.modalOverlay}>
+            <TouchableOpacity 
+              style={StyleSheet.absoluteFill} 
+              activeOpacity={1} 
+              onPress={onClose} 
+            />
+            <View style={[styles.modalContent, { backgroundColor: theme.card, borderColor: theme.border, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 5 }]}>
                 <View style={styles.modalHeader}>
-                    <Text style={[styles.modalTitle, { color: theme.text }]}>{title}</Text>
+                    <Text style={[styles.modalTitle, { color: theme.textSecondary, fontSize: 13, textTransform: 'uppercase', letterSpacing: 1 }]}>{title}</Text>
                 </View>
                 <View style={styles.modalBody}>
                     {children}
                 </View>
             </View>
-        </TouchableOpacity>
+        </View>
     </Modal>
 );
 
@@ -430,11 +500,13 @@ interface GroupChatSettingsProps {
   onUpdateTitle?: (title: string) => void;
   onUpdateDescription?: (desc: string) => void;
   onRemoveMember?: (memberId: string) => void;
+  onlyAdminsCanMessage?: boolean;
+  toggleOnlyAdminsCanMessage?: () => void;
   currentUserId?: string;
   description?: string;
 }
 
-export const GroupChatSettings = ({
+export const GroupChatSettings: React.FC<GroupChatSettingsProps> = ({
   id,
   title,
   theme,
@@ -453,6 +525,8 @@ export const GroupChatSettings = ({
   onUpdateTitle,
   onUpdateDescription,
   onRemoveMember,
+  onlyAdminsCanMessage,
+  toggleOnlyAdminsCanMessage,
   currentUserId,
   description,
 }: GroupChatSettingsProps) => {
@@ -713,12 +787,13 @@ export const GroupChatSettings = ({
                                 {member.role === 'coordinator' ? '👨‍🏫 COORDINATOR' : member.role.toUpperCase()}
                             </Text>
                         </View>
-                        <TouchableOpacity 
-                            style={styles.memberMore}
-                            onPress={() => router.push({ pathname: '/chat/[id]', params: { id: member.id } })}
-                        >
-                             <MessageSquare size={18} color={theme.primary} />
-                        </TouchableOpacity>
+                        {canManageAdmins && member.id !== currentUserId ? (
+                            <View style={styles.rightActionDots}>
+                                <MoreVertical size={20} color={theme.textSecondary} />
+                            </View>
+                        ) : (
+                            <ChevronRight size={16} color={theme.border} />
+                        )}
                     </TouchableOpacity>
                     {idx < sortedMembers.length - 1 && <View style={[styles.divider, { marginLeft: 68, backgroundColor: theme.border }]} />}
                 </View>
@@ -734,44 +809,108 @@ export const GroupChatSettings = ({
             <AlertModal
                 visible={!!selectedMember}
                 onClose={() => setSelectedMember(null)}
-                title={selectedMember.name}
+                title="Manage Participant"
                 theme={theme}
             >
-                <TouchableOpacity style={styles.modalActionItem} onPress={() => {
-                    setSelectedMember(null);
-                    router.push({ pathname: '/chat/[id]', params: { id: selectedMember.id } });
-                }}>
-                    <MessageSquare size={20} color={theme.primary} />
-                    <Text style={[styles.modalActionText, { color: theme.text }]}>Message {selectedMember.name}</Text>
-                </TouchableOpacity>
-                <View style={[styles.divider, { backgroundColor: theme.border }]} />
-                <TouchableOpacity style={styles.modalActionItem} onPress={confirmToggleAdmin}>
-                    <Shield size={20} color={theme.primary} />
-                    <Text style={[styles.modalActionText, { color: theme.text }]}>
-                        {selectedMember.isGroupAdmin ? 'Revoke Admin' : 'Grant Admin'}
+                <View style={[styles.modalProfileHeader, { borderBottomColor: theme.border }]}>
+                  <Image 
+                    source={getAvatarUrl(selectedMember.avatar)} 
+                    style={[styles.modalLargeAvatar, { backgroundColor: theme.primary + '10' }]} 
+                  />
+                  <View style={{ alignItems: 'center', marginTop: 12 }}>
+                    <Text style={[styles.modalProfileName, { color: theme.text }]}>{selectedMember.name}</Text>
+                    <Text style={[styles.modalProfileRole, { color: theme.textSecondary }]}>
+                      {selectedMember.role.toUpperCase()} {selectedMember.isGroupAdmin ? '• GROUP ADMIN' : ''}
                     </Text>
-                </TouchableOpacity>
-                <View style={[styles.divider, { backgroundColor: theme.border }]} />
-                <TouchableOpacity style={styles.modalActionItem} onPress={handleRemoveMember}>
-                    <LogOut size={20} color={theme.error} />
-                    <Text style={[styles.modalActionText, { color: theme.error }]}>Remove from Group</Text>
+                  </View>
+                </View>
+
+                <View style={styles.modalActionList}>
+                  <TouchableOpacity style={styles.modalActionItemPremium} onPress={() => {
+                      setSelectedMember(null);
+                      router.push({ pathname: '/chat/[id]', params: { id: selectedMember.id } });
+                  }}>
+                      <View style={[styles.actionIconCircle, { backgroundColor: theme.primary + '10' }]}>
+                        <MessageSquare size={20} color={theme.primary} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.modalActionTitle, { color: theme.text }]}>Direct Message</Text>
+                        <Text style={[styles.modalActionSub, { color: theme.textSecondary }]}>Start a private conversation</Text>
+                      </View>
+                      <ChevronRight size={18} color={theme.border} />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity style={styles.modalActionItemPremium} onPress={confirmToggleAdmin}>
+                      <View style={[styles.actionIconCircle, { backgroundColor: '#EC4899' + '10' }]}>
+                        <Shield size={20} color="#EC4899" />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.modalActionTitle, { color: theme.text }]}>
+                            {selectedMember.isGroupAdmin ? 'Revoke Admin' : 'Make Group Admin'}
+                        </Text>
+                        <Text style={[styles.modalActionSub, { color: theme.textSecondary }]}>
+                          {selectedMember.isGroupAdmin ? 'Remove management permissions' : 'Let them manage members & settings'}
+                        </Text>
+                      </View>
+                      <ChevronRight size={18} color={theme.border} />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity style={[styles.modalActionItemPremium, { borderBottomWidth: 0 }]} onPress={handleRemoveMember}>
+                      <View style={[styles.actionIconCircle, { backgroundColor: theme.error + '10' }]}>
+                        <LogOut size={20} color={theme.error} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.modalActionTitle, { color: theme.error }]}>Remove from Group</Text>
+                        <Text style={[styles.modalActionSub, { color: theme.textSecondary }]}>User will be removed from this chat</Text>
+                      </View>
+                      <ChevronRight size={18} color={theme.border} />
+                  </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity 
+                  style={[styles.modalCloseBtn, { backgroundColor: theme.background }]} 
+                  onPress={() => setSelectedMember(null)}
+                >
+                  <Text style={[styles.modalCloseText, { color: theme.textSecondary }]}>Dismiss</Text>
                 </TouchableOpacity>
             </AlertModal>
         )}
       </View>
 
       {/* Group Settings */}
-      <Text style={[styles.sectionTitle, { color: theme.textSecondary, marginLeft: 20, marginBottom: 8 }]}>GROUP SETTINGS</Text>
+      <View style={{ marginHorizontal: 20, marginBottom: 8, marginTop: 10 }}>
+          <Text style={[styles.sectionTitle, { color: theme.textSecondary, textTransform: 'uppercase', fontSize: 11 }]}>Group Settings</Text>
+      </View>
       <View style={[styles.optionsCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-        <OptionItem 
-          icon={Bell} 
-          label="Mute Group Notifications" 
-          theme={theme} 
-          right={<Switch value={isMuted} onValueChange={toggleMute} />} 
-        />
-        <View style={styles.divider} />
-        <OptionItem icon={Download} label="Auto-download Files" theme={theme} right={<Switch value={autoDownload} onValueChange={() => setAutoDownload(!autoDownload)} />} />
-        <View style={styles.divider} />
+            <OptionItem 
+                icon={Bell} 
+                label="Mute Notifications" 
+                theme={theme} 
+                right={<Switch value={isMuted} onValueChange={toggleMute} thumbColor={isMuted ? theme.primary : '#ccc'} trackColor={{ false: '#eee', true: theme.primary + '33' }} />} 
+            />
+            <View style={[styles.divider, { backgroundColor: theme.border, marginLeft: 56 }]} />
+            {canEdit && (
+                <>
+                  <OptionItem 
+                      icon={Lock} 
+                      label="Only Admins can Send" 
+                      theme={theme} 
+                      right={<Switch value={onlyAdminsCanMessage} onValueChange={toggleOnlyAdminsCanMessage} thumbColor={onlyAdminsCanMessage ? theme.primary : '#ccc'} trackColor={{ false: '#eee', true: theme.primary + '33' }} />} 
+                  />
+                  <View style={[styles.divider, { backgroundColor: theme.border, marginLeft: 56 }]} />
+                </>
+            )}
+            <OptionItem 
+                icon={Download} 
+                label="Auto-Download Media" 
+                theme={theme} 
+                right={<Switch value={autoDownload} onValueChange={setAutoDownload} thumbColor={autoDownload ? theme.primary : '#ccc'} trackColor={{ false: '#eee', true: theme.primary + '33' }} />} 
+            />
+        </View>
+      <View style={{ marginHorizontal: 20, marginBottom: 8, marginTop: 4 }}>
+          <Text style={[styles.sectionTitle, { color: theme.textSecondary, textTransform: 'uppercase', fontSize: 11 }]}>Description</Text>
+      </View>
+      <View style={[styles.optionsCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
         <OptionItem 
           icon={BookOpen} 
           label="Group Description" 
@@ -781,6 +920,9 @@ export const GroupChatSettings = ({
         />
       </View>
 
+      <View style={{ marginHorizontal: 20, marginBottom: 8, marginTop: 4 }}>
+          <Text style={[styles.sectionTitle, { color: theme.textSecondary, textTransform: 'uppercase', fontSize: 11 }]}>Personalization</Text>
+      </View>
       <View style={[styles.optionsCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
         <OptionItem icon={Smartphone} label="Group Media & Links" theme={theme} />
         <View style={styles.divider} />
@@ -792,8 +934,12 @@ export const GroupChatSettings = ({
         />
       </View>
 
+
       {/* Group Actions */}
-      <View style={[styles.optionsCard, { backgroundColor: theme.card, borderColor: theme.border, marginTop: 10 }]}>
+      <View style={{ marginHorizontal: 20, marginBottom: 8, marginTop: 4 }}>
+          <Text style={[styles.sectionTitle, { color: theme.textSecondary, textTransform: 'uppercase', fontSize: 11 }]}>Actions</Text>
+      </View>
+      <View style={[styles.optionsCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
         <TouchableOpacity style={styles.dangerItem} onPress={handleClearChat}>
           <Trash2 size={20} color={theme.error} />
           <Text style={[styles.dangerText, { color: theme.error }]}>Clear Group Chat</Text>

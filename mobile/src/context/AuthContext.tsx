@@ -17,6 +17,7 @@ interface AuthContextType {
   refreshProfile: () => Promise<void>;
   setUser: (user: User | null) => void;
   logout: () => Promise<void>;
+  lastLogin: string | null;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -25,11 +26,13 @@ const AuthContext = createContext<AuthContextType>({
   refreshProfile: async () => {},
   setUser: () => {},
   logout: async () => {},
+  lastLogin: null,
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [lastLogin, setLastLogin] = useState<string | null>(null);
 
   // Helper for 2s timeout
   const timeoutPromise = (ms: number) => new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms));
@@ -37,6 +40,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const fetchProfile = async () => {
     try {
       const token = await AsyncStorage.getItem('user_token');
+      const storedLastLogin = await AsyncStorage.getItem('last_login');
+      if (storedLastLogin) setLastLogin(storedLastLogin);
+
       if (!token) {
         setLoading(false);
         setUser(null);
@@ -106,7 +112,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, refreshProfile, setUser, logout }}>
+    <AuthContext.Provider value={{ user, loading, refreshProfile, setUser, logout, lastLogin }}>
       {children}
     </AuthContext.Provider>
   );

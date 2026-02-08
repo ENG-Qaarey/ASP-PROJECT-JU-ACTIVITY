@@ -38,6 +38,7 @@ export default function GroupChatSettingsScreen() {
   const [groupImage, setGroupImage] = useState<string | undefined>();
   const [groupDescription, setGroupDescription] = useState<string | undefined>();
   const [groupTitle, setGroupTitle] = useState(title || 'Activity Group');
+  const [onlyAdminsCanMessage, setOnlyAdminsCanMessage] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -60,6 +61,10 @@ export default function GroupChatSettingsScreen() {
 
       const membersData = await client.get(`/activities/${id}/members`);
       setMembers(membersData);
+      
+      // Load restricted messaging setting
+      const restricted = await AsyncStorage.getItem(`chat_restricted_${id}`);
+      setOnlyAdminsCanMessage(restricted === 'true');
     } catch (error) {
       console.log('Failed to fetch group details:', error);
     } finally {
@@ -135,6 +140,23 @@ export default function GroupChatSettingsScreen() {
     if (id) {
       if (newValue) await AsyncStorage.setItem(`chat_muted_${id}`, 'true');
       else await AsyncStorage.removeItem(`chat_muted_${id}`);
+    }
+  };
+
+  const toggleOnlyAdminsCanMessage = async () => {
+    const newValue = !onlyAdminsCanMessage;
+    setOnlyAdminsCanMessage(newValue);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (id) {
+      if (newValue) await AsyncStorage.setItem(`chat_restricted_${id}`, 'true');
+      else await AsyncStorage.removeItem(`chat_restricted_${id}`);
+      
+      // Update backend if supported
+      try {
+        await client.put(`/activities/${id}`, { restrictedMessaging: newValue });
+      } catch (err) {
+        console.log('Backend restrictedMessaging update failed - using local persistence only');
+      }
     }
   };
 
@@ -237,6 +259,8 @@ export default function GroupChatSettingsScreen() {
           onUpdateDescription={handleUpdateDescription}
           onRemoveMember={handleRemoveMember}
           onImageUpdate={(url) => setGroupImage(url)}
+          onlyAdminsCanMessage={onlyAdminsCanMessage}
+          toggleOnlyAdminsCanMessage={toggleOnlyAdminsCanMessage}
         />
       )}
     </GradientBackground>

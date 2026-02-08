@@ -1,323 +1,302 @@
-import React, { useState, useRef } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Dimensions, FlatList, Animated as RNAnimated } from 'react-native';
-import { useRouter, useFocusEffect } from 'expo-router';
+import React from 'react';
+import { StyleSheet, View, Text, Dimensions, Platform } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useAuth } from '@/src/context/AuthContext';
-import { Rocket, Target, Award, Sparkles, ArrowRight, ShieldCheck, Zap, Globe, ChevronRight } from 'lucide-react-native';
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
   withTiming, 
-  withSpring, 
+  withSpring,
+  withRepeat,
+  Easing,
   interpolate,
-  Extrapolate,
-  useAnimatedScrollHandler
+  useDerivedValue
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 
-const { width, height } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-const ONBOARDING_DATA = [
-  {
-    id: '1',
-    title: 'Unified Campus Life',
-    subtitle: 'Everything in One Place',
-    description:
-      'Effortlessly manage events, workshops, and activities. Enjoy a seamless experience connecting all aspects of campus life at Jazeera University.',
-    icon: Rocket,
-    color: '#0EA5E9',
-  },
-  {
-    id: '2',
-    title: 'Actionable Insights',
-    subtitle: 'Track & Grow',
-    description:
-      'Monitor your participation and progress with real-time analytics. Visualize your academic journey and make informed decisions.',
-    icon: Target,
-    color: '#3B82F6',
-  },
-  {
-    id: '3',
-    title: 'Instant Recognition',
-    subtitle: 'Verified Achievements',
-    description:
-      'Access and share your digital certificates securely. Celebrate your accomplishments with confidence, anytime and anywhere.',
-    icon: Award,
-    color: '#2563EB',
-  },
-  {
-    id: '4',
-    title: 'Personalized Updates',
-    subtitle: 'Smart Notifications',
-    description:
-      'Stay informed with timely, relevant notifications. Never miss important announcements or events tailored to your interests.',
-    icon: Zap,
-    color: '#0284C7',
-  },
-  {
-    id: '5',
-    title: 'Enterprise Security',
-    subtitle: 'Your Data Protected',
-    description:
-      'Benefit from advanced encryption and robust security. Your personal information and academic records are always safe.',
-    icon: ShieldCheck,
-    color: '#1E40AF',
-  },
-];
+// Premium Cinematic Background - Variety of unique "Flying Things"
+function FlyingParticle({ index }: { index: number }) {
+  const size = index % 3 === 0 ? Math.random() * 100 + 80 : Math.random() * 40 + 20;
+  const tX = useSharedValue(Math.random() * SCREEN_WIDTH);
+  const tY = useSharedValue(Math.random() * SCREEN_HEIGHT);
+  const scale = useSharedValue(Math.random() * 0.5 + 0.8);
+  const opacity = useSharedValue(Math.random() * 0.2 + 0.05);
+  const rotation = useSharedValue(0);
+  
+  const colors = ['#0EA5E9', '#7DD3FC', '#F0F9FF', '#BAE6FD', '#38BDF8'];
+  const particleColor = colors[index % colors.length];
+
+  React.useEffect(() => {
+    // Unique float for each thing
+    tX.value = withRepeat(withTiming(Math.random() * SCREEN_WIDTH, { duration: Math.random() * 15000 + 15000, easing: Easing.inOut(Easing.sin) }), -1, true);
+    tY.value = withRepeat(withTiming(Math.random() * SCREEN_HEIGHT, { duration: Math.random() * 15000 + 15000, easing: Easing.inOut(Easing.sin) }), -1, true);
+    
+    // Constant rotation for shards and stars
+    if (index % 2 !== 0) {
+        rotation.value = withRepeat(withTiming(360, { duration: Math.random() * 20000 + 10000, easing: Easing.linear }), -1, false);
+    }
+
+    scale.value = withRepeat(withTiming(1.2, { duration: Math.random() * 5000 + 5000, easing: Easing.inOut(Easing.sin) }), -1, true);
+  }, []);
+
+  const particleStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: tX.value - size / 2 },
+      { translateY: tY.value - size / 2 },
+      { scale: scale.value },
+      { rotate: `${rotation.value}deg` }
+    ],
+    opacity: opacity.value,
+  }));
+
+  const renderShape = () => {
+    const type = index % 4;
+    switch(type) {
+        case 0: // Soft Glowing Orb
+            return <View style={{ flex: 1, backgroundColor: particleColor, borderRadius: size / 2, shadowColor: particleColor, shadowRadius: 30, shadowOpacity: 0.2 }} />;
+        case 1: // Hollow Floating Ring
+            return <View style={{ flex: 1, borderWidth: 2, borderColor: particleColor, borderRadius: size / 2, opacity: 0.6 }} />;
+        case 2: // Sparkling Star/Diamond
+            return (
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <View style={{ position: 'absolute', width: '100%', height: 2, backgroundColor: '#FFFFFF' }} />
+                    <View style={{ position: 'absolute', width: 2, height: '100%', backgroundColor: '#FFFFFF' }} />
+                </View>
+            );
+        case 3: // Floating Glass Shard/Triangle
+            return (
+                <View style={{ 
+                    width: 0, height: 0, backgroundColor: 'transparent',
+                    borderLeftWidth: size / 2, borderLeftColor: 'transparent',
+                    borderRightWidth: size / 2, borderRightColor: 'transparent',
+                    borderBottomWidth: size, borderBottomColor: particleColor + '40'
+                }} />
+            );
+        default: return null;
+    }
+  };
+
+  return (
+    <Animated.View style={[{ position: 'absolute', width: size, height: size }, particleStyle as any]}>
+        {renderShape()}
+    </Animated.View>
+  );
+}
 
 export default function SplashScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { user, loading } = useAuth();
-  const flatListRef = useRef<FlatList>(null);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const scrollX = useSharedValue(0);
 
-  // Auto-redirect if already logged in
+  const contentTranslateY = useSharedValue(40);
+  const contentOpacity = useSharedValue(0.01); // Higher base for Android stability
+  const progressLine = useSharedValue(0);
+  const textFloating = useSharedValue(0);
+
+  // Auto-redirect logic (10s cinematic hold)
   React.useEffect(() => {
-    if (!loading && user) {
-        const role = user.role || 'student';
-        if (role === 'admin') router.replace('/(admin)/dashboard' as any);
-        else if (role === 'coordinator') router.replace('/(coordinator)/dashboard' as any);
-        else router.replace('/(student)/home' as any);
+    if (!loading) {
+        const timer = setTimeout(() => {
+            if (user) {
+                const role = user.role || 'student';
+                const target = role === 'admin' ? '/(admin)/dashboard' : 
+                             role === 'coordinator' ? '/(coordinator)/dashboard' : 
+                             '/(student)/home';
+                router.replace(target as any);
+            } else {
+                router.replace('/login' as any);
+            }
+        }, 10000);
+        return () => clearTimeout(timer);
     }
   }, [user, loading]);
 
-  const onScroll = useAnimatedScrollHandler((event) => {
-    scrollX.value = event.contentOffset.x;
-  });
+  React.useEffect(() => {
+    // Smoother Entrances (Slower for Cinematic feel)
+    contentTranslateY.value = withTiming(0, { duration: 2500, easing: Easing.out(Easing.exp) });
+    contentOpacity.value = withTiming(1, { duration: 2000 });
+    
+    // Constant Progress
+    progressLine.value = withTiming(1, { duration: 10000, easing: Easing.linear });
 
-  const handleNext = () => {
-    if (currentIndex < ONBOARDING_DATA.length - 1) {
-      flatListRef.current?.scrollToIndex({ index: currentIndex + 1 });
-    } else {
-      router.push('/login');
-    }
-  };
+    // Rhythmic Floating for Branding
+    textFloating.value = withRepeat(
+        withTiming(-12, { duration: 4500, easing: Easing.inOut(Easing.sin) }),
+        -1,
+        true
+    );
+  }, []);
 
-  const handleSkip = () => {
-    router.push('/login');
-  };
+  const contentStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: contentTranslateY.value + textFloating.value }],
+    opacity: contentOpacity.value,
+  }));
 
-  const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
-    if (viewableItems[0]) {
-      setCurrentIndex(viewableItems[0].index);
-    }
-  }).current;
+  const progressStyle = useAnimatedStyle(() => ({
+    width: `${progressLine.value * 100}%`,
+  }));
 
   return (
     <View style={styles.container}>
-      {/* Dynamic Modern Background */}
+      <StatusBar style="dark" />
+      
+      {/* Background Gradient - Direct Layer */}
       <LinearGradient
-        colors={['#FFFFFF', '#F0F9FF', '#E0F2FE', '#BAE6FD']}
+        colors={['#BAE6FD', '#FFFFFF', '#BAE6FD']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
 
-      {/* Decorative Floating Blobs (React to scroll) */}
-      <AnimatedBlob scrollX={scrollX} index={0} initialX={-100} initialY={100} size={300} />
-      <AnimatedBlob scrollX={scrollX} index={1} initialX={width - 200} initialY={height / 2.5} size={250} />
-
-      {/* Header Actions */}
-      <View style={styles.header}>
-        <View style={styles.branding}>
-            <View style={styles.logoTiny}>
-                <ShieldCheck size={14} color="#FFFFFF" />
-            </View>
-            <Text style={styles.brandingTitle}>JU-AMS</Text>
-        </View>
-        <TouchableOpacity onPress={handleSkip}>
-          <Text style={styles.skipText}>Skip</Text>
-        </TouchableOpacity>
+      {/* Cinematic Busy Particles Background (40 particles) */}
+      <View style={StyleSheet.absoluteFill} pointerEvents="none">
+        {[...Array(40)].map((_, i) => (
+            <FlyingParticle key={i} index={i} />
+        ))}
       </View>
 
-      <Animated.FlatList
-        ref={flatListRef}
-        data={ONBOARDING_DATA}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onScroll={onScroll}
-        scrollEventThrottle={16}
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item, index }) => (
-          <OnboardingPage item={item} index={index} scrollX={scrollX} />
-        )}
-      />
-
-      {/* Footer Controls */}
-      <View style={styles.footer}>
-        {/* Pagination Dots */}
-        <View style={styles.paginationContainer}>
-          {ONBOARDING_DATA.map((_, index) => (
-            <PaginationDot key={index} index={index} scrollX={scrollX} />
-          ))}
-        </View>
-
-        {/* Action Button */}
-        <TouchableOpacity activeOpacity={0.8} onPress={handleNext} style={styles.nextBtnContainer}>
-            <LinearGradient
-                colors={['#0EA5E9', '#2563EB']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.nextBtn}
-            >
-                <Text style={styles.nextBtnText}>
-                    {currentIndex === ONBOARDING_DATA.length - 1 ? 'Get Started' : 'Continue'}
-                </Text>
-                <View style={styles.arrowIconBox}>
-                    <ArrowRight size={18} color="#0EA5E9" />
-                </View>
-            </LinearGradient>
-        </TouchableOpacity>
-        
-        <Text style={styles.versionText}>v1.0.0 • POWERED BY JAZEERA UNIVERSITY</Text>
-      </View>
-    </View>
-  );
-}
-
-function OnboardingPage({ item, index, scrollX }: any) {
-  const Icon = item.icon;
-
-  const animatedStyle = useAnimatedStyle(() => {
-    const scale = interpolate(
-      scrollX.value,
-      [(index - 1) * width, index * width, (index + 1) * width],
-      [0.8, 1, 0.8],
-      Extrapolate.CLAMP
-    );
-    const opacity = interpolate(
-      scrollX.value,
-      [(index - 1) * width, index * width, (index + 1) * width],
-      [0, 1, 0],
-      Extrapolate.CLAMP
-    );
-
-    return {
-      transform: [{ scale }],
-      opacity,
-    };
-  });
-
-  return (
-    <View style={styles.pageContainer}>
-      <Animated.View style={[styles.cardContainer, animatedStyle]}>
-        <View style={styles.iconCircle}>
-            <LinearGradient
-                colors={['#FFFFFF', '#F0F9FF']}
-                style={styles.iconBg}
-            >
-                 <Icon size={64} color={item.color} strokeWidth={1.5} />
-            </LinearGradient>
-            <View style={[styles.iconGlow, { backgroundColor: item.color }]} />
-        </View>
-
-        <View style={styles.textStack}>
-            <View style={styles.badgeRow}>
-                <Sparkles size={14} color="#0284C7" />
-                <Text style={styles.badgeText}>{item.title}</Text>
-            </View>
-            <Text style={styles.heading}>{item.subtitle}</Text>
-            <Text style={styles.description}>{item.description}</Text>
-        </View>
-      </Animated.View>
-    </View>
-  );
-}
-
-function PaginationDot({ index, scrollX }: any) {
-  const animatedStyle = useAnimatedStyle(() => {
-    const widthDot = interpolate(
-      scrollX.value,
-      [(index - 1) * width, index * width, (index + 1) * width],
-      [8, 24, 8],
-      Extrapolate.CLAMP
-    );
-    const opacity = interpolate(
-      scrollX.value,
-      [(index - 1) * width, index * width, (index + 1) * width],
-      [0.3, 1, 0.3],
-      Extrapolate.CLAMP
-    );
-
-    return {
-      width: widthDot,
-      opacity,
-    };
-  });
-
-  return <Animated.View style={[styles.dot, animatedStyle]} />;
-}
-
-function AnimatedBlob({ scrollX, index, initialX, initialY, size }: any) {
-    const style = useAnimatedStyle(() => {
-        const translateX = interpolate(
-            scrollX.value,
-            [0, width * 2],
-            [0, index % 2 === 0 ? 100 : -100],
-            Extrapolate.CLAMP
-        );
-        return {
-            transform: [{ translateX }]
-        }
-    });
-
-    return (
-        <Animated.View style={[
-            styles.blob,
-            { top: initialY, left: initialX, width: size, height: size, borderRadius: size / 2.5 },
-            style
-        ]}>
-            <LinearGradient
-                colors={['#7DD3FC30', '#BAE6FD10']}
-                style={{ flex: 1, borderRadius: size / 2.5 }}
-            />
+      <View style={[styles.content, { marginTop: insets.top }]}>
+        <Animated.View 
+            style={[styles.textContainer as any, contentStyle]}
+            collapsable={false}
+        >
+          <Text style={styles.appName}>JU-AMS</Text>
+          <Text style={styles.tagline}>Excellence in Activity Management</Text>
+          <View style={styles.descriptionBox}>
+            <Text style={styles.description}>
+                Empowering Jazeera University students with a seamless, digital campus life experience.
+            </Text>
+          </View>
         </Animated.View>
-    )
+      </View>
+
+      <View style={[styles.progressFooter, { marginBottom: Math.max(insets.bottom, 40) }]}>
+          <View style={styles.progressContainer}>
+              <View style={[styles.progressBase, { backgroundColor: 'rgba(14, 165, 233, 0.15)' }]}>
+                  <Animated.View style={[styles.progressFill as any, progressStyle]} />
+              </View>
+              <Text style={styles.loadingText}>Initializing Secure Session...</Text>
+          </View>
+
+          <Animated.View 
+            style={[styles.footer as any, contentStyle]}
+            collapsable={false}
+          >
+            <Text style={styles.footerBranding}>v1.0.0 • POWERED BY ENG-QAAREY</Text>
+          </Animated.View>
+      </View>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  header: {
+  container: { 
+    flex: 1, 
+    backgroundColor: '#BAE6FD' 
+  },
+  particleBase: { 
+    position: 'absolute', 
+    width: 3.5, 
+    height: 3.5, 
+    borderRadius: 2,
+    zIndex: 1,
+  },
+  content: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    paddingHorizontal: 40, 
+    zIndex: 10 
+  },
+  textContainer: { 
+    alignItems: 'center' 
+  },
+  appName: {
+    fontSize: SCREEN_WIDTH > 400 ? 64 : 54,
+    fontWeight: '900',
+    color: '#0369A1',
+    letterSpacing: -2,
+    marginBottom: 4,
+    // Cross-platform consistent shadow
+    textShadowColor: 'rgba(3, 105, 161, 0.25)',
+    textShadowOffset: { width: 0, height: 4 },
+    textShadowRadius: 12,
+  },
+  tagline: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#0EA5E9',
+    textAlign: 'center',
+    marginBottom: 24,
+    textTransform: 'uppercase',
+    letterSpacing: 4,
+  },
+  descriptionBox: {
+    paddingHorizontal: 24,
+    backgroundColor: 'rgba(255, 255, 255, 0.14)',
+    paddingVertical: 14,
+    borderRadius: 24,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.9)',
+    // Consistent box shadow
+    shadowColor: '#00000012',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3, // Android fallback
+  },
+  description: {
+    fontSize: 14,
+    color: '#475569',
+    textAlign: 'center',
+    lineHeight: 22,
+    fontWeight: '600',
+  },
+  progressFooter: {
     position: 'absolute',
-    top: 50,
+    bottom: 0,
     left: 0,
     right: 0,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 24,
-    zIndex: 10,
   },
-  branding: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  logoTiny: { width: 24, height: 24, borderRadius: 6, backgroundColor: '#0EA5E9', justifyContent: 'center', alignItems: 'center' },
-  brandingTitle: { fontSize: 16, fontWeight: '900', color: '#0C4A6E', letterSpacing: -0.5 },
-  skipText: { fontSize: 14, fontWeight: '700', color: '#64748B' },
-  
-  pageContainer: { width, alignItems: 'center', justifyContent: 'center' },
-  cardContainer: { width: width * 0.85, alignItems: 'center' },
-  iconCircle: { width: 160, height: 160, marginBottom: 40, alignItems: 'center', justifyContent: 'center' },
-  iconBg: { width: 140, height: 140, borderRadius: 70, backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center', elevation: 10, shadowColor: '#0EA5E9', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, zIndex: 2 },
-  iconGlow: { position: 'absolute', width: 120, height: 120, borderRadius: 60, opacity: 0.15, zIndex: 1 },
-  
-  textStack: { alignItems: 'center' },
-  badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#FFFFFF', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, marginBottom: 16, borderWidth: 1, borderColor: '#F0F9FF' },
-  badgeText: { fontSize: 11, fontWeight: '800', color: '#0284C7', textTransform: 'uppercase', letterSpacing: 1 },
-  heading: { fontSize: 32, fontWeight: '900', color: '#0C4A6E', textAlign: 'center', marginBottom: 16, letterSpacing: -1 },
-  description: { fontSize: 15, color: '#64748B', textAlign: 'center', lineHeight: 24, paddingHorizontal: 10, fontWeight: '500' },
-  
-  footer: { position: 'absolute', bottom: 40, left: 0, right: 0, alignItems: 'center', paddingHorizontal: 32 },
-  paginationContainer: { flexDirection: 'row', gap: 6, marginBottom: 30 },
-  dot: { height: 8, borderRadius: 4, backgroundColor: '#0EA5E9' },
-  
-  nextBtnContainer: { width: '100%', height: 68, borderRadius: 24, overflow: 'hidden', elevation: 15, shadowColor: '#0369A1', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.3, shadowRadius: 20 },
-  nextBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 32, paddingRight: 10 },
-  nextBtnText: { color: '#FFFFFF', fontSize: 19, fontWeight: '900', letterSpacing: 0.5 },
-  arrowIconBox: { width: 48, height: 48, backgroundColor: '#FFFFFF', borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
-  
-  versionText: { marginTop: 24, fontSize: 9, color: '#94A3B8', fontWeight: '800', letterSpacing: 1.5 },
-  blob: { position: 'absolute', zIndex: 0 },
+  progressContainer: {
+    width: '100%',
+    paddingHorizontal: 60,
+    alignItems: 'center',
+    zIndex: 20,
+  },
+  progressBase: {
+    width: '100%',
+    height: 6,
+    borderRadius: 3,
+    overflow: 'hidden',
+    marginBottom: 12,
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#0EA5E9',
+  },
+  loadingText: {
+    fontSize: 10,
+    color: '#0369A1',
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 2,
+  },
+  footer: { 
+    paddingHorizontal: 40, 
+    marginTop: 32, 
+    alignItems: 'center', 
+    zIndex: 10 
+  },
+  footerBranding: {
+    fontSize: 9,
+    color: '#94A3B8',
+    fontWeight: '800',
+    letterSpacing: 2,
+  },
 });

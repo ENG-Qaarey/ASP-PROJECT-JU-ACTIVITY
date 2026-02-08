@@ -47,7 +47,7 @@ const MOCK_RECENT = [
 ];
 
 export default function StudentDashboard() {
-  const { user } = useAuth();
+  const { user, lastLogin } = useAuth();
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
   const router = useRouter();
@@ -153,8 +153,10 @@ export default function StudentDashboard() {
         {/* Welcome Header */}
         <View style={styles.header}>
             <View>
-                <ThemedText style={[styles.welcomeText, { color: theme.textSecondary }]}>Welcome back,</ThemedText>
-                <ThemedText style={[styles.userName, { color: theme.text }]}>{user?.name || 'Student'} 👋</ThemedText>
+                <ThemedText style={[styles.welcomeText, { color: theme.textSecondary }]}>
+                    {lastLogin ? `Last login: ${lastLogin}` : `Welcome back,`}
+                </ThemedText>
+                <ThemedText style={[styles.userName, { color: theme.text }]}>{user?.name || 'Student'}</ThemedText>
             </View>
             <TouchableOpacity 
                 style={[styles.notifBtn, { backgroundColor: theme.card, borderColor: theme.border }]}

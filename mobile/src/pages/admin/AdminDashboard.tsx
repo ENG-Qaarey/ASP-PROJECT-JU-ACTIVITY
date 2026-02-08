@@ -15,6 +15,7 @@ import { useRouter } from 'expo-router';
 import { client } from '@/src/lib/api';
 import { ENDPOINTS } from '@/src/lib/config';
 import { ShakingBellIcon } from '@/src/components/ShakingBellIcon';
+import { useAuth } from '@/src/context/AuthContext';
 
 const timeAgo = (date: Date) => {
   const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
@@ -37,6 +38,7 @@ const timeAgo = (date: Date) => {
 // ... (existing imports)
 
 export default function AdminDashboard() {
+  const { lastLogin } = useAuth();
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
   
@@ -94,7 +96,9 @@ export default function AdminDashboard() {
                     </View>
                 </View>
                 <Text style={styles.bannerTitle}>Admin Center</Text>
-                <Text style={styles.bannerSubtitle}>Monitor metrics and orchestrate campus activities.</Text>
+                <Text style={styles.bannerSubtitle}>
+                    {lastLogin ? `Last login: ${lastLogin}` : "Monitor metrics and orchestrate campus activities."}
+                </Text>
             </View>
             <ShakingBellIcon
                 size={24}

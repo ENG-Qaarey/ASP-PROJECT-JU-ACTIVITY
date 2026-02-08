@@ -16,7 +16,7 @@ import { client } from '@/src/lib/api';
 
 export default function CoordinatorDashboard() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, lastLogin } = useAuth();
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
 
@@ -127,7 +127,9 @@ export default function CoordinatorDashboard() {
                     </View>
                 </View>
                 <Text style={styles.bannerTitle}>Coordinator Command</Text>
-                <Text style={styles.bannerSubtitle}>Orchestrate excellence and track student engagement live.</Text>
+                <Text style={styles.bannerSubtitle}>
+                    {lastLogin ? `Last login: ${lastLogin}` : "Orchestrate excellence and track engagement."}
+                </Text>
             </View>
             <TouchableOpacity 
                 style={styles.headerBellBtn}

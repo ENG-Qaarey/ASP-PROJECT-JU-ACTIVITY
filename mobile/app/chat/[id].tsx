@@ -20,6 +20,7 @@ import {
   UIManager,
   PanResponder,
 } from 'react-native';
+import type { Animated as RNAnimatedType } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Reanimated from 'react-native-reanimated';
 import { BlurView as ExpoBlurView } from 'expo-blur';
@@ -158,7 +159,7 @@ const mockContact: Contact = {
 
 export default function ChatScreen() {
   const router = useRouter();
-  const { id, isGroup, title, image } = useLocalSearchParams<{ id: string; isGroup?: string; title?: string; image?: string }>();
+  const { id, isGroup, title, image } = useLocalSearchParams() as { id: string; isGroup?: string; title?: string; image?: string };
   const { user } = useAuth();
   const { socket, connected, sendMessage, emitTyping, emitStopTyping, emitDeleteMessage, emitRecording, emitStopRecording, onlineUsers } = useChat();
   const colorScheme = useColorScheme() ?? 'light';
@@ -172,7 +173,7 @@ export default function ChatScreen() {
     ...baseTheme,
     primary: customThemeColor || baseTheme.primary,
   }), [baseTheme, customThemeColor]);
-  const flatListRef = useRef<FlatList>(null);
+  const flatListRef = useRef<FlatList<Message> | null>(null);
   const insets = useSafeAreaInsets();
   
   const isGroupChat = isGroup === 'true';
@@ -205,8 +206,13 @@ export default function ChatScreen() {
   const undoTimerRef = useRef<NodeJS.Timeout | number | null>(null);
   const undoIntervalRef = useRef<NodeJS.Timeout | number | null>(null);
   const recorderIntervalRef = useRef<NodeJS.Timeout | number | null>(null);
+  
+  const [isRestricted, setIsRestricted] = useState(false);
+  const [isUserAdmin, setIsUserAdmin] = useState(false);
 
   const groupedMessages = useMemo(() => groupMessages(messages), [messages]);
+
+  type GroupedMessageItem = Message | { type: 'date'; date: string };
 
   // Quick Actions
   const handleMute = () => {
@@ -277,6 +283,21 @@ export default function ChatScreen() {
             setCustomThemeColor(color);
         } else {
             setCustomThemeColor(null);
+        }
+
+        if (isGroupChat) {
+          const restricted = await AsyncStorage.getItem(`chat_restricted_${id}`);
+          setIsRestricted(restricted === 'true');
+          
+          // Check if user is admin or coordinator
+          try {
+            const members = await client.get(`/activities/${id}/members`);
+            const memberInfo = members.find((m: any) => m.id === user?.id);
+            const isPlatformAdmin = user?.role === 'admin' || user?.role === 'coordinator';
+            setIsUserAdmin(isPlatformAdmin || (memberInfo?.isGroupAdmin ?? false));
+          } catch (e) {
+            console.log('Failed to check admin status', e);
+          }
         }
       } catch (e) {
         console.error("Failed to load visual settings", e);
@@ -721,7 +742,7 @@ export default function ChatScreen() {
   useFocusEffect(
     React.useCallback(() => {
       if (id) {
-        AsyncStorage.getItem(`chat_disappearing_${id}`).then(timer => {
+        AsyncStorage.getItem(`chat_disappearing_${id}`).then((timer: string | null) => {
           if (timer) setDisappearingTimer(timer);
         });
       }
@@ -730,6 +751,11 @@ export default function ChatScreen() {
 
   const handleSend = async () => {
     if (!inputText.trim() || !id || !connected) return;
+    
+    if (isRestricted && !isUserAdmin) {
+      Alert.alert('Restricted', 'Only admins can send messages in this group.');
+      return;
+    }
 
     const content = inputText.trim();
     const localId = Date.now().toString();
@@ -827,6 +853,10 @@ export default function ChatScreen() {
   }, [recording]);
 
   const startRecording = async () => {
+    if (isRestricted && !isUserAdmin) {
+      Alert.alert('Restricted', 'Only admins can send messages in this group.');
+      return;
+    }
     try {
       const permission = await Audio.requestPermissionsAsync();
       if (permission.status !== 'granted') return;
@@ -1311,7 +1341,7 @@ export default function ChatScreen() {
       }).start();
 
       // Enhanced bouncing dots animation with scale
-      const createBounceAnimation = (animValue: RNAnimated.Value, scaleValue: RNAnimated.Value, delay: number) => {
+      const createBounceAnimation = (animValue: RNAnimatedType.Value, scaleValue: RNAnimatedType.Value, delay: number) => {
         return RNAnimated.loop(
           RNAnimated.sequence([
             RNAnimated.delay(delay),
@@ -1556,7 +1586,7 @@ export default function ChatScreen() {
             <ActivityIndicator size="large" color={theme.primary} />
           </View>
         ) : (
-          <FlatList
+          <FlatList<GroupedMessageItem>
             ref={flatListRef}
             data={groupedMessages}
             renderItem={renderMessage}
@@ -1622,105 +1652,115 @@ export default function ChatScreen() {
           )}
 
           <View style={styles.inputActionsRow}>
-            <TouchableOpacity 
-              style={styles.plusBtn}
-              onPress={() => {
-                if (showAttachmentMenu) {
-                   setShowAttachmentMenu(false);
-                   // Optionally focus input here if ref is available
-                } else {
-                   Keyboard.dismiss();
-                   setTimeout(() => setShowAttachmentMenu(true), 50);
-                }
-              }}
-            >
-              {showAttachmentMenu ? (
-                <KeyboardIcon size={26} color={theme.text} />
-              ) : (
-                <Plus size={26} color={theme.primary} />
-              )}
-            </TouchableOpacity>
-
-            {isRecording ? (
-              <View style={[styles.recordingPanel, { backgroundColor: 'transparent' }]}>
-                {/* Top Row: Timer + Waveform */}
-                <View style={styles.recordingTopRow}>
-                  <Text style={[styles.recordingTimerText, { color: theme.text }]}>
-                    {Math.floor(recordingDuration / 60)}:{(recordingDuration % 60).toString().padStart(2, '0')}
-                  </Text>
-                  
-                  {/* Live Waveform Visualization */}
-                  <View style={styles.liveWaveform}>
-                      {waveData.map((height, i) => (
-                          <View 
-                            key={i} 
-                            style={[
-                              styles.liveWaveBar, 
-                              { 
-                                height: isPaused ? 2 : height,
-                                backgroundColor: isPaused ? '#475569' : '#E2E8F0',
-                              }
-                            ]} 
-                          />
-                      ))}
-                  </View>
-                </View>
-
-                {/* Bottom Row: Controls */}
-                <View style={styles.recordingBottomRow}>
-                    <TouchableOpacity onPress={() => stopRecording(false)} style={styles.recordActionBtn}>
-                      <Trash2 size={24} color="#CBD5E1" />
-                    </TouchableOpacity>
-
-                    <TouchableOpacity onPress={togglePause} style={styles.recordPauseBtn}>
-                       {isPaused ? (
-                          <View style={[styles.resumeCircle, { backgroundColor: 'transparent', borderWidth: 2, borderColor: '#EF4444' }]}>
-                             <Mic size={20} color="#EF4444" />
-                          </View>
-                       ) : (
-                          <View style={[styles.pauseCircle, { backgroundColor: 'transparent', borderWidth: 2, borderColor: '#EF4444' }]}>
-                             <Pause size={20} color="#EF4444" fill="#EF4444" />
-                          </View>
-                       )}
-                    </TouchableOpacity>
-
-                    <TouchableOpacity onPress={() => stopRecording(true)} style={[styles.recordSendBtn, { backgroundColor: '#FFF', width: 48, height: 48, borderRadius: 24 }]}>
-                      <Send size={22} color="#000" fill="#000" />
-                    </TouchableOpacity>
-                </View>
-              </View>
-            ) : (
+            {(!isRestricted || isUserAdmin) ? (
               <>
-                <View style={[styles.whatsappInputFrame, { backgroundColor: colorScheme === 'dark' ? '#1E293B' : '#FFF', borderColor: colorScheme === 'dark' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)' }]}>
-                  <TextInput
-                    style={[styles.chatInput, { color: theme.text }]}
-                    placeholder="Message..."
-                    placeholderTextColor={theme.textSecondary}
-                    value={inputText}
-                    onChangeText={handleInputChange}
-                    multiline
-                    keyboardAppearance={colorScheme === 'dark' ? 'dark' : 'light'}
-                  />
-                </View>
+                <TouchableOpacity 
+                  style={styles.plusBtn}
+                  onPress={() => {
+                    if (showAttachmentMenu) {
+                      setShowAttachmentMenu(false);
+                    } else {
+                      Keyboard.dismiss();
+                      setTimeout(() => setShowAttachmentMenu(true), 50);
+                    }
+                  }}
+                >
+                  {showAttachmentMenu ? (
+                    <KeyboardIcon size={26} color={theme.text} />
+                  ) : (
+                    <Plus size={26} color={theme.primary} />
+                  )}
+                </TouchableOpacity>
 
-                {!inputText.trim() ? (
-                  <View style={styles.inputRightActions}>
-                    <TouchableOpacity style={styles.inputActionBtn} onPress={handleCamera}>
-                      <Camera size={24} color={theme.primary} />
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                      style={styles.inputActionBtn} 
-                      onPress={startRecording}
-                    >
-                      <Mic size={24} color={theme.primary} />
-                    </TouchableOpacity>
+                {isRecording ? (
+                  <View style={[styles.recordingPanel, { backgroundColor: 'transparent' }]}>
+                    {/* Top Row: Timer + Waveform */}
+                    <View style={styles.recordingTopRow}>
+                      <Text style={[styles.recordingTimerText, { color: theme.text }]}>
+                        {Math.floor(recordingDuration / 60)}:{(recordingDuration % 60).toString().padStart(2, '0')}
+                      </Text>
+                      <View style={styles.waveformContainer}>
+                          {waveData.map((h, i) => (
+                              <View 
+                                key={i} 
+                                style={[
+                                  styles.waveBar, 
+                                  { 
+                                    height: h, 
+                                    backgroundColor: i % 2 === 0 ? theme.primary : theme.primary + '66',
+                                    opacity: isPaused ? 0.3 : 1
+                                  }
+                                ]} 
+                              />
+                          ))}
+                      </View>
+                    </View>
+
+                    {/* Bottom Row: Controls */}
+                    <View style={styles.recordingBottomRow}>
+                        <TouchableOpacity onPress={() => stopRecording(false)} style={styles.recordActionBtn}>
+                          <Trash2 size={24} color="#CBD5E1" />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity onPress={togglePause} style={styles.recordPauseBtn}>
+                           {isPaused ? (
+                              <View style={[styles.resumeCircle, { backgroundColor: 'transparent', borderWidth: 2, borderColor: '#EF4444' }]}>
+                                 <Mic size={20} color="#EF4444" />
+                              </View>
+                           ) : (
+                              <View style={[styles.pauseCircle, { backgroundColor: 'transparent', borderWidth: 2, borderColor: '#EF4444' }]}>
+                                 <Pause size={20} color="#EF4444" fill="#EF4444" />
+                              </View>
+                           )}
+                        </TouchableOpacity>
+
+                        <TouchableOpacity onPress={() => stopRecording(true)} style={[styles.recordSendBtn, { backgroundColor: '#FFF', width: 48, height: 48, borderRadius: 24 }]}>
+                          <Send size={22} color="#000" fill="#000" />
+                        </TouchableOpacity>
+                    </View>
                   </View>
                 ) : (
-                  <TouchableOpacity style={styles.whatsappSendBtn} onPress={handleSend}>
-                    <Send size={24} color={theme.primary} />
-                  </TouchableOpacity>
+                  <>
+                    <View style={[styles.whatsappInputFrame, { backgroundColor: colorScheme === 'dark' ? '#1E293B' : '#FFF', borderColor: colorScheme === 'dark' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)' }]}>
+                      <TextInput
+                        style={[styles.chatInput, { color: theme.text }]}
+                        placeholder="Message..."
+                        placeholderTextColor={theme.textSecondary}
+                        value={inputText}
+                        onChangeText={handleInputChange}
+                        multiline
+                        keyboardAppearance={colorScheme === 'dark' ? 'dark' : 'light'}
+                      />
+                    </View>
+
+                    {!inputText.trim() ? (
+                      <View style={styles.inputRightActions}>
+                        <TouchableOpacity style={styles.inputActionBtn} onPress={handleCamera}>
+                          <Camera size={24} color={theme.primary} />
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                          style={styles.inputActionBtn} 
+                          onPress={startRecording}
+                        >
+                          <Mic size={24} color={theme.primary} />
+                        </TouchableOpacity>
+                      </View>
+                    ) : (
+                      <TouchableOpacity style={styles.whatsappSendBtn} onPress={handleSend}>
+                        <Send size={24} color={theme.primary} />
+                      </TouchableOpacity>
+                    )}
+                  </>
                 )}
               </>
+            ) : (
+              <View style={[styles.restrictedNoticeBar, { 
+                backgroundColor: colorScheme === 'dark' ? '#111827' : '#F1F5F9',
+              }]}>
+                <Text style={[styles.restrictedNoticeText, { color: theme.textSecondary }]}>
+                  Only <Text style={{ color: '#22C55E', fontWeight: '800' }}>admins</Text> can send messages
+                </Text>
+              </View>
             )}
           </View>
         </View>
@@ -2170,6 +2210,19 @@ const styles = StyleSheet.create({
   },
   whatsappSendIcon: {
     color: '#FFF',
+  },
+  restrictedNoticeBar: {
+    flex: 1,
+    height: 54,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 16,
+    marginHorizontal: 4,
+  },
+  restrictedNoticeText: {
+    fontSize: 14,
+    fontWeight: '500',
+    letterSpacing: 0.2,
   },
   messagesList: {
     paddingHorizontal: 16,

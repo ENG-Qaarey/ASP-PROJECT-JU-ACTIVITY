@@ -117,6 +117,8 @@ function FloatingOrb({ size, x, y, duration, delay }: any) {
 
     const loginSuccess = async (target: string, userEmail: string) => {
       showToast({ message: 'Login successful! Welcome back.', type: 'success' });
+      const now = new Date().toLocaleString();
+      await AsyncStorage.setItem('last_login', now);
       await AsyncStorage.setItem('current-user', userEmail);
       await refreshTheme();
       router.push(target as any);
