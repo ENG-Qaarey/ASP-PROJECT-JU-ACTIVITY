@@ -25,6 +25,16 @@ import { NotificationService } from '@/src/lib/NotificationService';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
  
+/**
+ * Render the application's themed navigation layout and handle notification-driven navigation.
+ *
+ * When a notification response is received, navigates to `/chat/{id}` if the notification data
+ * `type` is `"chat"` (using `groupId` or `senderId`), or to `/notifications` if the `type` is
+ * `"approval"` or `"rejection"`. Selects a light or dark navigation theme based on the device
+ * color scheme and provides the app's stack navigator and status bar.
+ *
+ * @returns The React element containing the app's navigation provider, stack navigator, and status bar.
+ */
 function RootLayoutNav() {
   const colorScheme = useColorScheme() ?? 'light';
   const router = useRouter();
@@ -89,6 +99,14 @@ function RootLayoutNav() {
 
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+/**
+ * Compose global app providers and render the root navigation layout.
+ *
+ * The component wraps the app's root navigation with gesture handling and a stack
+ * of global context providers (Theme, Auth, Notification, Toast, Chat).
+ *
+ * @returns The root React element that supplies global contexts and mounts the navigation layout.
+ */
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

@@ -33,6 +33,16 @@ interface NotificationContextType {
 
 const NotificationContext = createContext<NotificationContextType | null>(null);
 
+/**
+ * Provides a NotificationContext and renders children while managing an in-app, swipe-to-dismiss notification UI.
+ *
+ * The provider supplies a `showNotification` action via context, displays a blurred card with avatar/app badge,
+ * supports tap-to-activate (calls `onPress` if provided) and swipe-up dismissal, triggers haptic feedback on show,
+ * and auto-hides notifications after five seconds.
+ *
+ * @param children - The subtree that will have access to the notification context.
+ * @returns The provider element that wraps `children` and conditionally renders the animated notification card.
+ */
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
   const [notification, setNotification] = useState<NotificationData | null>(null);
   const insets = useSafeAreaInsets();
