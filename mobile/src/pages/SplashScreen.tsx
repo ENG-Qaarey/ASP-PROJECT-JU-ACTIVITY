@@ -18,6 +18,8 @@ import { StatusBar } from 'expo-status-bar';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
+const AnimatedView = Animated.createAnimatedComponent(View);
+
 // Premium Cinematic Background - Variety of unique "Flying Things"
 function FlyingParticle({ index }: { index: number }) {
   const size = index % 3 === 0 ? Math.random() * 100 + 80 : Math.random() * 40 + 20;
@@ -81,9 +83,9 @@ function FlyingParticle({ index }: { index: number }) {
   };
 
   return (
-    <Animated.View style={[{ position: 'absolute', width: size, height: size }, particleStyle as any]}>
+    <AnimatedView style={[{ position: 'absolute', width: size, height: size }, particleStyle as any]}>
         {renderShape()}
-    </Animated.View>
+    </AnimatedView>
   );
 }
 
@@ -160,7 +162,7 @@ export default function SplashScreen() {
       </View>
 
       <View style={[styles.content, { marginTop: insets.top }]}>
-        <Animated.View 
+        <AnimatedView 
             style={[styles.textContainer as any, contentStyle]}
             collapsable={false}
         >
@@ -171,23 +173,23 @@ export default function SplashScreen() {
                 Empowering Jazeera University students with a seamless, digital campus life experience.
             </Text>
           </View>
-        </Animated.View>
+        </AnimatedView>
       </View>
 
       <View style={[styles.progressFooter, { marginBottom: Math.max(insets.bottom, 40) }]}>
           <View style={styles.progressContainer}>
               <View style={[styles.progressBase, { backgroundColor: 'rgba(14, 165, 233, 0.15)' }]}>
-                  <Animated.View style={[styles.progressFill as any, progressStyle]} />
+                  <AnimatedView style={[styles.progressFill as any, progressStyle]} />
               </View>
               <Text style={styles.loadingText}>Initializing Secure Session...</Text>
           </View>
 
-          <Animated.View 
+          <AnimatedView 
             style={[styles.footer as any, contentStyle]}
             collapsable={false}
           >
             <Text style={styles.footerBranding}>v1.0.0 • POWERED BY ENG-QAAREY</Text>
-          </Animated.View>
+          </AnimatedView>
       </View>
     </View>
   );
