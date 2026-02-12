@@ -89,6 +89,20 @@ function FlyingParticle({ index }: { index: number }) {
   );
 }
 
+/**
+ * Render the app's cinematic splash screen with animated particles, branding, and an automatic redirect after a 5-second hold.
+ *
+ * The component displays a gradient backdrop with 40 animated particles, a centered branding block that enters with eased motion,
+ * a progress bar that fills over 5 seconds, and a subtly floating footer branding. After 5 seconds (if not loading) it redirects:
+ * - admin -> '/(admin)/dashboard'
+ * - coordinator -> '/(coordinator)/dashboard'
+ * - student (default) -> '/(student)/home'
+ * - unauthenticated -> '/login'
+ *
+ * Animations and layout respect safe area insets.
+ *
+ * @returns The React element for the splash screen.
+ */
 export default function SplashScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
