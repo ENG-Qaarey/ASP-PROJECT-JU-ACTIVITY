@@ -63,6 +63,18 @@ function FloatingOrb({ size, x, y, duration, delay }: any) {
   );
 }
 
+/**
+ * Render the registration screen with animated background orbs and a glass-styled form.
+ *
+ * The form collects full name, student ID, Gmail address, password, and password confirmation.
+ * It validates required fields, enforces that the email ends with `@gmail.com`, and enforces password
+ * complexity (minimum 8 chars, uppercase, lowercase, number, and special char). On successful
+ * validation the component submits the registration to the API, stores the returned access token
+ * and current user when present, and navigates to the appropriate route; errors are displayed
+ * inline or via toast messages.
+ *
+ * @returns A React element representing the registration screen.
+ */
 export default function Register() {
   const { showToast } = useToast();
   const fade = useRef(new Animated.Value(0)).current;
