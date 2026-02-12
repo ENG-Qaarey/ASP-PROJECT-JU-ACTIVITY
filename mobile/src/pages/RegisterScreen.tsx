@@ -120,11 +120,20 @@ export default function Register() {
           showToast({ message: 'Please enter your email', type: 'error', duration: 3000 });
           return;
       }
-      if (!password.trim()) {
+
+      if (!email.trim().endsWith('@gmail.com')) {
+        emailRef.current?.focus();
+        showToast({ message: 'Email must be a @gmail.com address', type: 'error', duration: 3000 });
+        return;
+      }
+
+      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+      if (!passwordRegex.test(password)) {
           passwordRef.current?.focus();
-          showToast({ message: 'Please enter your password', type: 'error', duration: 3000 });
+          showToast({ message: 'Password must meet complexity requirements', type: 'error', duration: 4000 });
           return;
       }
+      
       if (!confirmPassword.trim()) {
           confirmPasswordRef.current?.focus();
           showToast({ message: 'Please confirm your password', type: 'error', duration: 3000 });
@@ -235,7 +244,7 @@ export default function Register() {
               <Input
                 ref={emailRef}
                 icon={Mail}
-                placeholder="student@jazeerauniversity.edu.so"
+                placeholder="yourname@gmail.com"
                 keyboardType="email-address"
                 autoCapitalize="none"
                 value={email}
@@ -243,7 +252,7 @@ export default function Register() {
                 focused={focused === 'email'}
                 onFocus={() => setFocused('email')}
                 onBlur={() => setFocused(null)}
-                error={submitted && !email.trim()}
+                error={submitted && (!email.trim() || !email.endsWith('@gmail.com'))}
                 returnKeyType="next"
                 onSubmitEditing={() => passwordRef.current?.focus()}
               />
@@ -259,7 +268,7 @@ export default function Register() {
                 focused={focused === 'password'}
                 onFocus={() => setFocused('password')}
                 onBlur={() => setFocused(null)}
-                error={submitted && !password.trim()}
+                error={submitted && !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(password)}
                 returnKeyType="next"
                 onSubmitEditing={() => confirmPasswordRef.current?.focus()}
               />
@@ -281,7 +290,7 @@ export default function Register() {
               />
 
               <Text style={styles.hint}>
-                Must be at least 8 characters with uppercase, lowercase, number and symbol
+                Must be at least 8 chars with uppercase, lowercase, number & special char (@$!%*?&)
               </Text>
 
               {error ? (

@@ -109,6 +109,11 @@ function FloatingOrb({ size, x, y, duration, delay }: any) {
       showToast({ message: 'Please enter your email', type: 'error', duration: 3000 });
       return;
     }
+    if (!email.trim().endsWith('@gmail.com')) {
+      emailRef.current?.focus();
+      showToast({ message: 'Email must be a @gmail.com address', type: 'error', duration: 3000 });
+      return;
+    }
     if (!password.trim()) {
       passwordRef.current?.focus();
       showToast({ message: 'Please enter your password', type: 'error', duration: 3000 });
