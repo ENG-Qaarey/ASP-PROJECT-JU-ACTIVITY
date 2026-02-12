@@ -13,10 +13,10 @@ import { useRouter } from 'expo-router';
 import { useColorScheme } from '@/src/hooks/use-color-scheme';
 import { Colors } from '@/src/data/theme';
 import { client } from '@/src/lib/api';
-import { ENDPOINTS, BASE_URL } from '@/src/lib/config';
 import { getAvatarUrl } from '@/src/lib/media';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/src/context/AuthContext';
+import { useLanguage } from '@/src/context/LanguageContext';
 
 export default function AdminPersonalSettings() {
   const router = useRouter();
@@ -25,6 +25,7 @@ export default function AdminPersonalSettings() {
   const { user, refreshProfile } = useAuth();
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
+  const { t, isRTL } = useLanguage();
 
   const [formData, setFormData] = React.useState({
     name: '',
@@ -67,9 +68,9 @@ export default function AdminPersonalSettings() {
         // Backend only supports name, email, department, studentId, avatar
       });
       await refreshProfile();
-      Alert.alert('Success', 'Profile updated successfully');
+      Alert.alert(t.common.success, 'Profile updated successfully');
     } catch (e: any) {
-      Alert.alert('Update Failed', e.message || 'Error updating profile');
+      Alert.alert(t.common.error, e.message || 'Error updating profile');
     } finally {
       setLoading(false);
     }
@@ -84,22 +85,22 @@ export default function AdminPersonalSettings() {
 
       if (libraryStatus.status !== 'granted') {
         Alert.alert(
-          'Permission Denied', 
-          'Gallery access is required to change your photo. Please enable it in Settings.',
+          t.profile.permissionDenied, 
+          t.profile.galleryAccess,
           [{ text: 'OK' }]
         );
         return;
       }
 
       Alert.alert(
-        'Update Profile Photo',
-        'Select a source for your new photo:',
+        t.profile.changePhoto,
+        t.profile.selectSource,
         [
           {
-            text: 'Camera',
+            text: t.profile.camera,
             onPress: async () => {
               if (cameraStatus.status !== 'granted') {
-                Alert.alert('Permission Error', 'Camera access is not granted.');
+                Alert.alert(t.profile.permissionDenied, 'Camera access is not granted.');
                 return;
               }
               const result = await ImagePicker.launchCameraAsync({
@@ -111,7 +112,7 @@ export default function AdminPersonalSettings() {
             }
           },
           {
-            text: 'Gallery',
+            text: t.profile.gallery,
             onPress: async () => {
               const result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: ['images'],
@@ -122,12 +123,12 @@ export default function AdminPersonalSettings() {
               if (!result.canceled) uploadImage(result.assets[0].uri);
             }
           },
-          { text: 'Cancel', style: 'cancel' }
+          { text: t.common.cancel, style: 'cancel' }
         ]
       );
     } catch (e) {
       console.log('Pick image error:', e);
-      Alert.alert('Error', 'Failed to open image picker.');
+      Alert.alert(t.common.error, 'Failed to open image picker.');
     }
   };
 
@@ -146,11 +147,11 @@ export default function AdminPersonalSettings() {
       if (response && response.avatar) {
           setFormData(prev => ({ ...prev, avatar: response.avatar }));
           await refreshProfile();
-          Alert.alert('Success', 'Profile photo updated successfully.');
+          Alert.alert(t.common.success, 'Profile photo updated successfully.');
       }
     } catch (e: any) {
       console.log('Photo upload failed:', e);
-      Alert.alert('Error', 'Failed to upload photo: ' + (e.message || 'Unknown error'));
+      Alert.alert(t.common.error, 'Failed to upload photo: ' + (e.message || 'Unknown error'));
     } finally {
       setLoading(false);
     }
@@ -168,9 +169,9 @@ export default function AdminPersonalSettings() {
 
   return (
     <GradientBackground>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.push('/(admin)/profile')}>
-          <ArrowLeft size={24} color={theme.text} />
+      <View style={[styles.header, isRTL && { flexDirection: 'row-reverse' }]}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.navigate('/(admin)/profile')}>
+          <ArrowLeft size={24} color={theme.text} style={isRTL && { transform: [{ rotate: '180deg' }] }} />
         </TouchableOpacity>
       </View>
 
@@ -192,75 +193,75 @@ export default function AdminPersonalSettings() {
               </TouchableOpacity>
             </View>
             <TouchableOpacity onPress={pickImage}>
-                <Text style={[styles.changePhotoText, { color: theme.primary }]}>Change Profile Photo</Text>
+                <Text style={[styles.changePhotoText, { color: theme.primary }]}>{t.profile.changePhoto}</Text>
             </TouchableOpacity>
           </View>
 
           {/* Form Section */}
           <GlassCard style={[styles.formCard, { backgroundColor: theme.card }]}>
             <View style={styles.inputGroup}>
-              <Label icon={User} label="Full Name" theme={theme} />
+              <Label icon={User} label={t.profile.fullName} theme={theme} isRTL={isRTL} />
               <TextInput 
-                style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} 
+                style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border, textAlign: isRTL ? 'right' : 'left' }]} 
                 value={formData.name} 
-                onChangeText={(val) => setFormData(prev => ({ ...prev, name: val }))}
-                placeholder="Enter full name"
+                onChangeText={(val: string) => setFormData(prev => ({ ...prev, name: val }))}
+                placeholder={t.profile.fullName}
                 placeholderTextColor={theme.textSecondary}
               />
             </View>
 
             <View style={styles.inputGroup}>
-              <Label icon={Shield} label="Admin Role" theme={theme} />
+              <Label icon={Shield} label={t.profile.adminRole} theme={theme} isRTL={isRTL} />
               <TextInput 
-                style={[styles.input, { backgroundColor: theme.background + '80', color: theme.textSecondary, borderColor: theme.border }]} 
-                value={formData.role.charAt(0).toUpperCase() + formData.role.slice(1) + ' Administrator'} 
+                style={[styles.input, { backgroundColor: theme.background + '80', color: theme.textSecondary, borderColor: theme.border, textAlign: isRTL ? 'right' : 'left' }]} 
+                value={t.profile.adminRole} 
                 editable={false}
               />
             </View>
 
             <View style={styles.inputGroup}>
-              <Label icon={Mail} label="Email Address" theme={theme} />
+              <Label icon={Mail} label={t.profile.emailAddress} theme={theme} isRTL={isRTL} />
               <TextInput 
-                style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} 
+                style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border, textAlign: isRTL ? 'right' : 'left' }]} 
                 value={formData.email} 
-                onChangeText={(val) => setFormData(prev => ({ ...prev, email: val }))}
+                onChangeText={(val: string) => setFormData(prev => ({ ...prev, email: val }))}
                 keyboardType="email-address"
-                placeholder="Enter email"
+                placeholder={t.profile.emailAddress}
                 placeholderTextColor={theme.textSecondary}
               />
             </View>
 
             <View style={styles.inputGroup}>
-              <Label icon={Phone} label="Phone Number" theme={theme} />
+              <Label icon={Phone} label={t.profile.phoneNumber} theme={theme} isRTL={isRTL} />
               <TextInput 
-                style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} 
+                style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border, textAlign: isRTL ? 'right' : 'left' }]} 
                 value={formData.phone} 
-                onChangeText={(val) => setFormData(prev => ({ ...prev, phone: val }))}
+                onChangeText={(val: string) => setFormData(prev => ({ ...prev, phone: val }))}
                 keyboardType="phone-pad"
-                placeholder="Enter phone number"
+                placeholder={t.profile.phoneNumber}
                 placeholderTextColor={theme.textSecondary}
               />
             </View>
 
              <View style={styles.inputGroup}>
-              <Label icon={MapPin} label="Office Location" theme={theme} />
+              <Label icon={MapPin} label={t.profile.officeLocation} theme={theme} isRTL={isRTL} />
               <TextInput 
-                style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} 
+                style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border, textAlign: isRTL ? 'right' : 'left' }]} 
                 value={formData.location} 
-                onChangeText={(val) => setFormData(prev => ({ ...prev, location: val }))}
-                placeholder="Enter office location"
+                onChangeText={(val: string) => setFormData(prev => ({ ...prev, location: val }))}
+                placeholder={t.profile.officeLocation}
                 placeholderTextColor={theme.textSecondary}
               />
             </View>
           </GlassCard>
 
-          <TouchableOpacity style={[styles.saveBtn, { backgroundColor: theme.primary, shadowColor: theme.primary }]} onPress={handleSave} disabled={loading}>
+          <TouchableOpacity style={[styles.saveBtn, { backgroundColor: theme.primary, shadowColor: theme.primary, flexDirection: isRTL ? 'row-reverse' : 'row' }]} onPress={handleSave} disabled={loading}>
             {loading ? (
-               <Text style={styles.saveBtnText}>Saving...</Text>
+               <Text style={styles.saveBtnText}>{t.profile.saving}</Text>
             ) : (
               <>
                 <CheckCircle2 size={18} color="#FFFFFF" strokeWidth={3} />
-                <Text style={styles.saveBtnText}>Save Changes</Text>
+                <Text style={styles.saveBtnText}>{t.profile.saveChanges}</Text>
               </>
             )}
           </TouchableOpacity>
@@ -271,9 +272,9 @@ export default function AdminPersonalSettings() {
   );
 }
 
-function Label({ icon: Icon, label, theme }: any) {
+function Label({ icon: Icon, label, theme, isRTL }: any) {
   return (
-    <View style={styles.labelContainer}>
+    <View style={[styles.labelContainer, isRTL && { flexDirection: 'row-reverse' }]}>
       <Icon size={14} color={theme.textSecondary} />
       <Text style={[styles.labelText, { color: theme.textSecondary }]}>{label}</Text>
     </View>

@@ -7,15 +7,14 @@ import {
 } from 'lucide-react-native';
 import { GradientBackground } from '@/src/components/GradientBackground';
 import { GlassCard } from '@/src/components/GlassCard';
-
 import { useColorScheme } from '@/src/hooks/use-color-scheme';
 import { Colors } from '@/src/data/theme';
 import { useRouter } from 'expo-router';
-
 import { client } from '@/src/lib/api';
 import { ENDPOINTS } from '@/src/lib/config';
 import { ShakingBellIcon } from '@/src/components/ShakingBellIcon';
 import { useAuth } from '@/src/context/AuthContext';
+import { useLanguage } from '@/src/context/LanguageContext';
 
 const timeAgo = (date: Date) => {
   const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
@@ -35,12 +34,11 @@ const timeAgo = (date: Date) => {
   return "just now";
 };
 
-// ... (existing imports)
-
 export default function AdminDashboard() {
   const { lastLogin } = useAuth();
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
+  const { t, isRTL } = useLanguage();
   
   const [stats, setStats] = React.useState({
       users: 0,
@@ -51,11 +49,9 @@ export default function AdminDashboard() {
   
   const [notifications, setNotifications] = React.useState<any[]>([]);
 
-
   React.useEffect(() => {
       const fetchData = async () => {
           try {
-              // Parallel fetching for performance
               const [usersRes, activitiesRes, appsRes, notifRes] = await Promise.allSettled([
                   client.get('/users'),
                   client.get(ENDPOINTS.ACTIVITIES),
@@ -82,21 +78,25 @@ export default function AdminDashboard() {
 
   return (
     <GradientBackground>
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
-        {/* ... (Header Banner) ... */}
-        <View style={styles.headerBanner}>
-            <View style={{ flex: 1 }}>
-                <View style={styles.bannerTopRow}>
+      <ScrollView 
+        style={styles.scrollView} 
+        contentContainerStyle={styles.contentContainer} 
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header Banner */}
+        <View style={[styles.headerBanner, isRTL && { flexDirection: 'row-reverse' }]}>
+            <View style={{ flex: 1, alignItems: isRTL ? 'flex-end' : 'flex-start' }}>
+                <View style={[styles.bannerTopRow, isRTL && { flexDirection: 'row-reverse' }]}>
                     <View style={styles.shieldIconBox}>
                         <ShieldCheck size={20} color="#FFFFFF" />
                     </View>
-                    <View style={styles.statusPill}>
+                    <View style={[styles.statusPill, isRTL && { flexDirection: 'row-reverse' }]}>
                         <View style={styles.statusDot} />
                         <Text style={styles.statusText}>System Online</Text>
                     </View>
                 </View>
-                <Text style={styles.bannerTitle}>Admin Center</Text>
-                <Text style={styles.bannerSubtitle}>
+                <Text style={[styles.bannerTitle, { textAlign: isRTL ? 'right' : 'left' }]}>Admin Center</Text>
+                <Text style={[styles.bannerSubtitle, { textAlign: isRTL ? 'right' : 'left' }]}>
                     {lastLogin ? `Last login: ${lastLogin}` : "Monitor metrics and orchestrate campus activities."}
                 </Text>
             </View>
@@ -110,32 +110,37 @@ export default function AdminDashboard() {
         </View>
 
         {/* Dynamic Stats Scroll */}
-        <View style={styles.sectionHeader}>
+        <View style={[styles.sectionHeader, isRTL && { flexDirection: 'row-reverse' }]}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>Performance Overview</Text>
             <TrendingUp size={16} color="#22C55E" />
         </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.statsScroll} contentContainerStyle={styles.statsScrollContent}>
-            <StatCard label="Total Users" value={stats.users.toString()} icon={Users} color="#0EA5E9" trend="+12%" theme={theme} />
-            <StatCard label="Activities" value={stats.activities.toString()} icon={Activity} color="#8B5CF6" trend="+5%" theme={theme} />
-            <StatCard label="Pending Apps" value={stats.pendingApps.toString()} icon={FileSearch} color="#F59E0B" trend="-2%" theme={theme} />
-            <StatCard label="System Load" value="14%" icon={Monitor} color="#22C55E" trend="Stable" theme={theme} />
+        <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false} 
+            style={styles.statsScroll} 
+            contentContainerStyle={[styles.statsScrollContent, isRTL && { flexDirection: 'row-reverse' }]}
+        >
+            <StatCard label="Total Users" value={stats.users.toString()} icon={Users} color="#0EA5E9" trend="+12%" theme={theme} isRTL={isRTL} />
+            <StatCard label="Activities" value={stats.activities.toString()} icon={Activity} color="#8B5CF6" trend="+5%" theme={theme} isRTL={isRTL} />
+            <StatCard label="Pending Apps" value={stats.pendingApps.toString()} icon={FileSearch} color="#F59E0B" trend="-2%" theme={theme} isRTL={isRTL} />
+            <StatCard label="System Load" value="14%" icon={Monitor} color="#22C55E" trend="Stable" theme={theme} isRTL={isRTL} />
         </ScrollView>
 
         {/* Quick Actions Grid */}
-        <View style={styles.sectionHeader}>
+        <View style={[styles.sectionHeader, isRTL && { flexDirection: 'row-reverse' }]}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>Terminal Hub</Text>
         </View>
-        <View style={styles.actionGrid}>
-            <ActionTile icon={Folders} label="Create" subLabel="New Activity" color="#0EA5E9" theme={theme} />
-            <ActionTile icon={Monitor} label="Monitor" subLabel="All Events" color="#8B5CF6" theme={theme} />
-            <ActionTile icon={FileSearch} label="Review" subLabel="Student Apps" color="#F59E0B" theme={theme} />
-            <ActionTile icon={Users} label="Directory" subLabel="JU Database" color="#22C55E" theme={theme} />
+        <View style={[styles.actionGrid, isRTL && { flexDirection: 'row-reverse' }]}>
+            <ActionTile icon={Folders} label="Create" subLabel="New Activity" color="#0EA5E9" theme={theme} onPress={() => router.push('/(admin)/activities/create')} />
+            <ActionTile icon={Monitor} label="Monitor" subLabel="All Events" color="#8B5CF6" theme={theme} onPress={() => router.push('/(admin)/activities')} />
+            <ActionTile icon={FileSearch} label="Review" subLabel="Student Apps" color="#F59E0B" theme={theme} onPress={() => router.push('/(admin)/applications')} />
+            <ActionTile icon={Users} label="Directory" subLabel="JU Database" color="#22C55E" theme={theme} onPress={() => router.push('/(admin)/users')} />
             <ActionTile icon={Settings} label="Staff" subLabel="Manage Team" color={theme.textSecondary} theme={theme} />
-            <ActionTile icon={ListChecks} label="Audit" subLabel="System Logs" color="#EC4899" theme={theme} />
+            <ActionTile icon={ListChecks} label="Audit" subLabel="System Logs" color="#EC4899" theme={theme} onPress={() => router.push('/(admin)/logs')} />
         </View>
 
         {/* System Intelligence / Alerts */}
-        <View style={styles.sectionHeader}>
+        <View style={[styles.sectionHeader, isRTL && { flexDirection: 'row-reverse' }]}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>System Intelligence</Text>
         </View>
         <View style={styles.alertsList}>
@@ -146,9 +151,10 @@ export default function AdminDashboard() {
                     msg={notif.title} 
                     time={timeAgo(new Date(notif.createdAt))} 
                     theme={theme}
+                    isRTL={isRTL}
                 />
             )) : (
-                <Text style={{ textAlign: 'center', color: theme.textSecondary, padding: 20 }}>No clinical alerts.</Text>
+                <Text style={{ textAlign: 'center', color: theme.textSecondary, padding: 20 }}>No intelligence alerts.</Text>
             )}
         </View>
       </ScrollView>
@@ -156,10 +162,10 @@ export default function AdminDashboard() {
   );
 }
 
-function StatCard({ label, value, icon: Icon, color, trend, theme }: any) {
+function StatCard({ label, value, icon: Icon, color, trend, theme, isRTL }: any) {
   return (
-    <GlassCard style={[styles.statCard, { backgroundColor: theme.card }]}>
-        <View style={styles.statCardHeader}>
+    <GlassCard style={[styles.statCard, { backgroundColor: theme.card }, isRTL ? { marginLeft: 12, marginRight: 0 } : { marginRight: 12 }]}>
+        <View style={[styles.statCardHeader, isRTL && { flexDirection: 'row-reverse' }]}>
             <View style={[styles.statIconBox, { backgroundColor: color + '15' }]}>
                 <Icon size={18} color={color} />
             </View>
@@ -167,15 +173,15 @@ function StatCard({ label, value, icon: Icon, color, trend, theme }: any) {
                 {trend}
             </Text>
         </View>
-        <Text style={[styles.statValue, { color: theme.text }]}>{value}</Text>
-        <Text style={[styles.statLabel, { color: theme.textSecondary }]}>{label}</Text>
+        <Text style={[styles.statValue, { color: theme.text, textAlign: isRTL ? 'right' : 'left' }]}>{value}</Text>
+        <Text style={[styles.statLabel, { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>{label}</Text>
     </GlassCard>
   )
 }
 
-function ActionTile({ icon: Icon, label, subLabel, color, theme }: any) {
+function ActionTile({ icon: Icon, label, subLabel, color, theme, onPress }: any) {
     return (
-        <TouchableOpacity style={styles.actionTileWrapper}>
+        <TouchableOpacity style={styles.actionTileWrapper} onPress={onPress}>
             <GlassCard style={[styles.actionTile, { backgroundColor: theme.card }]}>
                 <View style={[styles.actionIconBox, { backgroundColor: color + '10' }]}>
                     <Icon size={24} color={color} />
@@ -187,22 +193,22 @@ function ActionTile({ icon: Icon, label, subLabel, color, theme }: any) {
     )
 }
 
-function AlertItem({ type, msg, time, theme }: any) {
+function AlertItem({ type, msg, time, theme, isRTL }: any) {
     const isWarning = type === 'warning';
     const isSuccess = type === 'success';
     const color = isWarning ? '#F59E0B' : isSuccess ? '#22C55E' : '#3B82F6';
     
     return (
-        <GlassCard style={[styles.alertCard, { backgroundColor: theme.card }]}>
+        <GlassCard style={[styles.alertCard, { backgroundColor: theme.card }, isRTL && { flexDirection: 'row-reverse' }]}>
             <View style={[styles.alertIndicator, { backgroundColor: color }]} />
-            <View style={{ flex: 1, paddingLeft: 12 }}>
-                <Text style={[styles.alertMsg, { color: theme.text }]}>{msg}</Text>
-                <View style={styles.alertFooter}>
+            <View style={[{ flex: 1 }, isRTL ? { paddingRight: 12, paddingLeft: 0, alignItems: 'flex-end' } : { paddingLeft: 12, alignItems: 'flex-start' }]}>
+                <Text style={[styles.alertMsg, { color: theme.text, textAlign: isRTL ? 'right' : 'left' }]}>{msg}</Text>
+                <View style={[styles.alertFooter, isRTL && { flexDirection: 'row-reverse' }]}>
                     <Clock size={10} color={theme.textSecondary} />
-                    <Text style={[styles.alertTime, { color: theme.textSecondary }]}>{time}</Text>
+                    <Text style={[styles.alertTime, { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>{time}</Text>
                 </View>
             </View>
-            <ChevronRight size={14} color={theme.icon} />
+            <ChevronRight size={14} color={theme.icon} style={isRTL && { transform: [{ rotate: '180deg' }] }} />
         </GlassCard>
     )
 }
@@ -217,11 +223,6 @@ const styles = StyleSheet.create({
     padding: 24, 
     borderRadius: 28, 
     marginBottom: 24, 
-    shadowColor: '#0EA5E9', 
-    shadowOffset: { width: 0, height: 10 }, 
-    shadowOpacity: 0.3, 
-    shadowRadius: 15, 
-    elevation: 8 
   },
   bannerTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   shieldIconBox: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255, 255, 255, 0.2)', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.3)' },
@@ -234,7 +235,7 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 16, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1 },
   statsScroll: { flexGrow: 0, marginBottom: 24 },
   statsScrollContent: { paddingRight: 16 },
-  statCard: { width: 140, padding: 16, marginRight: 12, borderRadius: 20 },
+  statCard: { width: 140, padding: 16, borderRadius: 20 },
   statCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   statIconBox: { width: 34, height: 34, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
   trendText: { fontSize: 11, fontWeight: '700' },
@@ -262,16 +263,4 @@ const styles = StyleSheet.create({
       height: 48,
       width: 48,
   },
-  notifDot: {
-      position: 'absolute',
-      top: 10,
-      right: 12,
-      width: 8,
-      height: 8,
-      borderRadius: 4,
-      backgroundColor: '#EF4444',
-      zIndex: 10,
-      borderWidth: 1.5,
-      borderColor: '#FFFFFF'
-  }
 });

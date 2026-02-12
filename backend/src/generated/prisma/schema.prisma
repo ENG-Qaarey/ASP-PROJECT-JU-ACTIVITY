@@ -47,22 +47,22 @@ model User {
 }
 
 model Message {
-  id        String   @id @default(uuid())
-  content   String
-  type      MessageType @default(text)
-  metadata  Json?
-  senderId  String
+  id         String      @id @default(uuid())
+  content    String
+  type       MessageType @default(text)
+  metadata   Json?
+  senderId   String
   receiverId String?
-  groupId   String?
-  createdAt DateTime @default(now())
-  read      Boolean  @default(false)
-  replyTo   Json?
-  hiddenBy  String[] @default([])
-  isDeleted Boolean  @default(false)
+  groupId    String?
+  createdAt  DateTime    @default(now())
+  read       Boolean     @default(false)
+  replyTo    Json?
+  hiddenBy   String[]    @default([])
+  isDeleted  Boolean     @default(false)
 
-  sender    User     @relation("SentMessages", fields: [senderId], references: [id])
-  receiver  User?    @relation("ReceivedMessages", fields: [receiverId], references: [id])
-  activity  Activity? @relation(fields: [groupId], references: [id])
+  sender   User      @relation("SentMessages", fields: [senderId], references: [id])
+  receiver User?     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  activity Activity? @relation(fields: [groupId], references: [id])
 
   @@index([senderId])
   @@index([receiverId])
@@ -127,7 +127,7 @@ model Activity {
   enrolled        Int            @default(0)
   coordinatorId   String
   coordinatorName String
-  image           String?        // Added for group profile image
+  image           String? // Added for group profile image
   status          ActivityStatus @default(upcoming)
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
@@ -299,15 +299,15 @@ model PushToken {
 }
 
 model Review {
-  id          String   @id @default(uuid())
-  rating      Int      // 1-5
-  comment     String?
-  studentId   String
-  activityId  String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  student     User     @relation(fields: [studentId], references: [id])
-  activity    Activity @relation(fields: [activityId], references: [id])
+  id         String   @id @default(uuid())
+  rating     Int // 1-5
+  comment    String?
+  studentId  String
+  activityId String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  student    User     @relation(fields: [studentId], references: [id])
+  activity   Activity @relation(fields: [activityId], references: [id])
 
   @@unique([studentId, activityId])
   @@index([studentId])

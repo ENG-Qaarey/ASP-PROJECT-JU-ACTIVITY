@@ -1,6 +1,6 @@
 import React from 'react';
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity, Share } from 'react-native';
-import { Calendar, MapPin, Users, Clock, ArrowLeft, Share2, Bookmark, CheckCircle2, Info } from 'lucide-react-native';
+import { StyleSheet, View, Text, ScrollView, TouchableOpacity, Share, ActivityIndicator, Alert } from 'react-native';
+import { Calendar, MapPin, Users, Clock, ArrowLeft, Share2, Bookmark, CheckCircle2, Star } from 'lucide-react-native';
 import { GradientBackground } from '@/src/components/GradientBackground';
 import { GlassCard } from '@/src/components/GlassCard';
 import { JuButton } from '@/src/components/JuButton';
@@ -9,7 +9,8 @@ import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { client } from '@/src/lib/api';
 import { useAuth } from '@/src/context/AuthContext';
-import { ActivityIndicator, Alert } from 'react-native';
+import { useLanguage } from '@/src/context/LanguageContext';
+import { ActivityReviewModal } from '@/src/components/ActivityReviewModal';
 
 import { useColorScheme } from '@/src/hooks/use-color-scheme';
 import { Colors } from '@/src/data/theme';
@@ -18,11 +19,16 @@ export default function ActivityDetails() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
+  
   const [applied, setApplied] = React.useState(false);
   const [isApplying, setIsApplying] = React.useState(false);
   const [checkingStatus, setCheckingStatus] = React.useState(true);
+  const [reviewModalVisible, setReviewModalVisible] = React.useState(false);
+  const [hasAttended, setHasAttended] = React.useState(false);
+  const [activityStatus, setActivityStatus] = React.useState<string | null>(params.status as string || null);
 
   const { 
     id,
@@ -44,12 +50,27 @@ export default function ActivityDetails() {
     if (!id || !user?.id) return;
     try {
         setCheckingStatus(true);
-        const apps = await client.get(`/applications?studentId=${user.id}&activityId=${id}`);
+        // Parallel check for application and attendance
+        const [apps, attendance, activityRes] = await Promise.all([
+            client.get(`/applications?studentId=${user.id}&activityId=${id}`),
+            client.get(`/attendance?studentId=${user.id}&activityId=${id}`),
+            client.get(`/activities/${id}`)
+        ]);
+
         if (apps && apps.length > 0) {
             setApplied(true);
         }
+
+        if (attendance && attendance.length > 0) {
+            const hasAttendedRecord = attendance.some((a: any) => a.status === 'present');
+            if (hasAttendedRecord) setHasAttended(true);
+        }
+
+        if (activityRes) {
+            setActivityStatus(activityRes.status);
+        }
     } catch (error) {
-        console.log('Failed to check application status:', error);
+        console.log('Failed to check activity/application status:', error);
     } finally {
         setCheckingStatus(false);
     }
@@ -94,7 +115,7 @@ export default function ActivityDetails() {
 
   return (
     <GradientBackground>
-      {/* Fixed Background Image */}
+      {/* Background Image Header */}
       <View style={styles.headerImageContainer}>
           <Image 
               source={require('../../../assets/images/activity-banner.png')} 
@@ -112,7 +133,7 @@ export default function ActivityDetails() {
           </View>
       </View>
 
-      {/* Fixed Top Actions (Fixed Icons) */}
+      {/* Navigation Actions */}
       <View style={styles.topActions}>
           <TouchableOpacity 
             style={[styles.actionCircle, { backgroundColor: theme.card }]} 
@@ -135,10 +156,8 @@ export default function ActivityDetails() {
         contentContainerStyle={styles.contentContainer} 
         showsVerticalScrollIndicator={false}
       >
-        {/* Spacer to push content down so image shows */}
         <View style={styles.headerSpacer} />
 
-        {/* Content */}
         <View style={[styles.content, { backgroundColor: theme.background }]}>
             {applied && (
                 <View style={[styles.successPanel, { backgroundColor: colorScheme === 'dark' ? '#064e3b' : '#DCFCE7', borderColor: colorScheme === 'dark' ? '#065f46' : '#86EFAC' }]}>
@@ -166,6 +185,19 @@ export default function ActivityDetails() {
                 </ThemedText>
             </View>
 
+            {/* Attendance-based Reviews */}
+            {activityStatus === 'completed' && hasAttended && (
+                <View style={[styles.section, styles.reviewSection]}>
+                    <TouchableOpacity 
+                        style={[styles.reviewBtn, { borderColor: theme.primary, backgroundColor: theme.primary + '10' }]}
+                        onPress={() => setReviewModalVisible(true)}
+                    >
+                        <Star size={22} color={theme.primary} fill={theme.primary} />
+                        <Text style={[styles.reviewBtnText, { color: theme.primary }]}>{t.feedback.rateActivity}</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
+
             <View style={styles.section}>
                 <ThemedText style={[styles.sectionTitle, { color: theme.text }]}>Perks & Benefits</ThemedText>
                 <BenefitItem text="Certificate of Participation" theme={theme} />
@@ -175,7 +207,15 @@ export default function ActivityDetails() {
         </View>
       </ScrollView>
 
-      {/* Sticky Bottom Action */}
+      {/* Review Modal */}
+      <ActivityReviewModal 
+        visible={reviewModalVisible}
+        onClose={() => setReviewModalVisible(false)}
+        activityId={id as string}
+        activityTitle={title as string}
+      />
+
+      {/* Sticky Bottom Footer */}
       <View style={[styles.footer, { backgroundColor: theme.card, borderTopColor: theme.border }]}>
           <View style={styles.footerInfo}>
               <ThemedText style={[styles.footerLabel, { color: theme.textSecondary }]}>Registration Status</ThemedText>
@@ -210,7 +250,7 @@ export default function ActivityDetails() {
 function MetaItem({ icon: Icon, label, value, theme }: any) {
     return (
         <View style={styles.metaItem}>
-            <View style={[styles.metaIconBg, { backgroundColor: theme.card, shadowOpacity: theme.theme === 'dark' ? 0.2 : 0.05 }]}>
+            <View style={[styles.metaIconBg, { backgroundColor: theme.card }]}>
                 <Icon size={18} color={theme.primary} />
             </View>
             <View>
@@ -255,21 +295,40 @@ const styles = StyleSheet.create({
   topActions: { position: 'absolute', top: 50, left: 20, right: 20, zIndex: 10, flexDirection: 'row', justifyContent: 'space-between' },
   rightActions: { flexDirection: 'row', gap: 12 },
   actionCircle: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 5 },
-  headerImage: { width: '100%', height: 300 },
   content: { padding: 24, borderTopLeftRadius: 32, borderTopRightRadius: 32, minHeight: 600 },
   categoryBadge: { alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, marginBottom: 16 },
   categoryText: { fontSize: 12, fontWeight: '800', textTransform: 'uppercase' },
   title: { fontSize: 26, fontWeight: '900', marginBottom: 24 },
   metaGrid: { gap: 16, marginBottom: 32 },
   metaItem: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-  metaIconBg: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowRadius: 5 },
+  metaIconBg: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   metaLabel: { fontSize: 12, fontWeight: '600' },
   metaValue: { fontSize: 15, fontWeight: '700', marginTop: 2 },
   section: { marginBottom: 32 },
+  reviewSection: {
+      paddingVertical: 16,
+      borderTopWidth: 1,
+      borderBottomWidth: 1,
+      borderColor: 'rgba(0,0,0,0.05)',
+  },
   sectionTitle: { fontSize: 18, fontWeight: '800', marginBottom: 12 },
   description: { fontSize: 15, lineHeight: 24 },
   benefitItem: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
   benefitText: { fontSize: 15, fontWeight: '600' },
+  reviewBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 16,
+      borderRadius: 20,
+      borderWidth: 1.5,
+      borderStyle: 'dashed',
+      gap: 12,
+  },
+  reviewBtnText: {
+      fontSize: 16,
+      fontWeight: '800',
+  },
   footer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 24, paddingTop: 16, paddingBottom: 32, borderTopWidth: 1, flexDirection: 'row', alignItems: 'center', gap: 20, zIndex: 10 },
   footerInfo: { flex: 0.8 },
   footerLabel: { fontSize: 12, fontWeight: '600', marginBottom: 4 },

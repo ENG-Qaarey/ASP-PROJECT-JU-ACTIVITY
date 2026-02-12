@@ -30,7 +30,7 @@ export default function CoordinatorSecuritySettings() {
   return (
     <GradientBackground>
        <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.push('/(coordinator)/profile')}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.navigate('/(coordinator)/profile')}>
           <ArrowLeft size={24} color={theme.text} />
         </TouchableOpacity>
       </View>

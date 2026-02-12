@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, View, Text, ScrollView, TouchableOpacity, TextInput } from 'react-native';
-import { ArrowLeft, Lock, ShieldCheck, Fingerprint, Smartphone, Save } from 'lucide-react-native';
+import { ArrowLeft, Lock, ShieldCheck, Fingerprint, Smartphone } from 'lucide-react-native';
 import { GradientBackground } from '@/src/components/GradientBackground';
 import { GlassCard } from '@/src/components/GlassCard';
 import { ThemedText } from '@/src/components/themed-text';
@@ -8,52 +8,55 @@ import { JuButton } from '@/src/components/JuButton';
 import { useRouter } from 'expo-router';
 import { useColorScheme } from '@/src/hooks/use-color-scheme';
 import { Colors } from '@/src/data/theme';
+import { useTheme } from '@/src/context/ThemeContext';
+import { useLanguage } from '@/src/context/LanguageContext';
 
 export default function SecurityPassword() {
   const router = useRouter();
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
+  const { isRTL, t } = useLanguage();
 
   const handleBack = () => {
-    router.back();
+    router.navigate('/(student)/(tabs)/profile');
   };
 
   return (
     <GradientBackground>
-      <View style={styles.header}>
+      <View style={[styles.header, isRTL && { flexDirection: 'row-reverse' }]}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <ArrowLeft size={24} color={theme.text} />
+          <ArrowLeft size={24} color={theme.text} style={isRTL && { transform: [{ rotate: '180deg' }] }} />
         </TouchableOpacity>
-        <ThemedText style={styles.headerTitle}>Security & Password</ThemedText>
+        <ThemedText style={styles.headerTitle}>{t.profile.securityPassword}</ThemedText>
         <View style={{ width: 40 }} />
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
         <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Change Password</Text>
+            <Text style={[styles.sectionTitle, { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>{t.profile.changePassword}</Text>
             <GlassCard style={[styles.card, { backgroundColor: theme.card }]}>
                 <View style={styles.inputGroup}>
-                    <Text style={[styles.label, { color: theme.textSecondary }]}>Current Password</Text>
+                    <Text style={[styles.label, { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>{t.profile.currentPassword}</Text>
                     <TextInput 
-                        style={[styles.input, { color: theme.text, borderColor: theme.border }]} 
+                        style={[styles.input, { color: theme.text, borderColor: theme.border, textAlign: isRTL ? 'right' : 'left' }]} 
                         secureTextEntry
                         placeholder="••••••••"
                         placeholderTextColor={theme.textSecondary}
                     />
                 </View>
                 <View style={styles.inputGroup}>
-                    <Text style={[styles.label, { color: theme.textSecondary }]}>New Password</Text>
+                    <Text style={[styles.label, { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>{t.profile.newPassword}</Text>
                     <TextInput 
-                        style={[styles.input, { color: theme.text, borderColor: theme.border }]} 
+                        style={[styles.input, { color: theme.text, borderColor: theme.border, textAlign: isRTL ? 'right' : 'left' }]} 
                         secureTextEntry
                         placeholder="••••••••"
                         placeholderTextColor={theme.textSecondary}
                     />
                 </View>
                 <View style={styles.inputGroup}>
-                    <Text style={[styles.label, { color: theme.textSecondary }]}>Confirm New Password</Text>
+                    <Text style={[styles.label, { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>{t.profile.confirmNewPassword}</Text>
                     <TextInput 
-                        style={[styles.input, { color: theme.text, borderColor: theme.border }]} 
+                        style={[styles.input, { color: theme.text, borderColor: theme.border, textAlign: isRTL ? 'right' : 'left' }]} 
                         secureTextEntry
                         placeholder="••••••••"
                         placeholderTextColor={theme.textSecondary}
@@ -61,7 +64,7 @@ export default function SecurityPassword() {
                 </View>
 
                 <JuButton 
-                    title="Update Password" 
+                    title={t.profile.updatePassword} 
                     onPress={() => {}} 
                     style={styles.updateButton}
                 />
@@ -69,27 +72,29 @@ export default function SecurityPassword() {
         </View>
 
         <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Advanced Security</Text>
+            <Text style={[styles.sectionTitle, { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>{t.profile.advancedSecurity}</Text>
             <GlassCard style={[styles.card, { backgroundColor: theme.card }]}>
                 <SecurityOption 
                     icon={Fingerprint}
-                    label="Biometric Authentication"
-                    description="Use FaceID or TouchID to login"
-                    status="Enabled"
+                    label={t.profile.biometricAuth}
+                    description={t.profile.biometricDesc}
+                    status={t.profile.enabled}
                     theme={theme}
+                    isRTL={isRTL}
                 />
                 <View style={[styles.divider, { backgroundColor: theme.border }]} />
                 <SecurityOption 
                     icon={Smartphone}
-                    label="Two-Factor Auth"
-                    description="Secure your account with 2FA"
-                    status="Setup"
+                    label={t.profile.twoFactorAuth}
+                    description={t.profile.twoFactorDesc}
+                    status={t.profile.setup}
                     theme={theme}
+                    isRTL={isRTL}
                 />
             </GlassCard>
         </View>
 
-        <View style={styles.footerInfo}>
+        <View style={[styles.footerInfo, isRTL && { flexDirection: 'row-reverse' }]}>
              <ShieldCheck size={20} color="#22C55E" />
              <Text style={[styles.footerText, { color: theme.textSecondary }]}>
                  Your account is secured with end-to-end encryption.
@@ -100,20 +105,20 @@ export default function SecurityPassword() {
   );
 }
 
-function SecurityOption({ icon: Icon, label, description, status, theme }: any) {
+function SecurityOption({ icon: Icon, label, description, status, theme, isRTL }: any) {
     return (
-        <TouchableOpacity style={styles.optionRow}>
-            <View style={styles.optionLeft}>
+        <TouchableOpacity style={[styles.optionRow, isRTL && { flexDirection: 'row-reverse' }]}>
+            <View style={[styles.optionLeft, isRTL && { flexDirection: 'row-reverse' }]}>
                 <View style={[styles.iconContainer, { backgroundColor: theme.primary + '10' }]}>
                     <Icon size={20} color={theme.primary} />
                 </View>
-                <View style={styles.textContainer}>
-                    <Text style={[styles.optionLabel, { color: theme.text }]}>{label}</Text>
-                    <Text style={[styles.optionDescription, { color: theme.textSecondary }]}>{description}</Text>
+                <View style={[styles.textContainer, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
+                    <Text style={[styles.optionLabel, { color: theme.text, textAlign: isRTL ? 'right' : 'left' }]}>{label}</Text>
+                    <Text style={[styles.optionDescription, { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>{description}</Text>
                 </View>
             </View>
-            <View style={[styles.statusBadge, { backgroundColor: status === 'Enabled' ? '#DCFCE7' : theme.primary + '15' }]}>
-                <Text style={[styles.statusText, { color: status === 'Enabled' ? '#166534' : theme.primary }]}>{status}</Text>
+            <View style={[styles.statusBadge, { backgroundColor: status === 'Enabled' || status === 'Daaran' || status === 'مفعل' ? '#DCFCE7' : theme.primary + '15' }]}>
+                <Text style={[styles.statusText, { color: status === 'Enabled' || status === 'Daaran' || status === 'مفعل' ? '#166534' : theme.primary }]}>{status}</Text>
             </View>
         </TouchableOpacity>
     );

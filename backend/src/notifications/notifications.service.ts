@@ -115,7 +115,7 @@ export class NotificationsService {
     }
 
     const chunks = this.expo.chunkPushNotifications(messages);
-    const tickets = [];
+    const tickets: any[] = [];
     for (const chunk of chunks) {
       try {
         const ticketChunk = await this.expo.sendPushNotificationsAsync(chunk);

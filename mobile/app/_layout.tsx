@@ -21,6 +21,7 @@ import { AuthProvider } from '@/src/context/AuthContext';
 import { ChatProvider } from '@/src/context/ChatContext';
 import { ToastProvider } from '@/src/context/ToastContext';
 import { NotificationProvider } from '@/src/context/NotificationContext';
+import { LanguageProvider } from '@/src/context/LanguageContext';
 import { NotificationService } from '@/src/lib/NotificationService';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
@@ -93,15 +94,17 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider>
-        <AuthProvider>
-          <NotificationProvider>
-            <ToastProvider>
-              <ChatProvider>
-                <RootLayoutNav />
-              </ChatProvider>
-            </ToastProvider>
-          </NotificationProvider>
-        </AuthProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            <NotificationProvider>
+              <ToastProvider>
+                <ChatProvider>
+                  <RootLayoutNav />
+                </ChatProvider>
+              </ToastProvider>
+            </NotificationProvider>
+          </AuthProvider>
+        </LanguageProvider>
       </ThemeProvider>
     </GestureHandlerRootView>
   );

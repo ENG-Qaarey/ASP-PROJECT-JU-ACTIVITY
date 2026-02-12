@@ -7,11 +7,14 @@ import { ThemedText } from '@/src/components/themed-text';
 import { useRouter } from 'expo-router';
 import { useColorScheme } from '@/src/hooks/use-color-scheme';
 import { Colors } from '@/src/data/theme';
+import { useTheme } from '@/src/context/ThemeContext';
+import { useLanguage } from '@/src/context/LanguageContext';
 
 export default function DutyNotifications() {
   const router = useRouter();
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
+  const { isRTL, t } = useLanguage();
 
   const [settings, setSettings] = React.useState({
     activityReminders: true,
@@ -26,80 +29,89 @@ export default function DutyNotifications() {
   };
 
   const handleBack = () => {
-    router.back();
+    router.navigate('/(student)/(tabs)/profile');
   };
 
   return (
     <GradientBackground>
-      <View style={styles.header}>
+      <View style={[styles.header, isRTL && { flexDirection: 'row-reverse' }]}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <ArrowLeft size={24} color={theme.text} />
+          <ArrowLeft size={24} color={theme.text} style={isRTL && { transform: [{ rotate: '180deg' }] }} />
         </TouchableOpacity>
-        <ThemedText style={styles.headerTitle}>Duty Notifications</ThemedText>
+        <ThemedText style={styles.headerTitle}>{t.profile.dutyNotifications}</ThemedText>
         <View style={{ width: 40 }} />
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
-        <View style={styles.descriptionContainer}>
+        <View style={[styles.descriptionContainer, isRTL && { flexDirection: 'row-reverse' }]}>
             <View style={[styles.infoIcon, { backgroundColor: theme.primary + '15' }]}>
                 <Info size={20} color={theme.primary} />
             </View>
-            <Text style={[styles.descriptionText, { color: theme.textSecondary }]}>
-                Manage how you receive alerts for your assigned duties, upcoming activities, and group updates.
+            <Text style={[styles.descriptionText, { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+                {t.notifications.dutySubtitle}
             </Text>
         </View>
 
         <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Push Notifications</Text>
+            <Text style={[styles.sectionTitle, { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+                {t.profile.pushNotifications}
+            </Text>
             <GlassCard style={[styles.card, { backgroundColor: theme.card }]}>
                 <NotificationToggle 
                     icon={Calendar} 
-                    label="Activity Reminders" 
-                    description="Alerts for upcoming activities you've joined"
+                    label={t.profile.activityReminders} 
+                    description={t.profile.activityRemindersDesc}
                     value={settings.activityReminders}
                     onValueChange={() => toggleSetting('activityReminders')}
                     theme={theme}
+                    isRTL={isRTL}
                 />
                 <View style={[styles.divider, { backgroundColor: theme.border }]} />
                 <NotificationToggle 
                     icon={Bell} 
-                    label="Duty Assignments" 
-                    description="Immediate alerts when assigned to a duty"
+                    label={t.profile.dutyAssignments} 
+                    description={t.profile.dutyAssignmentsDesc}
                     value={settings.dutyAlerts}
                     onValueChange={() => toggleSetting('dutyAlerts')}
                     theme={theme}
+                    isRTL={isRTL}
                 />
                  <View style={[styles.divider, { backgroundColor: theme.border }]} />
                 <NotificationToggle 
                     icon={MessageSquare} 
-                    label="Group Messages" 
-                    description="New messages from your activity groups"
+                    label={t.profile.groupMessages} 
+                    description={t.profile.groupMessagesDesc}
                     value={settings.groupMessages}
                     onValueChange={() => toggleSetting('groupMessages')}
                     theme={theme}
+                    isRTL={isRTL}
                 />
                  <View style={[styles.divider, { backgroundColor: theme.border }]} />
                 <NotificationToggle 
                     icon={Megaphone} 
-                    label="General Announcements" 
-                    description="Important updates from JU Administration"
+                    label={t.profile.generalAnnouncements} 
+                    description={t.profile.generalAnnouncementsDesc}
                     value={settings.announcements}
                     onValueChange={() => toggleSetting('announcements')}
                     theme={theme}
+                    isRTL={isRTL}
                 />
             </GlassCard>
         </View>
 
         <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Other Channels</Text>
+            <Text style={[styles.sectionTitle, { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+                {t.profile.otherChannels}
+            </Text>
             <GlassCard style={[styles.card, { backgroundColor: theme.card }]}>
                 <NotificationToggle 
                     icon={Bell} 
-                    label="Email Notifications" 
-                    description="Receive weekly summaries via email"
+                    label={t.profile.emailNotifications} 
+                    description={t.profile.emailNotificationsDesc}
                     value={settings.emailNotifications}
                     onValueChange={() => toggleSetting('emailNotifications')}
                     theme={theme}
+                    isRTL={isRTL}
                 />
             </GlassCard>
         </View>
@@ -108,16 +120,16 @@ export default function DutyNotifications() {
   );
 }
 
-function NotificationToggle({ icon: Icon, label, description, value, onValueChange, theme }: any) {
+function NotificationToggle({ icon: Icon, label, description, value, onValueChange, theme, isRTL }: any) {
     return (
-        <View style={styles.toggleRow}>
-            <View style={styles.toggleLeft}>
+        <View style={[styles.toggleRow, isRTL && { flexDirection: 'row-reverse' }]}>
+            <View style={[styles.toggleLeft, isRTL && { flexDirection: 'row-reverse' }]}>
                 <View style={[styles.iconContainer, { backgroundColor: theme.primary + '10' }]}>
                     <Icon size={20} color={theme.primary} />
                 </View>
-                <View style={styles.textContainer}>
-                    <Text style={[styles.toggleLabel, { color: theme.text }]}>{label}</Text>
-                    <Text style={[styles.toggleDescription, { color: theme.textSecondary }]}>{description}</Text>
+                <View style={[styles.textContainer, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
+                    <Text style={[styles.toggleLabel, { color: theme.text, textAlign: isRTL ? 'right' : 'left' }]}>{label}</Text>
+                    <Text style={[styles.toggleDescription, { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>{description}</Text>
                 </View>
             </View>
             <Switch 
@@ -125,6 +137,7 @@ function NotificationToggle({ icon: Icon, label, description, value, onValueChan
                 onValueChange={onValueChange}
                 trackColor={{ false: theme.border, true: theme.primary + '80' }}
                 thumbColor={value ? theme.primary : '#f4f3f4'}
+                style={isRTL ? { marginRight: 16 } : { marginLeft: 16 }} // Add specific margin if needed, but flex-end handles it mostly
             />
         </View>
     );

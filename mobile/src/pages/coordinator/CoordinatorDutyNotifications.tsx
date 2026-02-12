@@ -7,9 +7,15 @@ import { GradientBackground } from '@/src/components/GradientBackground';
 import { ThemedText } from '@/src/components/themed-text';
 import { GlassCard } from '@/src/components/GlassCard';
 import { useRouter } from 'expo-router';
+import { useColorScheme } from '@/src/hooks/use-color-scheme';
+import { Colors } from '@/src/data/theme';
+import { useLanguage } from '@/src/context/LanguageContext';
 
 export default function CoordinatorDutyNotifications() {
   const router = useRouter();
+  const colorScheme = useColorScheme() ?? 'light';
+  const theme = Colors[colorScheme];
+  const { t, isRTL } = useLanguage();
   
   // State for toggles
   const [pushNotifs, setPushNotifs] = React.useState(true);
@@ -21,98 +27,116 @@ export default function CoordinatorDutyNotifications() {
 
   return (
     <GradientBackground>
-       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.push('/(coordinator)/profile')}>
-          <ArrowLeft size={24} color="#1E293B" />
+       <View style={[styles.header, isRTL && { flexDirection: 'row-reverse' }]}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.navigate('/(coordinator)/profile')}>
+          <ArrowLeft size={24} color={theme.text} style={isRTL && { transform: [{ rotate: '180deg' }] }} />
         </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
         <View style={styles.pageHeader}>
-            <View style={styles.iconContainer}>
-                <BellRing size={28} color="#F59E0B" />
+            <View style={[styles.iconContainer, { backgroundColor: theme.primary + '20', borderColor: theme.card }]}>
+                <BellRing size={28} color={theme.primary} />
             </View>
-            <ThemedText style={styles.pageTitle}>Duty Notifications</ThemedText>
-            <Text style={styles.pageSubtitle}>Stay updated with student applications and activity status.</Text>
+            <ThemedText style={[styles.pageTitle, { color: theme.text }]}>{t.notifications.dutyTitle}</ThemedText>
+            <Text style={[styles.pageSubtitle, { color: theme.textSecondary }]}>{t.notifications.dutySubtitle}</Text>
         </View>
 
         {/* Channels */}
-        <GlassCard style={styles.sectionCard}>
-            <View style={styles.sectionHeader}>
-                <Globe size={16} color="#64748B" />
-                <Text style={styles.sectionTitle}>Alert Channels</Text>
+        <GlassCard style={[styles.sectionCard, { backgroundColor: theme.card }]}>
+            <View style={[styles.sectionHeader, isRTL && { flexDirection: 'row-reverse' }]}>
+                <Globe size={16} color={theme.textSecondary} />
+                <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>{t.notifications.alertChannels}</Text>
             </View>
             
             <ToggleItem 
                 icon={Bell} 
-                label="Mobile Push" 
-                desc="Instant alerts for urgent activity updates"
+                label={t.notifications.mobilePush} 
+                desc={t.notifications.mobilePushDesc}
                 value={pushNotifs}
                 onValueChange={setPushNotifs}
+                theme={theme}
+                isRTL={isRTL}
             />
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: theme.border }]} />
             <ToggleItem 
                 icon={Mail} 
-                label="Email Updates" 
-                desc="Weekly summaries and detailed logs"
+                label={t.notifications.emailUpdates} 
+                desc={t.notifications.emailUpdatesDesc}
                 value={emailAlerts}
                 onValueChange={setEmailAlerts}
+                theme={theme}
+                isRTL={isRTL}
             />
         </GlassCard>
 
         {/* Operational Alerts */}
-        <GlassCard style={styles.sectionCard}>
-            <View style={styles.sectionHeader}>
-                <ClipboardList size={16} color="#64748B" />
-                <Text style={styles.sectionTitle}>Operational Alerts</Text>
+        <GlassCard style={[styles.sectionCard, { backgroundColor: theme.card }]}>
+            <View style={[styles.sectionHeader, isRTL && { flexDirection: 'row-reverse' }]}>
+                <ClipboardList size={16} color={theme.textSecondary} />
+                <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>{t.notifications.operationalAlerts}</Text>
             </View>
             
             <ToggleItem 
-                label="New Applications" 
-                desc="When students apply to your activities"
+                label={t.notifications.newApplications} 
+                desc={t.notifications.newApplicationsDesc}
                 value={applicationAlerts}
                 onValueChange={setApplicationAlerts}
+                theme={theme}
+                isRTL={isRTL}
             />
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: theme.border }]} />
             <ToggleItem 
-                label="Proposal Status" 
-                desc="When Admin approves or rejects your activities"
+                label={t.notifications.proposalStatus} 
+                desc={t.notifications.proposalStatusDesc}
                 value={proposalUpdates}
                 onValueChange={setProposalUpdates}
+                theme={theme}
+                isRTL={isRTL}
             />
-             <View style={styles.divider} />
+             <View style={[styles.divider, { backgroundColor: theme.border }]} />
             <ToggleItem 
-                label="Attendance Deadlines" 
-                desc="Reminders to submit your session logs"
+                label={t.notifications.attendanceDeadlines} 
+                desc={t.notifications.attendanceDeadlinesDesc}
                 value={attendanceReminders}
                 onValueChange={setAttendanceReminders}
+                theme={theme}
+                isRTL={isRTL}
             />
-             <View style={styles.divider} />
+             <View style={[styles.divider, { backgroundColor: theme.border }]} />
             <ToggleItem 
-                label="System Health Alerts" 
-                desc="Maintenance and platform updates"
+                label={t.notifications.systemHealth} 
+                desc={t.notifications.systemHealthDesc}
                 value={systemSafety}
                 onValueChange={setSystemSafety}
+                theme={theme}
+                isRTL={isRTL}
             />
         </GlassCard>
-
       </ScrollView>
     </GradientBackground>
   );
 }
 
-function ToggleItem({ icon: Icon, label, desc, value, onValueChange }: any) {
+function ToggleItem({ icon: Icon, label, desc, value, onValueChange, theme, isRTL }: any) {
     return (
-        <View style={styles.toggleRow}>
-            <View style={styles.toggleInfo}>
-                <Text style={styles.toggleLabel}>{label}</Text>
-                {desc && <Text style={styles.toggleDesc}>{desc}</Text>}
+        <View style={[styles.toggleRow, isRTL && { flexDirection: 'row-reverse' }]}>
+            <View style={[styles.toggleInfo, isRTL && { flexDirection: 'row-reverse' }]}>
+                {Icon && (
+                    <View style={[styles.toggleIconContainer, { backgroundColor: theme.primary + '10' }, isRTL ? { marginLeft: 16 } : { marginRight: 16 }]}>
+                         <Icon size={20} color={theme.primary} />
+                    </View>
+                )}
+                <View style={{ flex: 1, alignItems: isRTL ? 'flex-end' : 'flex-start' }}>
+                    <Text style={[styles.toggleLabel, { color: theme.text, textAlign: isRTL ? 'right' : 'left' }]}>{label}</Text>
+                    {desc && <Text style={[styles.toggleDesc, { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>{desc}</Text>}
+                </View>
             </View>
             <Switch 
                 value={value} 
                 onValueChange={onValueChange}
-                trackColor={{ false: '#E2E8F0', true: '#F59E0B' }}
-                thumbColor={'#FFFFFF'}
+                trackColor={{ false: theme.border, true: theme.primary + '80' }}
+                thumbColor={value ? theme.primary : '#f4f3f4'}
             />
         </View>
     );
@@ -123,7 +147,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#fafafa04',
     paddingHorizontal: 20,
     paddingTop: 50,
     marginTop: -20,
@@ -131,32 +154,27 @@ const styles = StyleSheet.create({
   backBtn: {
     width: 44,
     height: 44,
-    backgroundColor: '#ffffff00',
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: -20,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
   },
   scrollView: { flex: 1 },
   contentContainer: { padding: 20, paddingTop: 10 },
   pageHeader: { alignItems: 'center', marginBottom: 30 },
   iconContainer: {
-      width: 64, height: 64, borderRadius: 32, backgroundColor: '#FEF3C7',
+      width: 64, height: 64, borderRadius: 32,
       justifyContent: 'center', alignItems: 'center', marginBottom: 16,
-      borderWidth: 4, borderColor: '#FFFFFF'
+      borderWidth: 4,
   },
-  pageTitle: { fontSize: 24, fontWeight: '900', color: '#0F172A', marginBottom: 8 },
-  pageSubtitle: { fontSize: 13, color: '#64748B', textAlign: 'center', maxWidth: '70%' },
+  pageTitle: { fontSize: 24, fontWeight: '900', marginBottom: 8 },
+  pageSubtitle: { fontSize: 13, textAlign: 'center', maxWidth: '70%' },
   sectionCard: { padding: 20, borderRadius: 24, marginBottom: 20 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 20 },
-  sectionTitle: { fontSize: 12, fontWeight: '800', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 1 },
-  toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4 },
-  toggleInfo: { flex: 1, marginRight: 16 },
-  toggleLabel: { fontSize: 15, fontWeight: '700', color: '#1E293B' },
-  toggleDesc: { fontSize: 12, color: '#64748B', marginTop: 2, fontWeight: '500' },
-  divider: { height: 1, backgroundColor: '#F1F5F9', marginVertical: 12 },
+  sectionTitle: { fontSize: 12, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1 },
+  toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 8 },
+  toggleInfo: { flex: 1, flexDirection: 'row', alignItems: 'center', marginRight: 16 },
+  toggleIconContainer: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  toggleLabel: { fontSize: 16, fontWeight: '700' },
+  toggleDesc: { fontSize: 12, marginTop: 2, fontWeight: '500' },
+  divider: { height: 1, marginVertical: 12 },
 });

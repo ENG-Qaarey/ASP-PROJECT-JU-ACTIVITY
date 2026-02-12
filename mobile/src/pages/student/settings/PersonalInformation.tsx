@@ -1,6 +1,6 @@
 import React from 'react';
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity, TextInput } from 'react-native';
-import { ArrowLeft, User, Mail, Phone, MapPin, Save, Camera, LogOut } from 'lucide-react-native';
+import { StyleSheet, View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert, Platform } from 'react-native';
+import { ArrowLeft, User, Mail, Phone, MapPin, Save, Camera } from 'lucide-react-native';
 import { GradientBackground } from '@/src/components/GradientBackground';
 import { GlassCard } from '@/src/components/GlassCard';
 import { ThemedText } from '@/src/components/themed-text';
@@ -10,17 +10,17 @@ import { useColorScheme } from '@/src/hooks/use-color-scheme';
 import { Colors } from '@/src/data/theme';
 import { useAuth } from '@/src/context/AuthContext';
 import { client } from '@/src/lib/api';
-import { IMAGE_BASE } from '@/src/lib/config';
 import { getAvatarUrl } from '@/src/lib/media';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
-import { ActivityIndicator, Alert, Platform } from 'react-native';
+import { useLanguage } from '@/src/context/LanguageContext';
 
 export default function PersonalInformation() {
   const router = useRouter();
-  const { user, setUser, refreshProfile } = useAuth();
+  const { user, setUser } = useAuth();
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
+  const { t, isRTL } = useLanguage();
   
   const [name, setName] = React.useState(user?.name || '');
   const [email, setEmail] = React.useState(user?.email || '');
@@ -31,44 +31,30 @@ export default function PersonalInformation() {
   const [isUploading, setIsUploading] = React.useState(false);
 
   const handleBack = () => {
-    router.back();
+    router.navigate('/(student)/(tabs)/profile');
   };
 
   const handlePickImage = async () => {
     try {
-        // Request permissions
         const [libraryStatus, cameraStatus] = await Promise.all([
           ImagePicker.requestMediaLibraryPermissionsAsync(),
           ImagePicker.requestCameraPermissionsAsync(),
         ]);
 
         if (libraryStatus.status !== 'granted') {
-            if (!libraryStatus.canAskAgain) {
-                Alert.alert(
-                    'Permission Required', 
-                    'Gallery access is disabled. Please enable it in Settings.',
-                    [
-                        { text: 'Cancel', style: 'cancel' },
-                        { text: 'Open Settings', onPress: () => Platform.OS === 'ios' ? ImagePicker.requestMediaLibraryPermissionsAsync() : {} } 
-                        // Note: Expo doesn't have a direct 'openSettings' in picker, usually handled by OS or Linking
-                    ]
-                );
-            } else {
-                Alert.alert('Permission Denied', 'We need permission to access your gallery.');
-            }
+            Alert.alert(t.profile.permissionDenied, t.profile.galleryAccess);
             return;
         }
 
-        // Show choice to user
         Alert.alert(
-            'Update Profile Picture',
-            'Choose a source',
+            t.profile.changePhoto,
+            t.profile.selectSource,
             [
                 { 
-                    text: 'Camera', 
+                    text: t.profile.camera, 
                     onPress: async () => {
                         if (cameraStatus.status !== 'granted') {
-                            Alert.alert('Error', 'Camera permission not granted');
+                            Alert.alert(t.profile.permissionDenied, 'Camera permission not granted');
                             return;
                         }
                         const result = await ImagePicker.launchCameraAsync({
@@ -80,7 +66,7 @@ export default function PersonalInformation() {
                     }
                 },
                 { 
-                    text: 'Gallery', 
+                    text: t.profile.gallery, 
                     onPress: async () => {
                         const result = await ImagePicker.launchImageLibraryAsync({
                             mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -91,12 +77,12 @@ export default function PersonalInformation() {
                         if (!result.canceled) uploadAvatar(result.assets[0].uri);
                     }
                 },
-                { text: 'Cancel', style: 'cancel' }
+                { text: t.common.cancel, style: 'cancel' }
             ]
         );
     } catch (error) {
         console.log('Pick image error:', error);
-        Alert.alert('Error', 'An unexpected error occurred while picking an image.');
+        Alert.alert(t.common.error, 'An unexpected error occurred.');
     }
   };
 
@@ -108,19 +94,20 @@ export default function PersonalInformation() {
         const type = match ? `image/${match[1]}` : `image`;
 
         const formData = new FormData();
+        // @ts-ignore
         formData.append('file', {
             uri: Platform.OS === 'ios' ? uri.replace('file://', '') : uri,
             name: filename,
             type,
-        } as any);
+        });
 
         const updatedUser = await client.post('/users/me/avatar', formData);
         if (updatedUser) {
             setUser(updatedUser);
-            Alert.alert('Success', 'Profile picture updated successfully');
+            Alert.alert(t.common.success, 'Profile picture updated successfully');
         }
     } catch (error: any) {
-        Alert.alert('Upload Failed', error.message || 'Could not upload image');
+        Alert.alert(t.common.error, error.message || 'Could not upload image');
     } finally {
         setIsUploading(false);
     }
@@ -133,14 +120,14 @@ export default function PersonalInformation() {
             name,
             email,
             department,
-            studentId: phone, // Assuming studentId field for now based on user object
+            studentId: phone,
         });
         if (updated) {
             setUser(updated);
-            Alert.alert('Success', 'Profile information updated successfully');
+            Alert.alert(t.common.success, 'Profile information updated successfully');
         }
     } catch (error: any) {
-        Alert.alert('Error', error.message || 'Failed to update profile');
+        Alert.alert(t.common.error, error.message || 'Failed to update profile');
     } finally {
         setIsSaving(false);
     }
@@ -148,11 +135,11 @@ export default function PersonalInformation() {
 
   return (
     <GradientBackground>
-      <View style={styles.header}>
+       <View style={[styles.header, isRTL && { flexDirection: 'row-reverse' }]}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <ArrowLeft size={24} color={theme.text} />
+          <ArrowLeft size={24} color={theme.text} style={isRTL && { transform: [{ rotate: '180deg' }] }} />
         </TouchableOpacity>
-        <ThemedText style={styles.headerTitle}>Personal Information</ThemedText>
+        <ThemedText style={styles.headerTitle}>{t.profile.personalInfo}</ThemedText>
         <View style={{ width: 40 }} />
       </View>
 
@@ -177,18 +164,18 @@ export default function PersonalInformation() {
                 </TouchableOpacity>
             </View>
             <ThemedText style={[styles.avatarTip, { color: theme.textSecondary }]}>
-                Tap camera to change profile picture
+                {t.profile.changePhoto}
             </ThemedText>
         </View>
 
         <GlassCard style={[styles.card, { backgroundColor: theme.card }]}>
           <View style={styles.inputGroup}>
-            <View style={styles.labelRow}>
+            <View style={[styles.labelRow, isRTL && { flexDirection: 'row-reverse' }]}>
               <User size={18} color={theme.primary} />
-              <Text style={[styles.label, { color: theme.textSecondary }]}>Full Name</Text>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>{t.profile.fullName}</Text>
             </View>
             <TextInput 
-              style={[styles.input, { color: theme.text, borderColor: theme.border }]} 
+              style={[styles.input, { color: theme.text, borderColor: theme.border, textAlign: isRTL ? 'right' : 'left' }]} 
               value={name} 
               onChangeText={setName}
               placeholderTextColor={theme.textSecondary}
@@ -196,12 +183,12 @@ export default function PersonalInformation() {
           </View>
 
           <View style={styles.inputGroup}>
-            <View style={styles.labelRow}>
+            <View style={[styles.labelRow, isRTL && { flexDirection: 'row-reverse' }]}>
               <Mail size={18} color={theme.primary} />
-              <Text style={[styles.label, { color: theme.textSecondary }]}>Email Address</Text>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>{t.profile.emailAddress}</Text>
             </View>
             <TextInput 
-              style={[styles.input, { color: theme.text, borderColor: theme.border }]} 
+              style={[styles.input, { color: theme.text, borderColor: theme.border, textAlign: isRTL ? 'right' : 'left' }]} 
               value={email} 
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -210,12 +197,12 @@ export default function PersonalInformation() {
           </View>
 
           <View style={styles.inputGroup}>
-            <View style={styles.labelRow}>
+            <View style={[styles.labelRow, isRTL && { flexDirection: 'row-reverse' }]}>
               <Phone size={18} color={theme.primary} />
-              <Text style={[styles.label, { color: theme.textSecondary }]}>Student ID / Phone</Text>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>{t.profile.phoneNumber}</Text>
             </View>
             <TextInput 
-              style={[styles.input, { color: theme.text, borderColor: theme.border }]} 
+              style={[styles.input, { color: theme.text, borderColor: theme.border, textAlign: isRTL ? 'right' : 'left' }]} 
               value={phone} 
               onChangeText={setPhone}
               placeholderTextColor={theme.textSecondary}
@@ -223,12 +210,12 @@ export default function PersonalInformation() {
           </View>
 
           <View style={styles.inputGroup}>
-            <View style={styles.labelRow}>
+            <View style={[styles.labelRow, isRTL && { flexDirection: 'row-reverse' }]}>
               <MapPin size={18} color={theme.primary} />
-              <Text style={[styles.label, { color: theme.textSecondary }]}>Department</Text>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>{t.profile.department}</Text>
             </View>
             <TextInput 
-              style={[styles.input, { color: theme.text, borderColor: theme.border }]} 
+              style={[styles.input, { color: theme.text, borderColor: theme.border, textAlign: isRTL ? 'right' : 'left' }]} 
               value={department} 
               onChangeText={setDepartment}
               placeholderTextColor={theme.textSecondary}
@@ -243,7 +230,7 @@ export default function PersonalInformation() {
         </View>
 
         <JuButton 
-            title="Save Changes" 
+            title={t.profile.saveChanges} 
             onPress={handleSave} 
             icon={Save}
             loading={isSaving}

@@ -15,6 +15,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { client } from '@/src/lib/api';
 import { ENDPOINTS } from '@/src/lib/config';
 import { useAuth } from '@/src/context/AuthContext';
+import { useLanguage } from '@/src/context/LanguageContext';
 import { ActivityIndicator, RefreshControl } from 'react-native';
 
 const { width } = Dimensions.get('window');
@@ -48,6 +49,7 @@ const MOCK_RECENT = [
 
 export default function StudentDashboard() {
   const { user, lastLogin } = useAuth();
+  const { t, isRTL } = useLanguage();
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
   const router = useRouter();
@@ -61,7 +63,7 @@ export default function StudentDashboard() {
   const [refreshing, setRefreshing] = React.useState(false);
   const [hasUnread, setHasUnread] = React.useState(false);
   const shakeAnim = React.useRef(new Animated.Value(0)).current;
-  const shakeLoop = React.useRef<Animated.CompositeAnimation | null>(null);
+  const shakeLoop = React.useRef<any | null>(null);
 
   React.useEffect(() => {
     if (hasUnread) {
@@ -151,12 +153,12 @@ export default function StudentDashboard() {
         }
       >
         {/* Welcome Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, isRTL && { flexDirection: 'row-reverse' }]}>
             <View>
-                <ThemedText style={[styles.welcomeText, { color: theme.textSecondary }]}>
-                    {lastLogin ? `Last login: ${lastLogin}` : `Welcome back,`}
+                <ThemedText style={[styles.welcomeText, { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+                    {lastLogin ? `Last login: ${lastLogin}` : t.home.welcome}
                 </ThemedText>
-                <ThemedText style={[styles.userName, { color: theme.text }]}>{user?.name || 'Student'}</ThemedText>
+                <ThemedText style={[styles.userName, { color: theme.text, textAlign: isRTL ? 'right' : 'left' }]}>{user?.name || 'Student'}</ThemedText>
             </View>
             <TouchableOpacity 
                 style={[styles.notifBtn, { backgroundColor: theme.card, borderColor: theme.border }]}
@@ -179,9 +181,9 @@ export default function StudentDashboard() {
         <View style={[styles.searchBar, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <Search size={18} color={theme.textSecondary} />
             <TextInput 
-                placeholder="Find workshops, seminars..." 
+                placeholder={t.common.search} 
                 placeholderTextColor={theme.textSecondary}
-                style={[styles.searchInput, { color: theme.text }]}
+                style={[styles.searchInput, { color: theme.text, textAlign: isRTL ? 'right' : 'left' }]}
             />
         </View>
 
@@ -196,10 +198,10 @@ export default function StudentDashboard() {
 
         {/* Categories Grid */}
         <View style={styles.sectionContainer}>
-            <View style={styles.sectionHeader}>
-                <ThemedText style={[styles.sectionTitle, { color: theme.text }]}>Explore Categories</ThemedText>
+            <View style={[styles.sectionHeader, isRTL && { flexDirection: 'row-reverse' }]}>
+                <ThemedText style={[styles.sectionTitle, { color: theme.text }]}>{t.activities.title}</ThemedText>
                 <TouchableOpacity onPress={() => router.navigate('/(student)/(tabs)/activities')}>
-                    <ThemedText style={[styles.seeAll, { color: theme.primary }]}>View All</ThemedText>
+                    <ThemedText style={[styles.seeAll, { color: theme.primary }]}>{t.home.seeAll}</ThemedText>
                 </TouchableOpacity>
             </View>
             <View style={styles.categoryGrid}>
@@ -232,8 +234,8 @@ export default function StudentDashboard() {
 
         {/* Recent Activities Section */}
         <View style={styles.sectionContainer}>
-            <View style={styles.sectionHeader}>
-                <ThemedText style={[styles.sectionTitle, { color: theme.text }]}>Recently Added Activities</ThemedText>
+            <View style={[styles.sectionHeader, isRTL && { flexDirection: 'row-reverse' }]}>
+                <ThemedText style={[styles.sectionTitle, { color: theme.text }]}>{t.home.upcomingActivities}</ThemedText>
             </View>
             <View style={styles.activityList}>
                 {loading && !refreshing ? (

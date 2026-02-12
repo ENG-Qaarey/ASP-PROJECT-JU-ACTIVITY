@@ -1,26 +1,18 @@
 import React from 'react';
 import { StyleSheet, ScrollView, View, Text, TouchableOpacity, RefreshControl, ActivityIndicator, Modal } from 'react-native';
-import { X } from 'lucide-react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { 
-  User, Mail, Shield, Bell, CircleHelp, LogOut, 
-  ChevronRight, Settings, LayoutDashboard, Database, Lock,
-  Calendar, Users, BookOpen,
-  Award
-} from 'lucide-react-native';
+import { X, User, Mail, Shield, Bell, CircleHelp, LogOut, ChevronRight, Settings, LayoutDashboard, Database, Lock, Calendar, Users, BookOpen, Award } from 'lucide-react-native';
 import { GradientBackground } from '@/src/components/GradientBackground';
 import { ThemedText } from '@/src/components/themed-text';
 import { GlassCard } from '@/src/components/GlassCard';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-
 import { useColorScheme } from '@/src/hooks/use-color-scheme';
 import { Colors } from '@/src/data/theme';
 import { useTheme } from '@/src/context/ThemeContext';
 import { useAuth } from '@/src/context/AuthContext';
-
-import { IMAGE_BASE } from '@/src/lib/config';
+import { useLanguage } from '@/src/context/LanguageContext';
 import { getAvatarUrl } from '@/src/lib/media';
+import { IMAGE_BASE } from '@/src/lib/config';
 
 export default function StudentProfile() {
   const router = useRouter();
@@ -28,6 +20,7 @@ export default function StudentProfile() {
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
   const { refreshTheme } = useTheme();
+  const { t, isRTL } = useLanguage();
   const [refreshing, setRefreshing] = React.useState(false);
   const [viewerVisible, setViewerVisible] = React.useState(false);
 
@@ -68,68 +61,101 @@ export default function StudentProfile() {
               source={getAvatarUrl(user?.avatar)} 
               style={[styles.avatar, { borderColor: theme.card }]} 
             />
-            <View style={[styles.studentBadge, { borderColor: theme.card }]}>
+            <View style={[styles.studentBadge, { borderColor: theme.card, backgroundColor: '#0EA5E9' }]}>
                 <Award size={12} color="#FFFFFF" strokeWidth={3} />
             </View>
           </TouchableOpacity>
-          <ThemedText style={[styles.userName, { color: theme.text }]}>{user?.name || 'Muscab Ahmed'}</ThemedText>
+          <ThemedText style={[styles.userName, { color: theme.text }]}>{user?.name || 'Student'}</ThemedText>
           <View style={[styles.roleLabel, { backgroundColor: theme.primary + '20' }]}>
-              <Text style={[styles.roleText, { color: theme.primary }]}>STUDENT PORTAL</Text>
+              <Text style={[styles.roleText, { color: theme.primary }]}>{t.profile.studentRole}</Text>
           </View>
         </View>
 
         {/* My Engagement */}
         <View style={styles.section}>
-          <ThemedText style={[styles.sectionTitle, { color: theme.textSecondary }]}>My Engagement</ThemedText>
+          <ThemedText style={[styles.sectionTitle, { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+            {t.profile.myEngagement}
+          </ThemedText>
           <GlassCard style={[styles.card, { backgroundColor: theme.card }]}>
-            <ProfileItem icon={Calendar} label="Activity History" color={theme.primary} theme={theme} />
-            <ProfileItem icon={Users} label="My Activity Groups" color="#8B5CF6" theme={theme} />
-            <ProfileItem icon={BookOpen} label="Coordination Logs" color="#F59E0B" theme={theme} />
+            <ProfileItem 
+                icon={Calendar} 
+                label={t.profile.activityHistory} 
+                color={theme.primary} 
+                theme={theme} 
+                isRTL={isRTL}
+                onPress={() => router.push('/(student)/(tabs)/activities')} // Or a specific history page if it exists
+            />
+            <ProfileItem 
+                icon={Users} 
+                label={t.profile.myActivityGroups} 
+                color="#8B5CF6" 
+                theme={theme} 
+                isRTL={isRTL}
+                onPress={() => router.push('/(student)/(tabs)/chat')}
+            />
+            <ProfileItem 
+                icon={BookOpen} 
+                label={t.profile.coordinationLogs} 
+                color="#F59E0B" 
+                theme={theme} 
+                isRTL={isRTL} 
+                // Student might not have logs, maybe points history? using dashboard for now
+                onPress={() => router.push('/(student)/(tabs)/home')}
+            />
           </GlassCard>
         </View>
 
-        {/* Account Details - Requested Items */}
+        {/* Account Details */}
         <View style={styles.section}>
-          <ThemedText style={[styles.sectionTitle, { color: theme.textSecondary }]}>Account Settings</ThemedText>
+          <ThemedText style={[styles.sectionTitle, { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+            {t.profile.accountDetails}
+          </ThemedText>
           <GlassCard style={[styles.card, { backgroundColor: theme.card }]}>
             <ProfileItem 
                 icon={User} 
-                label="Personal Information" 
+                label={t.profile.personalInfo} 
                 onPress={() => router.push('/(student)/settings/personal')}
                 theme={theme}
+                isRTL={isRTL}
             />
             <ProfileItem 
                 icon={Bell} 
-                label="Duty Notifications" 
+                label={t.profile.dutyNotifications} 
                 onPress={() => router.push('/(student)/settings/notifications')}
                 theme={theme}
+                isRTL={isRTL}
             />
              <ProfileItem 
                 icon={Lock} 
-                label="Security & Password" 
+                label={t.profile.securityPassword} 
                 onPress={() => router.push('/(student)/settings/security')}
                 theme={theme}
+                isRTL={isRTL}
             />
             <ProfileItem 
                 icon={Settings} 
-                label="App Preferences" 
+                label={t.settings.title} 
                 onPress={() => router.push('/(student)/settings/preferences')}
                 theme={theme}
+                isRTL={isRTL}
             />
           </GlassCard>
         </View>
 
         {/* Support */}
         <View style={styles.section}>
-          <ThemedText style={[styles.sectionTitle, { color: theme.textSecondary }]}>Support & More</ThemedText>
+          <ThemedText style={[styles.sectionTitle, { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+            {t.profile.support}
+          </ThemedText>
           <GlassCard style={[styles.card, { backgroundColor: theme.card }]}>
             <ProfileItem 
                 icon={CircleHelp} 
-                label="Portal FAQ & Help" 
+                label={t.profile.portalFaq} 
                 onPress={() => router.push('/(student)/support/faq')}
                 theme={theme} 
+                isRTL={isRTL}
             />
-            <ProfileItem icon={LogOut} label="Logout" color={theme.error} onPress={handleLogout} theme={theme} />
+            <ProfileItem icon={LogOut} label={t.profile.logout} color="#EF4444" onPress={handleLogout} theme={theme} isRTL={isRTL} />
           </GlassCard>
         </View>
 
@@ -155,7 +181,7 @@ export default function StudentProfile() {
           >
             <View style={styles.viewerContent}>
               <Image 
-                source={{ uri: user?.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${IMAGE_BASE}${user.avatar}`) : 'https://github.com/shadcn.png' }}
+                source={getAvatarUrl(user?.avatar)}
                 style={styles.fullImage}
                 contentFit="contain"
               />
@@ -165,7 +191,7 @@ export default function StudentProfile() {
               >
                 <X size={24} color="#FFFFFF" />
               </TouchableOpacity>
-              <ThemedText style={styles.viewerName}>{user?.name || 'User'}</ThemedText>
+              <ThemedText style={styles.viewerName}>{user?.name || 'Student'}</ThemedText>
             </View>
           </TouchableOpacity>
         </View>
@@ -174,17 +200,21 @@ export default function StudentProfile() {
   );
 }
 
-function ProfileItem({ icon: Icon, label, color, onPress, theme }: any) {
+function ProfileItem({ icon: Icon, label, color, onPress, theme, isRTL }: any) {
   const itemColor = color || theme.text;
   return (
-    <TouchableOpacity style={styles.item} onPress={onPress} activeOpacity={0.7}>
-      <View style={styles.itemLeft}>
-        <View style={[styles.iconBg, { backgroundColor: itemColor + '15' }]}>
+    <TouchableOpacity 
+      style={[styles.item, isRTL && { flexDirection: 'row-reverse' }]} 
+      onPress={onPress} 
+      activeOpacity={0.7}
+    >
+      <View style={[styles.itemLeft, isRTL && { flexDirection: 'row-reverse' }]}>
+        <View style={[styles.iconBg, { backgroundColor: itemColor + '15' }, isRTL ? { marginLeft: 0, marginRight: 0 } : { marginRight: 16 }]}>
           <Icon size={20} color={itemColor} />
         </View>
-        <Text style={[styles.itemLabel, { color: theme.text }]}>{label}</Text>
+        <Text style={[styles.itemLabel, { color: itemColor, textAlign: isRTL ? 'right' : 'left' }, isRTL && { marginRight: 16 }]}>{label}</Text>
       </View>
-      <ChevronRight size={18} color={theme.textSecondary} />
+      <ChevronRight size={18} color={theme.icon || theme.textSecondary} style={isRTL && { transform: [{ rotate: '180deg' }] }} />
     </TouchableOpacity>
   );
 }
@@ -195,7 +225,7 @@ const styles = StyleSheet.create({
   header: { alignItems: 'center', marginBottom: 20 },
   avatarContainer: { position: 'relative', marginBottom: 16 },
   avatar: { width: 100, height: 100, borderRadius: 50, borderWidth: 4 },
-  studentBadge: { position: 'absolute', right: 4, bottom: 4, backgroundColor: '#0EA5E9', padding: 6, borderRadius: 12, borderWidth: 2 },
+  studentBadge: { position: 'absolute', right: 4, bottom: 4, padding: 6, borderRadius: 12, borderWidth: 2 },
   userName: { fontSize: 26, fontWeight: '900', letterSpacing: -0.5 },
   roleLabel: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20, marginTop: 8 },
   roleText: { fontSize: 10, fontWeight: '800', letterSpacing: 1 },
@@ -203,52 +233,15 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 13, fontWeight: '800', marginBottom: 12, marginLeft: 4, textTransform: 'uppercase', letterSpacing: 1 },
   card: { padding: 8, borderRadius: 24, overflow: 'hidden' },
   item: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12 },
-  itemLeft: { flexDirection: 'row', alignItems: 'center' },
-  iconBg: { width: 42, height: 42, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 16 },
+  itemLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  iconBg: { width: 42, height: 42, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   itemLabel: { fontSize: 16, fontWeight: '600' },
   footer: { alignItems: 'center', marginTop: 20, marginBottom: 40 },
   versionText: { fontSize: 11, fontWeight: '600' },
-
-  // Image Viewer Styles
-  viewerOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.95)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  viewerCloseArea: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  viewerContent: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  fullImage: {
-    width: '90%',
-    height: '70%',
-    borderRadius: 20,
-  },
-  viewerCloseBtn: {
-    position: 'absolute',
-    top: 50,
-    right: 20,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  viewerName: {
-    position: 'absolute',
-    bottom: 50,
-    color: '#FFFFFF',
-    fontSize: 20,
-    fontWeight: '900',
-  },
+  viewerOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center', alignItems: 'center' },
+  viewerCloseArea: { width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' },
+  viewerContent: { width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' },
+  fullImage: { width: '90%', height: '70%', borderRadius: 20 },
+  viewerCloseBtn: { position: 'absolute', top: 50, right: 20, width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
+  viewerName: { position: 'absolute', bottom: 50, color: '#FFFFFF', fontSize: 20, fontWeight: '900' },
 });

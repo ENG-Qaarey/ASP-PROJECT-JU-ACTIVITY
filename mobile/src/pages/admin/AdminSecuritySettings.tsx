@@ -11,7 +11,7 @@ import { useRouter } from 'expo-router';
 import { useColorScheme } from '@/src/hooks/use-color-scheme';
 import { Colors } from '@/src/data/theme';
 import { client } from '@/src/lib/api';
-import { ActivityIndicator } from 'react-native';
+import { useLanguage } from '@/src/context/LanguageContext';
 
 export default function AdminSecuritySettings() {
   const router = useRouter();
@@ -24,20 +24,21 @@ export default function AdminSecuritySettings() {
   });
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
+  const { t, isRTL } = useLanguage();
 
   const handleSave = async () => {
     if (!passwords.old || !passwords.new || !passwords.confirm) {
-      Alert.alert('Required Fields', 'Please fill in all password fields.');
+      Alert.alert(t.common.error, 'Please fill in all password fields.');
       return;
     }
 
     if (passwords.new !== passwords.confirm) {
-      Alert.alert('Validation Error', 'New passwords do not match.');
+      Alert.alert(t.common.error, 'New passwords do not match.');
       return;
     }
 
     if (passwords.new.length < 8) {
-      Alert.alert('Security Policy', 'New password must be at least 8 characters long.');
+      Alert.alert(t.common.error, 'New password must be at least 8 characters long.');
       return;
     }
 
@@ -47,10 +48,10 @@ export default function AdminSecuritySettings() {
         oldPassword: passwords.old,
         newPassword: passwords.new
       });
-      Alert.alert('Security Updated', 'Your password has been successfully changed.');
+      Alert.alert(t.common.success, 'Your password has been successfully changed.');
       setPasswords({ old: '', new: '', confirm: '' });
     } catch (e: any) {
-      Alert.alert('Update Failed', e.message || 'Error updating security settings');
+      Alert.alert(t.common.error, e.message || 'Error updating security settings');
     } finally {
       setLoading(false);
     }
@@ -58,9 +59,9 @@ export default function AdminSecuritySettings() {
 
   return (
     <GradientBackground>
-       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.push('/(admin)/profile')}>
-          <ArrowLeft size={24} color={theme.text} />
+       <View style={[styles.header, isRTL && { flexDirection: 'row-reverse' }]}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.navigate('/(admin)/profile')}>
+          <ArrowLeft size={24} color={theme.text} style={isRTL && { transform: [{ rotate: '180deg' }] }} />
         </TouchableOpacity>
       </View>
 
@@ -69,49 +70,49 @@ export default function AdminSecuritySettings() {
             <View style={[styles.iconContainer, { backgroundColor: theme.primary + '20', borderColor: theme.card }]}>
                 <ShieldCheck size={32} color={theme.primary} />
             </View>
-            <ThemedText style={[styles.pageTitle, { color: theme.text }]}>Security & Password</ThemedText>
-            <Text style={[styles.pageSubtitle, { color: theme.textSecondary }]}>Manage your password and security preferences.</Text>
+            <ThemedText style={[styles.pageTitle, { color: theme.text }]}>{t.profile.securityPassword}</ThemedText>
+            <Text style={[styles.pageSubtitle, { color: theme.textSecondary }]}>{t.profile.advancedSecurity}</Text>
         </View>
 
         {/* Change Password Section */}
         <GlassCard style={[styles.formCard, { backgroundColor: theme.card }]}>
-            <View style={styles.sectionHeader}>
+            <View style={[styles.sectionHeader, isRTL && { flexDirection: 'row-reverse' }]}>
                 <KeyRound size={16} color={theme.textSecondary} />
-                <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Change Password</Text>
+                <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>{t.profile.changePassword}</Text>
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: theme.text }]}>Current Password</Text>
+              <Text style={[styles.inputLabel, { color: theme.text, textAlign: isRTL ? 'right' : 'left' }]}>{t.profile.currentPassword}</Text>
               <TextInput 
-                style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} 
+                style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border, textAlign: isRTL ? 'right' : 'left' }]} 
                 secureTextEntry
                 value={passwords.old}
-                onChangeText={(val) => setPasswords(prev => ({ ...prev, old: val }))}
-                placeholder="Enter current password"
+                onChangeText={(val: string) => setPasswords(prev => ({ ...prev, old: val }))}
+                placeholder={t.profile.currentPassword}
                 placeholderTextColor={theme.textSecondary}
               />
             </View>
 
              <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: theme.text }]}>New Password</Text>
+              <Text style={[styles.inputLabel, { color: theme.text, textAlign: isRTL ? 'right' : 'left' }]}>{t.profile.newPassword}</Text>
               <TextInput 
-                style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} 
+                style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border, textAlign: isRTL ? 'right' : 'left' }]} 
                 secureTextEntry
                 value={passwords.new}
-                onChangeText={(val) => setPasswords(prev => ({ ...prev, new: val }))}
-                placeholder="Enter new password"
+                onChangeText={(val: string) => setPasswords(prev => ({ ...prev, new: val }))}
+                placeholder={t.profile.newPassword}
                 placeholderTextColor={theme.textSecondary}
               />
             </View>
 
              <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: theme.text }]}>Confirm New Password</Text>
+              <Text style={[styles.inputLabel, { color: theme.text, textAlign: isRTL ? 'right' : 'left' }]}>{t.profile.confirmNewPassword}</Text>
               <TextInput 
-                style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} 
+                style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border, textAlign: isRTL ? 'right' : 'left' }]} 
                 secureTextEntry
                 value={passwords.confirm}
-                onChangeText={(val) => setPasswords(prev => ({ ...prev, confirm: val }))}
-                placeholder="Confirm new password"
+                onChangeText={(val: string) => setPasswords(prev => ({ ...prev, confirm: val }))}
+                placeholder={t.profile.confirmNewPassword}
                 placeholderTextColor={theme.textSecondary}
               />
             </View>
@@ -119,15 +120,15 @@ export default function AdminSecuritySettings() {
 
         {/* Two-Factor Auth */}
         <GlassCard style={[styles.formCard, { backgroundColor: theme.card }]}>
-            <View style={styles.sectionHeader}>
+            <View style={[styles.sectionHeader, isRTL && { flexDirection: 'row-reverse' }]}>
                 <Smartphone size={16} color={theme.textSecondary} />
-                <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Two-Factor Authentication</Text>
+                <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>{t.profile.twoFactorAuth}</Text>
             </View>
             
-            <View style={styles.toggleRow}>
-                <View style={styles.toggleInfo}>
-                    <Text style={[styles.toggleLabel, { color: theme.text }]}>Enable 2FA</Text>
-                    <Text style={[styles.toggleDesc, { color: theme.textSecondary }]}>Secure your account with 2FA via authenticator app.</Text>
+            <View style={[styles.toggleRow, isRTL && { flexDirection: 'row-reverse' }]}>
+                <View style={[styles.toggleInfo, { marginRight: isRTL ? 0 : 16, marginLeft: isRTL ? 16 : 0 }]}>
+                    <Text style={[styles.toggleLabel, { color: theme.text, textAlign: isRTL ? 'right' : 'left' }]}>{t.profile.enabled}</Text>
+                    <Text style={[styles.toggleDesc, { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>{t.profile.twoFactorDesc}</Text>
                 </View>
                 <Switch 
                     value={twoFactor} 
@@ -138,13 +139,13 @@ export default function AdminSecuritySettings() {
             </View>
         </GlassCard>
 
-        <TouchableOpacity style={[styles.saveBtn, { backgroundColor: theme.primary, shadowColor: theme.primary }]} onPress={handleSave} disabled={loading}>
+        <TouchableOpacity style={[styles.saveBtn, { backgroundColor: theme.primary, shadowColor: theme.primary, flexDirection: isRTL ? 'row-reverse' : 'row' }]} onPress={handleSave} disabled={loading}>
             {loading ? (
-               <Text style={styles.saveBtnText}>Updating...</Text>
+               <Text style={styles.saveBtnText}>{t.profile.saving}</Text>
             ) : (
               <>
                 <CheckCircle2 size={18} color="#FFFFFF" strokeWidth={3} />
-                <Text style={styles.saveBtnText}>Update Security Settings</Text>
+                <Text style={styles.saveBtnText}>{t.profile.saveChanges}</Text>
               </>
             )}
         </TouchableOpacity>
@@ -195,7 +196,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4 },
-  toggleInfo: { flex: 1, marginRight: 16 },
+  toggleInfo: { flex: 1 },
   toggleLabel: { fontSize: 15, fontWeight: '700' },
   toggleDesc: { fontSize: 12, marginTop: 2, fontWeight: '500' },
   saveBtn: {

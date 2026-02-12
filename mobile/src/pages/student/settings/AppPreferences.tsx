@@ -1,6 +1,7 @@
 import React from 'react';
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity, Switch } from 'react-native';
-import { ArrowLeft, Moon, Languages, Eye, Zap, Database } from 'lucide-react-native';
+import { StyleSheet, View, Text, ScrollView, TouchableOpacity, Switch, Modal } from 'react-native';
+import { ArrowLeft, Moon, Languages, CheckCircle, ChevronRight, Monitor } from 'lucide-react-native';
+import { BlurView } from 'expo-blur';
 import { GradientBackground } from '@/src/components/GradientBackground';
 import { GlassCard } from '@/src/components/GlassCard';
 import { ThemedText } from '@/src/components/themed-text';
@@ -8,128 +9,201 @@ import { useRouter } from 'expo-router';
 import { useColorScheme } from '@/src/hooks/use-color-scheme';
 import { Colors } from '@/src/data/theme';
 import { useTheme } from '@/src/context/ThemeContext';
+import { useLanguage } from '@/src/context/LanguageContext';
 
 export default function AppPreferences() {
   const router = useRouter();
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
-  const { toggleTheme } = useTheme();
+  const { themeSetting, setTheme } = useTheme();
+  const { language, setLanguage, t, isRTL } = useLanguage();
 
-  const [prefs, setPrefs] = React.useState({
-    darkMode: colorScheme === 'dark',
-    highContrast: false,
-    reducedMotion: false,
-    dataSaver: false,
-    language: 'English',
-  });
-
-  const handleToggleTheme = () => {
-    toggleTheme();
-    setPrefs(prev => ({ ...prev, darkMode: !prev.darkMode }));
-  };
+  const [languageModalVisible, setLanguageModalVisible] = React.useState(false);
+  const [themeModalVisible, setThemeModalVisible] = React.useState(false);
 
   const handleBack = () => {
-    router.back();
+    router.navigate('/(student)/(tabs)/profile');
+  };
+
+  const getLanguageName = (lang: string) => {
+    switch (lang) {
+      case 'en': return 'English';
+      case 'so': return 'Af-Soomaali';
+      case 'ar': return 'العربية';
+      default: return 'English';
+    }
+  };
+
+  const getThemeName = (mode: string) => {
+    switch (mode) {
+      case 'light': return t.settings.lightMode;
+      case 'dark': return t.settings.darkMode;
+      case 'system': return t.settings.systemMode;
+      default: return t.settings.systemMode;
+    }
   };
 
   return (
     <GradientBackground>
-      <View style={styles.header}>
+      <View style={[styles.header, isRTL && { flexDirection: 'row-reverse' }]}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <ArrowLeft size={24} color={theme.text} />
+          <ArrowLeft size={24} color={theme.text} style={isRTL && { transform: [{ rotate: '180deg' }] }} />
         </TouchableOpacity>
-        <ThemedText style={styles.headerTitle}>App Preferences</ThemedText>
+        <ThemedText style={styles.headerTitle}>{t.settings.title}</ThemedText>
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.scrollView} 
+        contentContainerStyle={styles.contentContainer} 
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Appearance</Text>
+            <Text style={[styles.sectionTitle, { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+              {t.settings.theme}
+            </Text>
             <GlassCard style={[styles.card, { backgroundColor: theme.card }]}>
-                <PreferenceToggle 
-                    icon={Moon}
-                    label="Dark Mode"
-                    description="Switch between light and dark themes"
-                    value={prefs.darkMode}
-                    onValueChange={handleToggleTheme}
-                    theme={theme}
-                />
-                 <View style={[styles.divider, { backgroundColor: theme.border }]} />
-                <PreferenceToggle 
-                    icon={Eye}
-                    label="High Contrast"
-                    description="Increase visibility of text and icons"
-                    value={prefs.highContrast}
-                    onValueChange={() => setPrefs(p => ({ ...p, highContrast: !p.highContrast }))}
-                    theme={theme}
-                />
-            </GlassCard>
-        </View>
-
-        <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Localization</Text>
-            <GlassCard style={[styles.card, { backgroundColor: theme.card }]}>
-                <TouchableOpacity style={styles.optionRow}>
-                    <View style={styles.optionLeft}>
+                <TouchableOpacity 
+                   style={[styles.optionRow, isRTL && { flexDirection: 'row-reverse' }]} 
+                   onPress={() => setThemeModalVisible(true)}
+                >
+                    <View style={[styles.optionLeft, isRTL && { flexDirection: 'row-reverse' }]}>
                         <View style={[styles.iconContainer, { backgroundColor: theme.primary + '10' }]}>
-                            <Languages size={20} color={theme.primary} />
+                            <Monitor size={20} color={theme.primary} />
                         </View>
-                        <View style={styles.textContainer}>
-                            <Text style={[styles.optionLabel, { color: theme.text }]}>App Language</Text>
-                            <Text style={[styles.optionDescription, { color: theme.textSecondary }]}>System Default (English)</Text>
+                        <View style={[styles.textContainer, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
+                            <Text style={[styles.optionLabel, { color: theme.text, textAlign: isRTL ? 'right' : 'left' }]}>
+                              {t.settings.theme}
+                            </Text>
+                            <Text style={[styles.optionDescription, { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+                              {getThemeName(themeSetting)}
+                            </Text>
                         </View>
                     </View>
+                    <ChevronRight size={20} color={theme.textSecondary} style={isRTL && { transform: [{ rotate: '180deg' }] }} />
                 </TouchableOpacity>
             </GlassCard>
         </View>
 
         <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Performance</Text>
+            <Text style={[styles.sectionTitle, { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+              {t.settings.language}
+            </Text>
             <GlassCard style={[styles.card, { backgroundColor: theme.card }]}>
-                <PreferenceToggle 
-                    icon={Zap}
-                    label="Reduced Motion"
-                    description="Minimize animations for better speed"
-                    value={prefs.reducedMotion}
-                    onValueChange={() => setPrefs(p => ({ ...p, reducedMotion: !p.reducedMotion }))}
-                    theme={theme}
-                />
-                 <View style={[styles.divider, { backgroundColor: theme.border }]} />
-                <PreferenceToggle 
-                    icon={Database}
-                    label="Data Saver"
-                    description="Lower image quality on cellular data"
-                    value={prefs.dataSaver}
-                    onValueChange={() => setPrefs(p => ({ ...p, dataSaver: !p.dataSaver }))}
-                    theme={theme}
-                />
+                <TouchableOpacity 
+                  style={[styles.optionRow, isRTL && { flexDirection: 'row-reverse' }]} 
+                  onPress={() => setLanguageModalVisible(true)}
+                >
+                    <View style={[styles.optionLeft, isRTL && { flexDirection: 'row-reverse' }]}>
+                        <View style={[styles.iconContainer, { backgroundColor: theme.primary + '10' }]}>
+                            <Languages size={20} color={theme.primary} />
+                        </View>
+                        <View style={[styles.textContainer, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
+                            <Text style={[styles.optionLabel, { color: theme.text, textAlign: isRTL ? 'right' : 'left' }]}>
+                              {t.settings.language}
+                            </Text>
+                            <Text style={[styles.optionDescription, { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+                              {getLanguageName(language)}
+                            </Text>
+                        </View>
+                    </View>
+                    <ChevronRight size={20} color={theme.textSecondary} style={isRTL && { transform: [{ rotate: '180deg' }] }} />
+                </TouchableOpacity>
             </GlassCard>
         </View>
       </ScrollView>
+
+      {/* Theme Choice Modal */}
+      <Modal
+        visible={themeModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setThemeModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
+          <TouchableOpacity 
+            style={styles.modalCloseArea} 
+            activeOpacity={1} 
+            onPress={() => setThemeModalVisible(false)} 
+          />
+          <View style={[styles.modalContent, { backgroundColor: theme.background }]}>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>{t.settings.selectTheme}</Text>
+            <View style={styles.choiceList}>
+              {(['light', 'dark', 'system'] as const).map((mode) => (
+                <TouchableOpacity 
+                  key={mode}
+                  style={[
+                    styles.choiceItem, 
+                    { borderBottomColor: theme.border },
+                    themeSetting === mode && { backgroundColor: theme.primary + '10' }
+                  ]}
+                  onPress={async () => {
+                    await setTheme(mode);
+                    setThemeModalVisible(false);
+                  }}
+                >
+                  <Text style={[
+                      styles.choiceText, 
+                      { color: theme.text },
+                      themeSetting === mode && { color: theme.primary, fontWeight: '800' }
+                  ]}>
+                    {getThemeName(mode)}
+                  </Text>
+                  {themeSetting === mode && <CheckCircle size={20} color={theme.primary} />}
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Language Selection Modal */}
+      <Modal
+        visible={languageModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLanguageModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
+          <TouchableOpacity 
+            style={styles.modalCloseArea} 
+            activeOpacity={1} 
+            onPress={() => setLanguageModalVisible(false)} 
+          />
+          <View style={[styles.modalContent, { backgroundColor: theme.background }]}>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>{t.settings.selectLanguage}</Text>
+            <View style={styles.choiceList}>
+              {(['en', 'so', 'ar'] as const).map((lang) => (
+                <TouchableOpacity 
+                  key={lang}
+                  style={[
+                    styles.choiceItem, 
+                    { borderBottomColor: theme.border },
+                    language === lang && { backgroundColor: theme.primary + '10' }
+                  ]}
+                  onPress={async () => {
+                    await setLanguage(lang);
+                    setLanguageModalVisible(false);
+                  }}
+                >
+                  <Text style={[
+                      styles.choiceText, 
+                      { color: theme.text },
+                      language === lang && { color: theme.primary, fontWeight: '800' }
+                  ]}>
+                    {getLanguageName(lang)}
+                  </Text>
+                  {language === lang && <CheckCircle size={20} color={theme.primary} />}
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </View>
+      </Modal>
     </GradientBackground>
   );
-}
-
-function PreferenceToggle({ icon: Icon, label, description, value, onValueChange, theme }: any) {
-    return (
-        <View style={styles.toggleRow}>
-            <View style={styles.toggleLeft}>
-                <View style={[styles.iconContainer, { backgroundColor: theme.primary + '10' }]}>
-                    <Icon size={20} color={theme.primary} />
-                </View>
-                <View style={styles.textContainer}>
-                    <Text style={[styles.toggleLabel, { color: theme.text }]}>{label}</Text>
-                    <Text style={[styles.toggleDescription, { color: theme.textSecondary }]}>{description}</Text>
-                </View>
-            </View>
-            <Switch 
-                value={value} 
-                onValueChange={onValueChange}
-                trackColor={{ false: theme.border, true: theme.primary + '80' }}
-                thumbColor={value ? theme.primary : '#f4f3f4'}
-            />
-        </View>
-    );
 }
 
 const styles = StyleSheet.create({
@@ -174,18 +248,6 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     paddingVertical: 8,
   },
-  toggleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-  },
-  toggleLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    gap: 16,
-  },
   optionRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -208,15 +270,6 @@ const styles = StyleSheet.create({
   textContainer: {
     flex: 1,
   },
-  toggleLabel: {
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 2,
-  },
-  toggleDescription: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
   optionLabel: {
     fontSize: 16,
     fontWeight: '700',
@@ -226,9 +279,38 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
   },
-  divider: {
-    height: 1,
-    marginHorizontal: 16,
-    opacity: 0.5,
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  modalCloseArea: {
+    flex: 1,
+  },
+  modalContent: {
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    padding: 24,
+    paddingBottom: 40,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  choiceList: {
+    gap: 8,
+  },
+  choiceItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 20,
+    borderRadius: 20,
+    borderBottomWidth: 1,
+  },
+  choiceText: {
+    fontSize: 18,
+    fontWeight: '600',
   },
 });
