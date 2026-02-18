@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { NotificationType, UserRole } from '../generated/prisma';
-import { Prisma } from '../generated/prisma/client';
+import { Prisma } from '../generated/prisma';
 import { PrismaService } from '../prisma/prisma.service';
 import { Expo, ExpoPushMessage } from 'expo-server-sdk';
 

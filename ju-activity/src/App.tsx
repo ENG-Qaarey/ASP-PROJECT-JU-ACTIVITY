@@ -40,6 +40,8 @@ import AdminReports from "./pages/admin/AdminReports";
 import SystemLogs from "./pages/admin/SystemLogs";
 import AdminLogs from "./pages/admin/AdminLogs";
 import NotFound from "./pages/NotFound";
+import StudentCalendar from "./pages/student/StudentCalendar";
+import AllActivitiesCalendar from "./pages/AllActivitiesCalendar";
 
 const queryClient = new QueryClient();
 
@@ -70,6 +72,7 @@ const App = () => (
                     <Route path="activities/:id" element={<ActivityDetails />} />
                     <Route path="applications" element={<StudentApplications />} />
                     <Route path="notifications" element={<StudentNotifications />} />
+                    <Route path="calendar" element={<StudentCalendar />} />
                     <Route path="profile" element={<ProfileScreen />} />
                     <Route path="change-password" element={<ChangePasswordScreen />} />
                   </Routes>
@@ -91,6 +94,7 @@ const App = () => (
                     <Route path="applications" element={<CoordinatorApplications />} />
                     <Route path="attendance" element={<AttendanceManagement />} />
                     <Route path="notifications" element={<CoordinatorNotifications />} />
+                    <Route path="calendar" element={<StudentCalendar />} />
                     <Route path="profile" element={<ProfileScreen />} />
                     <Route path="change-password" element={<ChangePasswordScreen />} />
                    </Routes>
@@ -117,6 +121,7 @@ const App = () => (
                     <Route path="reports-advanced" element={<AdminReports />} />
                     <Route path="system-logs" element={<SystemLogs />} />
                     <Route path="logs" element={<AdminLogs />} />
+                    <Route path="calendar" element={<AllActivitiesCalendar />} />
                     <Route path="profile" element={<ProfileScreen />} />
                     <Route path="change-password" element={<ChangePasswordScreen />} />
                    </Routes>

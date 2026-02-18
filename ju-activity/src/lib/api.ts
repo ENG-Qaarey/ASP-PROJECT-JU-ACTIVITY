@@ -330,6 +330,15 @@ export const attendanceApi = {
       method: 'POST',
       body: JSON.stringify(data),
     }),
+
+  generateQR: (activityId: string) =>
+    fetchApi<{ token: string }>(`/attendance/qr/generate/${activityId}`),
+
+  scanQR: (data: { activityId: string; token: string; location?: { lat: number; lng: number } }) =>
+    fetchApi<any>('/attendance/qr/scan', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
 };
 
 // Audit Logs API (Admin only)

@@ -43,6 +43,7 @@
     "dotenv": "^17.2.3",
     "expo-server-sdk": "^5.0.0",
     "google-auth-library": "^8.3.0",
+    "ical-generator": "^10.0.0",
     "jsonwebtoken": "^9.0.3",
     "nodemailer": "^6.9.16",
     "pg": "^8.16.3",

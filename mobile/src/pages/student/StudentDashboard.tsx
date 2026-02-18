@@ -175,6 +175,13 @@ export default function StudentDashboard() {
                     <Bell size={22} color={theme.text} />
                 </Animated.View>
             </TouchableOpacity>
+
+            <TouchableOpacity 
+                style={[styles.notifBtn, { backgroundColor: theme.card, borderColor: theme.border, marginLeft: 10 }]}
+                onPress={() => router.push('/(student)/scanner')}
+            >
+                <Zap size={22} color={theme.primary} />
+            </TouchableOpacity>
         </View>
 
         {/* Search Bar */}

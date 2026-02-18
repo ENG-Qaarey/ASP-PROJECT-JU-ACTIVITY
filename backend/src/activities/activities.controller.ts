@@ -5,13 +5,17 @@ import {
   Delete,
   ForbiddenException,
   Get,
+  Header,
   Param,
   Post,
   Put,
   Query,
   Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
+import { Response } from 'express';
+import { ICalEventStatus } from 'ical-generator';
 import { ActivitiesService } from './activities.service';
 import { JwtAuthGuard } from '../authz/jwt-auth.guard';
 import { Roles } from '../authz/roles.decorator';
@@ -33,6 +37,247 @@ export class ActivitiesController {
   ) {
     return this.activitiesService.findAll(status, category, coordinatorId);
   }
+
+  // ==================== CALENDAR ENDPOINTS (MUST BE BEFORE :id) ====================
+
+  @Get('calendar/view')
+  async getCalendarView(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('status') status?: string,
+    @Query('category') category?: string,
+  ) {
+    const where: any = {};
+
+    // Date range filter
+    if (startDate || endDate) {
+      where.date = {};
+      if (startDate) {
+        where.date.gte = new Date(startDate);
+      }
+      if (endDate) {
+        where.date.lte = new Date(endDate);
+      }
+    }
+
+    // Status filter
+    if (status) {
+      where.status = status;
+    }
+
+    // Category filter
+    if (category) {
+      where.category = category;
+    }
+
+    const activities = await this.prisma.activity.findMany({
+      where,
+      orderBy: { date: 'asc' },
+      include: {
+        coordinator: {
+          select: { id: true, name: true, email: true, avatar: true }
+        },
+        applications: {
+          where: { status: 'approved' },
+          select: { id: true }
+        }
+      }
+    });
+
+    // Transform to calendar format
+    return activities.map(activity => ({
+      id: activity.id,
+      title: activity.title,
+      description: activity.description,
+      start: new Date(`${activity.date}T${activity.time}`),
+      end: new Date(`${activity.date}T${activity.time}`), // Can add duration later
+      location: activity.location,
+      category: activity.category,
+      status: activity.status,
+      capacity: activity.capacity,
+      enrolled: activity.enrolled,
+      availableSpots: activity.capacity - activity.enrolled,
+      coordinator: activity.coordinator,
+      approvedStudents: activity.applications.length,
+      image: activity.image
+    }));
+  }
+
+  @Get('calendar/user/:userId')
+  @UseGuards(JwtAuthGuard)
+  async getUserCalendar(
+    @Param('userId') userId: string,
+    @Req() req: any,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    const requestUser = req.user as { id: string; role: string };
+
+    // Only allow users to view their own calendar, unless admin
+    if (requestUser.role !== 'admin' && requestUser.id !== userId) {
+      throw new ForbiddenException('You can only view your own calendar');
+    }
+
+    const where: any = {
+      date: {}
+    };
+
+    if (startDate) {
+      where.date.gte = new Date(startDate);
+    }
+    if (endDate) {
+      where.date.lte = new Date(endDate);
+    }
+
+    // Get user's activities (as coordinator or approved applicant)
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        activitiesAsCoordinator: {
+          where: where.date ? { date: where.date } : {},
+          orderBy: { date: 'asc' }
+        },
+        applications: {
+          where: {
+            status: 'approved',
+            activity: where.date ? { date: where.date } : {}
+          },
+          include: {
+            activity: true
+          }
+        }
+      }
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    // Combine and format activities
+    const coordinatorActivities = user.activitiesAsCoordinator.map(activity => ({
+      id: activity.id,
+      title: activity.title,
+      description: activity.description,
+      start: new Date(`${activity.date}T${activity.time}`),
+      end: new Date(`${activity.date}T${activity.time}`),
+      location: activity.location,
+      category: activity.category,
+      status: activity.status,
+      role: 'coordinator',
+      capacity: activity.capacity,
+      enrolled: activity.enrolled
+    }));
+
+    const participantActivities = user.applications.map(app => ({
+      id: app.activity.id,
+      title: app.activity.title,
+      description: app.activity.description,
+      start: new Date(`${app.activity.date}T${app.activity.time}`),
+      end: new Date(`${app.activity.date}T${app.activity.time}`),
+      location: app.activity.location,
+      category: app.activity.category,
+      status: app.activity.status,
+      role: 'participant',
+      capacity: app.activity.capacity,
+      enrolled: app.activity.enrolled
+    }));
+
+    return [...coordinatorActivities, ...participantActivities];
+  }
+
+  @Get('calendar/export')
+  async exportCalendar(
+    @Res({ passthrough: false }) res: Response,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('userId') userId?: string,
+  ) {
+    const ical = (await import('ical-generator')).default;
+
+    const where: any = {};
+
+    if (startDate || endDate) {
+      where.date = {};
+      if (startDate) where.date.gte = new Date(startDate);
+      if (endDate) where.date.lte = new Date(endDate);
+    }
+
+    let activities;
+    if (userId) {
+      // Export user-specific calendar
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+          activitiesAsCoordinator: {
+            where: where.date ? { date: where.date } : {},
+            orderBy: { date: 'asc' }
+          },
+          applications: {
+            where: {
+              status: 'approved',
+              activity: where.date ? { date: where.date } : {}
+            },
+            include: { activity: true }
+          }
+        }
+      });
+
+      if (!user) {
+        throw new BadRequestException('User not found');
+      }
+
+      activities = [
+        ...user.activitiesAsCoordinator,
+        ...user.applications.map(app => app.activity)
+      ];
+    } else {
+      // Export all activities
+      activities = await this.prisma.activity.findMany({
+        where,
+        orderBy: { date: 'asc' }
+      });
+    }
+
+    // Create iCal calendar
+    const calendar = ical({
+      name: 'JU Activity Hub Calendar',
+      prodId: '//JU Activity Hub//EN',
+      timezone: 'Asia/Riyadh' // Adjust based on your timezone
+    });
+
+    // Add events
+    activities.forEach(activity => {
+      const startDateTime = new Date(`${activity.date}T${activity.time}`);
+      const endDateTime = new Date(startDateTime);
+      endDateTime.setHours(endDateTime.getHours() + 2); // Default 2 hour duration
+
+      const eventStatus: ICalEventStatus =
+        activity.status === 'upcoming' ? ICalEventStatus.CONFIRMED :
+          activity.status === 'ongoing' ? ICalEventStatus.TENTATIVE :
+            ICalEventStatus.CANCELLED;
+
+      calendar.createEvent({
+        start: startDateTime,
+        end: endDateTime,
+        summary: activity.title,
+        description: activity.description,
+        location: activity.location,
+        categories: [{ name: activity.category }],
+        status: eventStatus,
+        organizer: {
+          name: activity.coordinatorName,
+          email: `coordinator@ju-activity-hub.com` // Adjust as needed
+        }
+      });
+    });
+
+    // Send iCal file
+    res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="ju-activities.ics"');
+    res.send(calendar.toString());
+  }
+
+  // ==================== END CALENDAR ENDPOINTS ====================
 
   @Get(':id')
   findOne(@Param('id') id: string) {

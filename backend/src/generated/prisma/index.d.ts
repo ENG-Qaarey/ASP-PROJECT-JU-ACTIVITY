@@ -8166,11 +8166,17 @@ export namespace Prisma {
   export type ActivityAvgAggregateOutputType = {
     capacity: number | null
     enrolled: number | null
+    latitude: number | null
+    longitude: number | null
+    radius: number | null
   }
 
   export type ActivitySumAggregateOutputType = {
     capacity: number | null
     enrolled: number | null
+    latitude: number | null
+    longitude: number | null
+    radius: number | null
   }
 
   export type ActivityMinAggregateOutputType = {
@@ -8189,6 +8195,10 @@ export namespace Prisma {
     createdAt: Date | null
     updatedAt: Date | null
     category: string | null
+    latitude: number | null
+    longitude: number | null
+    radius: number | null
+    qrCodeSecret: string | null
   }
 
   export type ActivityMaxAggregateOutputType = {
@@ -8207,6 +8217,10 @@ export namespace Prisma {
     createdAt: Date | null
     updatedAt: Date | null
     category: string | null
+    latitude: number | null
+    longitude: number | null
+    radius: number | null
+    qrCodeSecret: string | null
   }
 
   export type ActivityCountAggregateOutputType = {
@@ -8225,6 +8239,10 @@ export namespace Prisma {
     createdAt: number
     updatedAt: number
     category: number
+    latitude: number
+    longitude: number
+    radius: number
+    qrCodeSecret: number
     _all: number
   }
 
@@ -8232,11 +8250,17 @@ export namespace Prisma {
   export type ActivityAvgAggregateInputType = {
     capacity?: true
     enrolled?: true
+    latitude?: true
+    longitude?: true
+    radius?: true
   }
 
   export type ActivitySumAggregateInputType = {
     capacity?: true
     enrolled?: true
+    latitude?: true
+    longitude?: true
+    radius?: true
   }
 
   export type ActivityMinAggregateInputType = {
@@ -8255,6 +8279,10 @@ export namespace Prisma {
     createdAt?: true
     updatedAt?: true
     category?: true
+    latitude?: true
+    longitude?: true
+    radius?: true
+    qrCodeSecret?: true
   }
 
   export type ActivityMaxAggregateInputType = {
@@ -8273,6 +8301,10 @@ export namespace Prisma {
     createdAt?: true
     updatedAt?: true
     category?: true
+    latitude?: true
+    longitude?: true
+    radius?: true
+    qrCodeSecret?: true
   }
 
   export type ActivityCountAggregateInputType = {
@@ -8291,6 +8323,10 @@ export namespace Prisma {
     createdAt?: true
     updatedAt?: true
     category?: true
+    latitude?: true
+    longitude?: true
+    radius?: true
+    qrCodeSecret?: true
     _all?: true
   }
 
@@ -8396,6 +8432,10 @@ export namespace Prisma {
     createdAt: Date
     updatedAt: Date
     category: string
+    latitude: number | null
+    longitude: number | null
+    radius: number | null
+    qrCodeSecret: string | null
     _count: ActivityCountAggregateOutputType | null
     _avg: ActivityAvgAggregateOutputType | null
     _sum: ActivitySumAggregateOutputType | null
@@ -8433,6 +8473,10 @@ export namespace Prisma {
     createdAt?: boolean
     updatedAt?: boolean
     category?: boolean
+    latitude?: boolean
+    longitude?: boolean
+    radius?: boolean
+    qrCodeSecret?: boolean
     coordinator?: boolean | UserDefaultArgs<ExtArgs>
     applications?: boolean | Activity$applicationsArgs<ExtArgs>
     attendance?: boolean | Activity$attendanceArgs<ExtArgs>
@@ -8457,6 +8501,10 @@ export namespace Prisma {
     createdAt?: boolean
     updatedAt?: boolean
     category?: boolean
+    latitude?: boolean
+    longitude?: boolean
+    radius?: boolean
+    qrCodeSecret?: boolean
     coordinator?: boolean | UserDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["activity"]>
 
@@ -8476,6 +8524,10 @@ export namespace Prisma {
     createdAt?: boolean
     updatedAt?: boolean
     category?: boolean
+    latitude?: boolean
+    longitude?: boolean
+    radius?: boolean
+    qrCodeSecret?: boolean
     coordinator?: boolean | UserDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["activity"]>
 
@@ -8495,9 +8547,13 @@ export namespace Prisma {
     createdAt?: boolean
     updatedAt?: boolean
     category?: boolean
+    latitude?: boolean
+    longitude?: boolean
+    radius?: boolean
+    qrCodeSecret?: boolean
   }
 
-  export type ActivityOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "title" | "description" | "date" | "time" | "location" | "capacity" | "enrolled" | "coordinatorId" | "coordinatorName" | "image" | "status" | "createdAt" | "updatedAt" | "category", ExtArgs["result"]["activity"]>
+  export type ActivityOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "title" | "description" | "date" | "time" | "location" | "capacity" | "enrolled" | "coordinatorId" | "coordinatorName" | "image" | "status" | "createdAt" | "updatedAt" | "category" | "latitude" | "longitude" | "radius" | "qrCodeSecret", ExtArgs["result"]["activity"]>
   export type ActivityInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     coordinator?: boolean | UserDefaultArgs<ExtArgs>
     applications?: boolean | Activity$applicationsArgs<ExtArgs>
@@ -8538,6 +8594,10 @@ export namespace Prisma {
       createdAt: Date
       updatedAt: Date
       category: string
+      latitude: number | null
+      longitude: number | null
+      radius: number | null
+      qrCodeSecret: string | null
     }, ExtArgs["result"]["activity"]>
     composites: {}
   }
@@ -8981,6 +9041,10 @@ export namespace Prisma {
     readonly createdAt: FieldRef<"Activity", 'DateTime'>
     readonly updatedAt: FieldRef<"Activity", 'DateTime'>
     readonly category: FieldRef<"Activity", 'String'>
+    readonly latitude: FieldRef<"Activity", 'Float'>
+    readonly longitude: FieldRef<"Activity", 'Float'>
+    readonly radius: FieldRef<"Activity", 'Int'>
+    readonly qrCodeSecret: FieldRef<"Activity", 'String'>
   }
     
 
@@ -16333,7 +16397,11 @@ export namespace Prisma {
     status: 'status',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt',
-    category: 'category'
+    category: 'category',
+    latitude: 'latitude',
+    longitude: 'longitude',
+    radius: 'radius',
+    qrCodeSecret: 'qrCodeSecret'
   };
 
   export type ActivityScalarFieldEnum = (typeof ActivityScalarFieldEnum)[keyof typeof ActivityScalarFieldEnum]
@@ -16590,6 +16658,20 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'Float'
+   */
+  export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
+    
+
+
+  /**
+   * Reference to a field of type 'Float[]'
+   */
+  export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
+    
+
+
+  /**
    * Reference to a field of type 'ApplicationStatus'
    */
   export type EnumApplicationStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ApplicationStatus'>
@@ -16642,20 +16724,6 @@ export namespace Prisma {
    * Reference to a field of type 'AuditAction[]'
    */
   export type ListEnumAuditActionFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AuditAction[]'>
-    
-
-
-  /**
-   * Reference to a field of type 'Float'
-   */
-  export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
-    
-
-
-  /**
-   * Reference to a field of type 'Float[]'
-   */
-  export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
     
   /**
    * Deep Input Types
@@ -17119,6 +17187,10 @@ export namespace Prisma {
     createdAt?: DateTimeFilter<"Activity"> | Date | string
     updatedAt?: DateTimeFilter<"Activity"> | Date | string
     category?: StringFilter<"Activity"> | string
+    latitude?: FloatNullableFilter<"Activity"> | number | null
+    longitude?: FloatNullableFilter<"Activity"> | number | null
+    radius?: IntNullableFilter<"Activity"> | number | null
+    qrCodeSecret?: StringNullableFilter<"Activity"> | string | null
     coordinator?: XOR<UserScalarRelationFilter, UserWhereInput>
     applications?: ApplicationListRelationFilter
     attendance?: AttendanceListRelationFilter
@@ -17142,6 +17214,10 @@ export namespace Prisma {
     createdAt?: SortOrder
     updatedAt?: SortOrder
     category?: SortOrder
+    latitude?: SortOrderInput | SortOrder
+    longitude?: SortOrderInput | SortOrder
+    radius?: SortOrderInput | SortOrder
+    qrCodeSecret?: SortOrderInput | SortOrder
     coordinator?: UserOrderByWithRelationInput
     applications?: ApplicationOrderByRelationAggregateInput
     attendance?: AttendanceOrderByRelationAggregateInput
@@ -17168,6 +17244,10 @@ export namespace Prisma {
     createdAt?: DateTimeFilter<"Activity"> | Date | string
     updatedAt?: DateTimeFilter<"Activity"> | Date | string
     category?: StringFilter<"Activity"> | string
+    latitude?: FloatNullableFilter<"Activity"> | number | null
+    longitude?: FloatNullableFilter<"Activity"> | number | null
+    radius?: IntNullableFilter<"Activity"> | number | null
+    qrCodeSecret?: StringNullableFilter<"Activity"> | string | null
     coordinator?: XOR<UserScalarRelationFilter, UserWhereInput>
     applications?: ApplicationListRelationFilter
     attendance?: AttendanceListRelationFilter
@@ -17191,6 +17271,10 @@ export namespace Prisma {
     createdAt?: SortOrder
     updatedAt?: SortOrder
     category?: SortOrder
+    latitude?: SortOrderInput | SortOrder
+    longitude?: SortOrderInput | SortOrder
+    radius?: SortOrderInput | SortOrder
+    qrCodeSecret?: SortOrderInput | SortOrder
     _count?: ActivityCountOrderByAggregateInput
     _avg?: ActivityAvgOrderByAggregateInput
     _max?: ActivityMaxOrderByAggregateInput
@@ -17217,6 +17301,10 @@ export namespace Prisma {
     createdAt?: DateTimeWithAggregatesFilter<"Activity"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Activity"> | Date | string
     category?: StringWithAggregatesFilter<"Activity"> | string
+    latitude?: FloatNullableWithAggregatesFilter<"Activity"> | number | null
+    longitude?: FloatNullableWithAggregatesFilter<"Activity"> | number | null
+    radius?: IntNullableWithAggregatesFilter<"Activity"> | number | null
+    qrCodeSecret?: StringNullableWithAggregatesFilter<"Activity"> | string | null
   }
 
   export type ApplicationWhereInput = {
@@ -18180,6 +18268,10 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     category: string
+    latitude?: number | null
+    longitude?: number | null
+    radius?: number | null
+    qrCodeSecret?: string | null
     coordinator: UserCreateNestedOneWithoutActivitiesAsCoordinatorInput
     applications?: ApplicationCreateNestedManyWithoutActivityInput
     attendance?: AttendanceCreateNestedManyWithoutActivityInput
@@ -18203,6 +18295,10 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     category: string
+    latitude?: number | null
+    longitude?: number | null
+    radius?: number | null
+    qrCodeSecret?: string | null
     applications?: ApplicationUncheckedCreateNestedManyWithoutActivityInput
     attendance?: AttendanceUncheckedCreateNestedManyWithoutActivityInput
     messages?: MessageUncheckedCreateNestedManyWithoutActivityInput
@@ -18224,6 +18320,10 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     category?: StringFieldUpdateOperationsInput | string
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    radius?: NullableIntFieldUpdateOperationsInput | number | null
+    qrCodeSecret?: NullableStringFieldUpdateOperationsInput | string | null
     coordinator?: UserUpdateOneRequiredWithoutActivitiesAsCoordinatorNestedInput
     applications?: ApplicationUpdateManyWithoutActivityNestedInput
     attendance?: AttendanceUpdateManyWithoutActivityNestedInput
@@ -18247,6 +18347,10 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     category?: StringFieldUpdateOperationsInput | string
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    radius?: NullableIntFieldUpdateOperationsInput | number | null
+    qrCodeSecret?: NullableStringFieldUpdateOperationsInput | string | null
     applications?: ApplicationUncheckedUpdateManyWithoutActivityNestedInput
     attendance?: AttendanceUncheckedUpdateManyWithoutActivityNestedInput
     messages?: MessageUncheckedUpdateManyWithoutActivityNestedInput
@@ -18269,6 +18373,10 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     category: string
+    latitude?: number | null
+    longitude?: number | null
+    radius?: number | null
+    qrCodeSecret?: string | null
   }
 
   export type ActivityUpdateManyMutationInput = {
@@ -18286,6 +18394,10 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     category?: StringFieldUpdateOperationsInput | string
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    radius?: NullableIntFieldUpdateOperationsInput | number | null
+    qrCodeSecret?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type ActivityUncheckedUpdateManyInput = {
@@ -18304,6 +18416,10 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     category?: StringFieldUpdateOperationsInput | string
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    radius?: NullableIntFieldUpdateOperationsInput | number | null
+    qrCodeSecret?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type ApplicationCreateInput = {
@@ -19350,6 +19466,28 @@ export namespace Prisma {
     not?: NestedEnumActivityStatusFilter<$PrismaModel> | $Enums.ActivityStatus
   }
 
+  export type FloatNullableFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatNullableFilter<$PrismaModel> | number | null
+  }
+
+  export type IntNullableFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableFilter<$PrismaModel> | number | null
+  }
+
   export type ActivityCountOrderByAggregateInput = {
     id?: SortOrder
     title?: SortOrder
@@ -19366,11 +19504,18 @@ export namespace Prisma {
     createdAt?: SortOrder
     updatedAt?: SortOrder
     category?: SortOrder
+    latitude?: SortOrder
+    longitude?: SortOrder
+    radius?: SortOrder
+    qrCodeSecret?: SortOrder
   }
 
   export type ActivityAvgOrderByAggregateInput = {
     capacity?: SortOrder
     enrolled?: SortOrder
+    latitude?: SortOrder
+    longitude?: SortOrder
+    radius?: SortOrder
   }
 
   export type ActivityMaxOrderByAggregateInput = {
@@ -19389,6 +19534,10 @@ export namespace Prisma {
     createdAt?: SortOrder
     updatedAt?: SortOrder
     category?: SortOrder
+    latitude?: SortOrder
+    longitude?: SortOrder
+    radius?: SortOrder
+    qrCodeSecret?: SortOrder
   }
 
   export type ActivityMinOrderByAggregateInput = {
@@ -19407,11 +19556,18 @@ export namespace Prisma {
     createdAt?: SortOrder
     updatedAt?: SortOrder
     category?: SortOrder
+    latitude?: SortOrder
+    longitude?: SortOrder
+    radius?: SortOrder
+    qrCodeSecret?: SortOrder
   }
 
   export type ActivitySumOrderByAggregateInput = {
     capacity?: SortOrder
     enrolled?: SortOrder
+    latitude?: SortOrder
+    longitude?: SortOrder
+    radius?: SortOrder
   }
 
   export type EnumActivityStatusWithAggregatesFilter<$PrismaModel = never> = {
@@ -19422,6 +19578,38 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumActivityStatusFilter<$PrismaModel>
     _max?: NestedEnumActivityStatusFilter<$PrismaModel>
+  }
+
+  export type FloatNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatNullableWithAggregatesFilter<$PrismaModel> | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedFloatNullableFilter<$PrismaModel>
+    _min?: NestedFloatNullableFilter<$PrismaModel>
+    _max?: NestedFloatNullableFilter<$PrismaModel>
+  }
+
+  export type IntNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableWithAggregatesFilter<$PrismaModel> | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedIntNullableFilter<$PrismaModel>
+    _max?: NestedIntNullableFilter<$PrismaModel>
   }
 
   export type EnumApplicationStatusFilter<$PrismaModel = never> = {
@@ -20461,6 +20649,22 @@ export namespace Prisma {
     set?: $Enums.ActivityStatus
   }
 
+  export type NullableFloatFieldUpdateOperationsInput = {
+    set?: number | null
+    increment?: number
+    decrement?: number
+    multiply?: number
+    divide?: number
+  }
+
+  export type NullableIntFieldUpdateOperationsInput = {
+    set?: number | null
+    increment?: number
+    decrement?: number
+    multiply?: number
+    divide?: number
+  }
+
   export type UserUpdateOneRequiredWithoutActivitiesAsCoordinatorNestedInput = {
     create?: XOR<UserCreateWithoutActivitiesAsCoordinatorInput, UserUncheckedCreateWithoutActivitiesAsCoordinatorInput>
     connectOrCreate?: UserCreateOrConnectWithoutActivitiesAsCoordinatorInput
@@ -21060,6 +21264,17 @@ export namespace Prisma {
     not?: NestedEnumActivityStatusFilter<$PrismaModel> | $Enums.ActivityStatus
   }
 
+  export type NestedFloatNullableFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatNullableFilter<$PrismaModel> | number | null
+  }
+
   export type NestedEnumActivityStatusWithAggregatesFilter<$PrismaModel = never> = {
     equals?: $Enums.ActivityStatus | EnumActivityStatusFieldRefInput<$PrismaModel>
     in?: $Enums.ActivityStatus[] | ListEnumActivityStatusFieldRefInput<$PrismaModel>
@@ -21068,6 +21283,38 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumActivityStatusFilter<$PrismaModel>
     _max?: NestedEnumActivityStatusFilter<$PrismaModel>
+  }
+
+  export type NestedFloatNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatNullableWithAggregatesFilter<$PrismaModel> | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedFloatNullableFilter<$PrismaModel>
+    _min?: NestedFloatNullableFilter<$PrismaModel>
+    _max?: NestedFloatNullableFilter<$PrismaModel>
+  }
+
+  export type NestedIntNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableWithAggregatesFilter<$PrismaModel> | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedIntNullableFilter<$PrismaModel>
+    _max?: NestedIntNullableFilter<$PrismaModel>
   }
 
   export type NestedEnumApplicationStatusFilter<$PrismaModel = never> = {
@@ -21170,6 +21417,10 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     category: string
+    latitude?: number | null
+    longitude?: number | null
+    radius?: number | null
+    qrCodeSecret?: string | null
     applications?: ApplicationCreateNestedManyWithoutActivityInput
     attendance?: AttendanceCreateNestedManyWithoutActivityInput
     messages?: MessageCreateNestedManyWithoutActivityInput
@@ -21191,6 +21442,10 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     category: string
+    latitude?: number | null
+    longitude?: number | null
+    radius?: number | null
+    qrCodeSecret?: string | null
     applications?: ApplicationUncheckedCreateNestedManyWithoutActivityInput
     attendance?: AttendanceUncheckedCreateNestedManyWithoutActivityInput
     messages?: MessageUncheckedCreateNestedManyWithoutActivityInput
@@ -21616,6 +21871,10 @@ export namespace Prisma {
     createdAt?: DateTimeFilter<"Activity"> | Date | string
     updatedAt?: DateTimeFilter<"Activity"> | Date | string
     category?: StringFilter<"Activity"> | string
+    latitude?: FloatNullableFilter<"Activity"> | number | null
+    longitude?: FloatNullableFilter<"Activity"> | number | null
+    radius?: IntNullableFilter<"Activity"> | number | null
+    qrCodeSecret?: StringNullableFilter<"Activity"> | string | null
   }
 
   export type AdminUpsertWithoutUserInput = {
@@ -22098,6 +22357,10 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     category: string
+    latitude?: number | null
+    longitude?: number | null
+    radius?: number | null
+    qrCodeSecret?: string | null
     coordinator: UserCreateNestedOneWithoutActivitiesAsCoordinatorInput
     applications?: ApplicationCreateNestedManyWithoutActivityInput
     attendance?: AttendanceCreateNestedManyWithoutActivityInput
@@ -22120,6 +22383,10 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     category: string
+    latitude?: number | null
+    longitude?: number | null
+    radius?: number | null
+    qrCodeSecret?: string | null
     applications?: ApplicationUncheckedCreateNestedManyWithoutActivityInput
     attendance?: AttendanceUncheckedCreateNestedManyWithoutActivityInput
     reviews?: ReviewUncheckedCreateNestedManyWithoutActivityInput
@@ -22310,6 +22577,10 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     category?: StringFieldUpdateOperationsInput | string
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    radius?: NullableIntFieldUpdateOperationsInput | number | null
+    qrCodeSecret?: NullableStringFieldUpdateOperationsInput | string | null
     coordinator?: UserUpdateOneRequiredWithoutActivitiesAsCoordinatorNestedInput
     applications?: ApplicationUpdateManyWithoutActivityNestedInput
     attendance?: AttendanceUpdateManyWithoutActivityNestedInput
@@ -22332,6 +22603,10 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     category?: StringFieldUpdateOperationsInput | string
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    radius?: NullableIntFieldUpdateOperationsInput | number | null
+    qrCodeSecret?: NullableStringFieldUpdateOperationsInput | string | null
     applications?: ApplicationUncheckedUpdateManyWithoutActivityNestedInput
     attendance?: AttendanceUncheckedUpdateManyWithoutActivityNestedInput
     reviews?: ReviewUncheckedUpdateManyWithoutActivityNestedInput
@@ -22998,6 +23273,10 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     category: string
+    latitude?: number | null
+    longitude?: number | null
+    radius?: number | null
+    qrCodeSecret?: string | null
     coordinator: UserCreateNestedOneWithoutActivitiesAsCoordinatorInput
     attendance?: AttendanceCreateNestedManyWithoutActivityInput
     messages?: MessageCreateNestedManyWithoutActivityInput
@@ -23020,6 +23299,10 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     category: string
+    latitude?: number | null
+    longitude?: number | null
+    radius?: number | null
+    qrCodeSecret?: string | null
     attendance?: AttendanceUncheckedCreateNestedManyWithoutActivityInput
     messages?: MessageUncheckedCreateNestedManyWithoutActivityInput
     reviews?: ReviewUncheckedCreateNestedManyWithoutActivityInput
@@ -23156,6 +23439,10 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     category?: StringFieldUpdateOperationsInput | string
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    radius?: NullableIntFieldUpdateOperationsInput | number | null
+    qrCodeSecret?: NullableStringFieldUpdateOperationsInput | string | null
     coordinator?: UserUpdateOneRequiredWithoutActivitiesAsCoordinatorNestedInput
     attendance?: AttendanceUpdateManyWithoutActivityNestedInput
     messages?: MessageUpdateManyWithoutActivityNestedInput
@@ -23178,6 +23465,10 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     category?: StringFieldUpdateOperationsInput | string
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    radius?: NullableIntFieldUpdateOperationsInput | number | null
+    qrCodeSecret?: NullableStringFieldUpdateOperationsInput | string | null
     attendance?: AttendanceUncheckedUpdateManyWithoutActivityNestedInput
     messages?: MessageUncheckedUpdateManyWithoutActivityNestedInput
     reviews?: ReviewUncheckedUpdateManyWithoutActivityNestedInput
@@ -23458,6 +23749,10 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     category: string
+    latitude?: number | null
+    longitude?: number | null
+    radius?: number | null
+    qrCodeSecret?: string | null
     coordinator: UserCreateNestedOneWithoutActivitiesAsCoordinatorInput
     applications?: ApplicationCreateNestedManyWithoutActivityInput
     messages?: MessageCreateNestedManyWithoutActivityInput
@@ -23480,6 +23775,10 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     category: string
+    latitude?: number | null
+    longitude?: number | null
+    radius?: number | null
+    qrCodeSecret?: string | null
     applications?: ApplicationUncheckedCreateNestedManyWithoutActivityInput
     messages?: MessageUncheckedCreateNestedManyWithoutActivityInput
     reviews?: ReviewUncheckedCreateNestedManyWithoutActivityInput
@@ -23691,6 +23990,10 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     category?: StringFieldUpdateOperationsInput | string
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    radius?: NullableIntFieldUpdateOperationsInput | number | null
+    qrCodeSecret?: NullableStringFieldUpdateOperationsInput | string | null
     coordinator?: UserUpdateOneRequiredWithoutActivitiesAsCoordinatorNestedInput
     applications?: ApplicationUpdateManyWithoutActivityNestedInput
     messages?: MessageUpdateManyWithoutActivityNestedInput
@@ -23713,6 +24016,10 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     category?: StringFieldUpdateOperationsInput | string
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    radius?: NullableIntFieldUpdateOperationsInput | number | null
+    qrCodeSecret?: NullableStringFieldUpdateOperationsInput | string | null
     applications?: ApplicationUncheckedUpdateManyWithoutActivityNestedInput
     messages?: MessageUncheckedUpdateManyWithoutActivityNestedInput
     reviews?: ReviewUncheckedUpdateManyWithoutActivityNestedInput
@@ -24441,6 +24748,10 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     category: string
+    latitude?: number | null
+    longitude?: number | null
+    radius?: number | null
+    qrCodeSecret?: string | null
     coordinator: UserCreateNestedOneWithoutActivitiesAsCoordinatorInput
     applications?: ApplicationCreateNestedManyWithoutActivityInput
     attendance?: AttendanceCreateNestedManyWithoutActivityInput
@@ -24463,6 +24774,10 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     category: string
+    latitude?: number | null
+    longitude?: number | null
+    radius?: number | null
+    qrCodeSecret?: string | null
     applications?: ApplicationUncheckedCreateNestedManyWithoutActivityInput
     attendance?: AttendanceUncheckedCreateNestedManyWithoutActivityInput
     messages?: MessageUncheckedCreateNestedManyWithoutActivityInput
@@ -24576,6 +24891,10 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     category?: StringFieldUpdateOperationsInput | string
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    radius?: NullableIntFieldUpdateOperationsInput | number | null
+    qrCodeSecret?: NullableStringFieldUpdateOperationsInput | string | null
     coordinator?: UserUpdateOneRequiredWithoutActivitiesAsCoordinatorNestedInput
     applications?: ApplicationUpdateManyWithoutActivityNestedInput
     attendance?: AttendanceUpdateManyWithoutActivityNestedInput
@@ -24598,6 +24917,10 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     category?: StringFieldUpdateOperationsInput | string
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    radius?: NullableIntFieldUpdateOperationsInput | number | null
+    qrCodeSecret?: NullableStringFieldUpdateOperationsInput | string | null
     applications?: ApplicationUncheckedUpdateManyWithoutActivityNestedInput
     attendance?: AttendanceUncheckedUpdateManyWithoutActivityNestedInput
     messages?: MessageUncheckedUpdateManyWithoutActivityNestedInput
@@ -24618,6 +24941,10 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     category: string
+    latitude?: number | null
+    longitude?: number | null
+    radius?: number | null
+    qrCodeSecret?: string | null
   }
 
   export type ApplicationCreateManyStudentInput = {
@@ -24747,6 +25074,10 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     category?: StringFieldUpdateOperationsInput | string
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    radius?: NullableIntFieldUpdateOperationsInput | number | null
+    qrCodeSecret?: NullableStringFieldUpdateOperationsInput | string | null
     applications?: ApplicationUpdateManyWithoutActivityNestedInput
     attendance?: AttendanceUpdateManyWithoutActivityNestedInput
     messages?: MessageUpdateManyWithoutActivityNestedInput
@@ -24768,6 +25099,10 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     category?: StringFieldUpdateOperationsInput | string
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    radius?: NullableIntFieldUpdateOperationsInput | number | null
+    qrCodeSecret?: NullableStringFieldUpdateOperationsInput | string | null
     applications?: ApplicationUncheckedUpdateManyWithoutActivityNestedInput
     attendance?: AttendanceUncheckedUpdateManyWithoutActivityNestedInput
     messages?: MessageUncheckedUpdateManyWithoutActivityNestedInput
@@ -24789,6 +25124,10 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     category?: StringFieldUpdateOperationsInput | string
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    radius?: NullableIntFieldUpdateOperationsInput | number | null
+    qrCodeSecret?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type ApplicationUpdateWithoutStudentInput = {

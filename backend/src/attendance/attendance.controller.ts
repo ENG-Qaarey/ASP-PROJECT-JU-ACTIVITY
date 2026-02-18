@@ -22,7 +22,7 @@ export class AttendanceController {
   constructor(
     private readonly attendanceService: AttendanceService,
     private readonly prisma: PrismaService,
-  ) {}
+  ) { }
 
   @Get()
   findAll(
@@ -167,5 +167,39 @@ export class AttendanceController {
       ...payload,
       markedBy: user.id,
     });
+  }
+
+  // QR Attendance endpoints
+  @Get('qr/generate/:activityId')
+  @Roles('coordinator')
+  async generateQR(@Param('activityId') activityId: string, @Req() req: any) {
+    const user = req.user as { id: string; role: string };
+
+    // Verify ownership
+    const activity = await this.prisma.activity.findUnique({
+      where: { id: activityId },
+      select: { coordinatorId: true },
+    });
+
+    if (!activity || activity.coordinatorId !== user.id) {
+      throw new ForbiddenException('You can only generate QR codes for your own activities');
+    }
+
+    return this.attendanceService.generateAttendanceToken(activityId);
+  }
+
+  @Post('qr/scan')
+  @Roles('student')
+  async scanQR(
+    @Req() req: any,
+    @Body() payload: { activityId: string; token: string; location?: { lat: number; lng: number } }
+  ) {
+    const user = req.user as { id: string; role: string };
+    return this.attendanceService.markAttendanceByQr(
+      user.id,
+      payload.activityId,
+      payload.token,
+      payload.location
+    );
   }
 }

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { Image } from 'expo-image';
 import { FileText, Clock, Pin, Ban, Play } from 'lucide-react-native';
 import { Svg, Path } from 'react-native-svg';
@@ -68,24 +68,29 @@ export const PremiumMessageBubble = ({
   contactAvatar,
   isGroup,
 }: MessageBubbleProps) => {
-  const bubbleColor = isMe 
-    ? theme.primary 
-    : (colorScheme === 'dark' ? '#333336' : '#E9E9EB');
-  
-  const textColor = isMe 
-    ? '#FFF' 
-    : (colorScheme === 'dark' ? '#FFF' : '#000');
+  const bubbleColor = isMe
+    ? theme.primary
+    : (colorScheme === 'dark' ? '#2D2D32' : '#F1F5F9');
+  const bubbleBorderColor = isMe
+    ? (colorScheme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.2)')
+    : (colorScheme === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)');
+  const textColor = isMe
+    ? '#FFF'
+    : (colorScheme === 'dark' ? '#F1F5F9' : '#0F172A');
 
   return (
     <View style={[
       styles.bubble,
       isMe ? styles.myBubble : styles.theirBubble,
-      { 
+      {
         backgroundColor: bubbleColor,
-        borderBottomRightRadius: isMe && isLastInGroup ? 4 : 18,
-        borderTopRightRadius: isMe && !isFirstInGroup ? 4 : 18,
-        borderBottomLeftRadius: !isMe && isLastInGroup ? 4 : 18,
-        borderTopLeftRadius: !isMe && !isFirstInGroup ? 4 : 18,
+        borderWidth: 1,
+        borderColor: bubbleBorderColor,
+        borderBottomRightRadius: isMe && isLastInGroup ? 8 : 20,
+        borderTopRightRadius: isMe && !isFirstInGroup ? 8 : 20,
+        borderBottomLeftRadius: !isMe && isLastInGroup ? 8 : 20,
+        borderTopLeftRadius: !isMe && !isFirstInGroup ? 8 : 20,
+        ...(isMe ? styles.sentShadow : styles.receivedShadow),
       }
     ]}>
       {isMe && isLastInGroup && <SentTail color={bubbleColor} />}
@@ -133,26 +138,42 @@ export const PremiumMessageBubble = ({
           onPlay={setPlayingAudioId}
         />
       ) : msgItem.type === 'image' ? (
-        <TouchableOpacity onPress={() => setViewerImageUrl(msgItem.text.startsWith('http') ? msgItem.text : `${IMAGE_BASE}${msgItem.text}`)}>
-          <Image 
-            source={{ uri: msgItem.text.startsWith('http') ? msgItem.text : `${IMAGE_BASE}${msgItem.text}` }} 
-            style={styles.image}
-            contentFit="cover"
-          />
-        </TouchableOpacity>
+        <>
+          <TouchableOpacity
+            style={[styles.mediaWrap, isMe && styles.mediaWrapSent]}
+            onPress={() => setViewerImageUrl(msgItem.text.startsWith('http') ? msgItem.text : `${IMAGE_BASE}${msgItem.text}`)}
+            activeOpacity={0.92}
+          >
+            <Image
+              source={{ uri: msgItem.text.startsWith('http') ? msgItem.text : `${IMAGE_BASE}${msgItem.text}` }}
+              style={styles.image}
+              contentFit="cover"
+            />
+          </TouchableOpacity>
+          {msgItem.caption ? (
+            <Text style={[styles.captionText, { color: textColor }]}>{msgItem.caption}</Text>
+          ) : null}
+        </>
       ) : msgItem.type === 'video' ? (
-        <TouchableOpacity
-          style={styles.videoPreview}
-          onPress={() => setViewerVideoUrl?.(msgItem.text.startsWith('http') ? msgItem.text : `${IMAGE_BASE}${msgItem.text}`)}
-          activeOpacity={0.9}
-        >
-          <View style={styles.videoPreviewPlaceholder} />
-          <View style={styles.videoPlayOverlay}>
-            <View style={styles.videoPlayCircle}>
-              <Play size={36} color="#FFF" fill="#FFF" />
+        <>
+          <TouchableOpacity
+            style={[styles.mediaWrap, styles.videoPreview, isMe && styles.mediaWrapSent]}
+            onPress={() => setViewerVideoUrl?.(msgItem.text.startsWith('http') ? msgItem.text : `${IMAGE_BASE}${msgItem.text}`)}
+            activeOpacity={0.92}
+          >
+            <View style={styles.videoPreviewPlaceholder} />
+            <View style={styles.videoPlayOverlay}>
+              <View style={styles.videoPlayCircle}>
+                <View style={styles.videoPlayCircleInner}>
+                  <Play size={28} color="#FFF" fill="#FFF" />
+                </View>
+              </View>
             </View>
-          </View>
-        </TouchableOpacity>
+          </TouchableOpacity>
+          {msgItem.caption ? (
+            <Text style={[styles.captionText, { color: textColor }]}>{msgItem.caption}</Text>
+          ) : null}
+        </>
       ) : msgItem.type === 'file' ? (
         <TouchableOpacity 
           style={styles.fileContainer}
@@ -176,17 +197,17 @@ export const PremiumMessageBubble = ({
         </Text>
       )}
 
-      <View style={styles.footer}>
-        {msgItem.pinned && <Pin size={10} color={isMe ? 'rgba(255,255,255,0.7)' : theme.textSecondary} style={{ marginRight: 4 }} fill={isMe ? 'rgba(255,255,255,0.7)' : theme.textSecondary} />}
-        <Text style={[styles.time, { color: isMe ? 'rgba(255,255,255,0.7)' : theme.textSecondary }]}>
+      <View style={[styles.footer, (msgItem.type === 'image' || msgItem.type === 'video') && styles.footerMedia]}>
+        {msgItem.pinned && <Pin size={10} color={isMe ? 'rgba(255,255,255,0.75)' : theme.textSecondary} style={{ marginRight: 4 }} fill={isMe ? 'rgba(255,255,255,0.75)' : theme.textSecondary} />}
+        <Text style={[styles.time, { color: isMe ? 'rgba(255,255,255,0.85)' : (colorScheme === 'dark' ? '#94A3B8' : '#64748B') }]}>
           {formatTime(msgItem.timestamp)}
         </Text>
         {isMe && (
-          <View style={{ marginLeft: 4 }}>
+          <View style={styles.statusWrap}>
             {msgItem.status === 'sending' ? (
-              <Clock size={10} color="rgba(255,255,255,0.5)" />
+              <Clock size={11} color="rgba(255,255,255,0.6)" />
             ) : (
-              <Text style={[styles.status, { color: msgItem.status === 'read' ? '#38BDF8' : 'rgba(255,255,255,0.7)' }]}>
+              <Text style={[styles.status, { color: msgItem.status === 'read' ? '#7DD3FC' : 'rgba(255,255,255,0.85)' }]}>
                 {msgItem.status === 'read' ? '✓✓' : '✓'}
               </Text>
             )}
@@ -197,41 +218,74 @@ export const PremiumMessageBubble = ({
   );
 };
 
+const MEDIA_SIZE = { width: 260, height: 200 };
+const MEDIA_RADIUS = 16;
+
 const styles = StyleSheet.create({
   bubble: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     maxWidth: '100%',
     position: 'relative',
   },
   myBubble: {
-    borderBottomRightRadius: 4,
+    borderBottomRightRadius: 8,
   },
   theirBubble: {
-    borderBottomLeftRadius: 4,
+    borderBottomLeftRadius: 8,
+  },
+  sentShadow: {
+    ...Platform.select({
+      ios: {
+        shadowColor: '#0EA5E9',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+      },
+      android: { elevation: 4 },
+    }),
+  },
+  receivedShadow: {
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.06,
+        shadowRadius: 6,
+      },
+      android: { elevation: 2 },
+    }),
   },
   messageText: {
     fontSize: 16,
     lineHeight: 22,
+    letterSpacing: 0.2,
   },
   senderName: {
     fontSize: 12,
     fontWeight: '700',
     marginBottom: 4,
+    letterSpacing: 0.3,
   },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
-    marginTop: 2,
+    marginTop: 4,
+  },
+  footerMedia: {
+    marginTop: 6,
   },
   time: {
-    fontSize: 10,
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  statusWrap: {
+    marginLeft: 5,
   },
   status: {
     fontSize: 12,
-    marginLeft: 2,
-    marginTop: -2,
+    fontWeight: '600',
   },
   sentTail: {
     position: 'absolute',
@@ -245,9 +299,9 @@ const styles = StyleSheet.create({
   },
   replyContainer: {
     borderLeftWidth: 3,
-    padding: 8,
+    padding: 10,
     marginBottom: 8,
-    borderRadius: 8,
+    borderRadius: 10,
   },
   replySender: {
     fontWeight: '700',
@@ -257,24 +311,43 @@ const styles = StyleSheet.create({
   replyText: {
     fontSize: 13,
   },
-  image: {
-    width: 250,
-    height: 180,
-    borderRadius: 12,
+  mediaWrap: {
+    borderRadius: MEDIA_RADIUS,
+    overflow: 'hidden',
     marginBottom: 4,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.12,
+        shadowRadius: 8,
+      },
+      android: { elevation: 4 },
+    }),
+  },
+  mediaWrapSent: {
+    ...Platform.select({
+      ios: {
+        shadowColor: '#0EA5E9',
+        shadowOpacity: 0.2,
+      },
+      android: {},
+    }),
+  },
+  image: {
+    width: MEDIA_SIZE.width,
+    height: MEDIA_SIZE.height,
+    borderRadius: MEDIA_RADIUS,
   },
   videoPreview: {
-    width: 250,
-    height: 180,
-    borderRadius: 12,
-    marginBottom: 4,
-    overflow: 'hidden',
+    width: MEDIA_SIZE.width,
+    height: MEDIA_SIZE.height,
     justifyContent: 'center',
     alignItems: 'center',
   },
   videoPreviewPlaceholder: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.75)',
+    backgroundColor: 'rgba(0,0,0,0.82)',
   },
   videoPlayOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -282,23 +355,44 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   videoPlayCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: 'rgba(255,255,255,0.35)',
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: 'rgba(255,255,255,0.22)',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 3,
+    borderColor: 'rgba(255,255,255,0.4)',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.35,
+        shadowRadius: 12,
+      },
+      android: { elevation: 8 },
+    }),
+  },
+  videoPlayCircleInner: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 4,
   },
   fileContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    paddingRight: 10,
+    gap: 12,
+    paddingVertical: 4,
+    paddingRight: 4,
   },
   fileIconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -307,9 +401,17 @@ const styles = StyleSheet.create({
   },
   fileName: {
     fontWeight: '600',
-    fontSize: 14,
+    fontSize: 15,
   },
   fileMeta: {
-    fontSize: 11,
+    fontSize: 12,
+    marginTop: 2,
+  },
+  captionText: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginTop: 6,
+    marginBottom: 2,
+    paddingHorizontal: 2,
   },
 });

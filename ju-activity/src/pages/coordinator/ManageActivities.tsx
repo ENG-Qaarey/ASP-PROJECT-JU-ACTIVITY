@@ -35,7 +35,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { Calendar, MapPin, Edit, Trash2, Eye, Users, Save } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
+import { attendanceApi } from "@/lib/api";
+import { Calendar, MapPin, Edit, Trash2, Eye, Users, Save, QrCode } from "lucide-react";
 import { Activity } from "@/data/mockData";
 
 const ManageActivities = () => {
@@ -48,6 +50,30 @@ const ManageActivities = () => {
   const [editId, setEditId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [editFormData, setEditFormData] = useState<Partial<Activity>>({});
+  
+  // QR State
+  const [qrActivityId, setQrActivityId] = useState<string | null>(null);
+  const [qrToken, setQrToken] = useState<string | null>(null);
+  const [isGeneratingQR, setIsGeneratingQR] = useState(false);
+
+  const handleShowQR = async (activityId: string) => {
+    setIsGeneratingQR(true);
+    try {
+      const { token } = await attendanceApi.generateQR(activityId);
+      // We encode both activityId and token in the QR code as a JSON string
+      const qrData = JSON.stringify({ activityId, token });
+      setQrToken(qrData);
+      setQrActivityId(activityId);
+    } catch (error: any) {
+      toast({
+        title: "QR Error",
+        description: error?.message || "Failed to generate attendance QR code",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingQR(false);
+    }
+  };
 
   const canManageActivity = (activity: Activity) => {
     if (!user) return false;
@@ -308,15 +334,24 @@ const ManageActivities = () => {
                       </span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setViewStudentsId(activity.id)}
-                    >
-                      <Users className="w-4 h-4 mr-2" />
-                      View Students ({getApprovedApplicationsByActivity(activity.id).length})
-                    </Button>
+                    <div className="flex items-center gap-3">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleShowQR(activity.id)}
+                        disabled={isGeneratingQR && qrActivityId === activity.id}
+                      >
+                        <QrCode className="w-4 h-4 mr-2" />
+                        Show QR
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setViewStudentsId(activity.id)}
+                      >
+                        <Users className="w-4 h-4 mr-2" />
+                        View Students ({getApprovedApplicationsByActivity(activity.id).length})
+                      </Button>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -559,6 +594,46 @@ const ManageActivities = () => {
                 </Button>
               </div>
             </form>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={qrToken !== null} onOpenChange={() => {
+          setQrToken(null);
+          setQrActivityId(null);
+        }}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <QrCode className="w-5 h-5" />
+                Attendance QR Code
+              </DialogTitle>
+              <DialogDescription>
+                Students can scan this code using the mobile app to mark their attendance.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col items-center justify-center p-6 space-y-4">
+              <div className="bg-white p-4 rounded-xl shadow-inner border-2 border-primary/20">
+                {qrToken && (
+                  <QRCodeSVG 
+                    value={qrToken} 
+                    size={256}
+                    level="H"
+                    includeMargin={true}
+                  />
+                )}
+              </div>
+              <p className="text-sm font-medium text-center text-muted-foreground">
+                This code is time-limited and secure.
+              </p>
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => handleShowQR(qrActivityId!)}
+              >
+                <Save className="w-4 h-4 mr-2" />
+                Refresh Code
+              </Button>
+            </div>
           </DialogContent>
         </Dialog>
       </div>

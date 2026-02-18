@@ -10,12 +10,7 @@ import { getAvatarUrl } from '@/src/lib/media';
 /** Chat route segments that are not a chat id (user id or group id). */
 const CHAT_SUBROUTES = new Set(['users', 'group-settings', 'settings', 'wallpaper', 'disappearing-messages', 'index', '']);
 
-/**
- * Extracts the chat identifier from a pathname of the form `/chat/{id}`.
- *
- * @param pathname - The URL pathname to parse.
- * @returns The chat id if `pathname` is exactly `/chat/{id}` and the `{id}` is not a known subroute; `null` otherwise.
- */
+/** Get current chat id from pathname (e.g. /chat/abc-123 -> abc-123), or null if not on a chat screen. */
 function getCurrentChatIdFromPathname(pathname: string): string | null {
   const match = pathname.match(/^\/chat\/([^/]+)$/);
   const segment = match?.[1];

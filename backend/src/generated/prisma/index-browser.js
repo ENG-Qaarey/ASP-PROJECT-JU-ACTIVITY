@@ -199,7 +199,11 @@ exports.Prisma.ActivityScalarFieldEnum = {
   status: 'status',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
-  category: 'category'
+  category: 'category',
+  latitude: 'latitude',
+  longitude: 'longitude',
+  radius: 'radius',
+  qrCodeSecret: 'qrCodeSecret'
 };
 
 exports.Prisma.ApplicationScalarFieldEnum = {

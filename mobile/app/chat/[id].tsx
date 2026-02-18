@@ -98,6 +98,7 @@ interface Message {
   fileSize?: string;
   fileExt?: string;
   pdfPages?: number;
+  caption?: string;
   isDeleted?: boolean;
   senderName?: string;
   senderAvatar?: string;
@@ -294,6 +295,9 @@ export default function ChatScreen() {
   const [waveData, setWaveData] = useState<number[]>(new Array(25).fill(4));
   const [viewerImageUrl, setViewerImageUrl] = useState<string | null>(null);
   const [viewerVideoUrl, setViewerVideoUrl] = useState<string | null>(null);
+  type PendingMedia = { uri: string; type: 'image' | 'video'; fileName?: string; fileSize?: number };
+  const [pendingMedia, setPendingMedia] = useState<PendingMedia | null>(null);
+  const [mediaCaption, setMediaCaption] = useState('');
 
   useFocusEffect(
     React.useCallback(() => {
@@ -569,6 +573,7 @@ export default function ChatScreen() {
         fileSize: msg.metadata?.fileSize,
         fileExt: msg.metadata?.fileExt,
         pdfPages: msg.metadata?.pdfPages,
+        caption: msg.metadata?.caption,
         replyTo: msg.replyTo,
         isDeleted: msg.isDeleted,
       }));
@@ -676,6 +681,7 @@ export default function ChatScreen() {
                 fileSize: meta.fileSize ?? updated[optimisticIndex].fileSize,
                 fileExt: meta.fileExt ?? updated[optimisticIndex].fileExt,
                 pdfPages: meta.pdfPages ?? updated[optimisticIndex].pdfPages,
+                caption: meta.caption ?? updated[optimisticIndex].caption,
               };
               return updated;
             }
@@ -685,7 +691,7 @@ export default function ChatScreen() {
             id: msg.id,
             text: msg.content,
             sender: isMe ? 'me' : 'them',
-            senderName: msg.sender?.name, // Important for group chat
+            senderName: msg.sender?.name,
             senderAvatar: msg.sender?.avatar,
             timestamp: new Date(msg.createdAt),
             status: 'read',
@@ -694,6 +700,7 @@ export default function ChatScreen() {
             fileSize: msg.metadata?.fileSize,
             fileExt: msg.metadata?.fileExt,
             pdfPages: msg.metadata?.pdfPages,
+            caption: msg.metadata?.caption,
             replyTo: msg.replyTo,
           };
           return [...prev, newMsg];
@@ -1056,7 +1063,7 @@ export default function ChatScreen() {
     }
   };
 
-  const uploadAndSendMessage = async (uri: string, type: 'image' | 'video' | 'file' | 'audio', originalName?: string, size?: number) => {
+  const uploadAndSendMessage = async (uri: string, type: 'image' | 'video' | 'file' | 'audio', originalName?: string, size?: number, caption?: string) => {
     if (!id || !connected) return;
 
     const localId = Date.now().toString();
@@ -1080,6 +1087,7 @@ export default function ChatScreen() {
       fileSize: formatSize(size),
       fileExt: ext,
       pdfPages: filename.endsWith('.pdf') ? 72 : undefined,
+      caption: caption,
       sender: 'me',
       timestamp: new Date(),
       status: 'sending',
@@ -1144,7 +1152,8 @@ export default function ChatScreen() {
         fileName: optimisticMessage.fileName,
         fileSize: optimisticMessage.fileSize,
         fileExt: optimisticMessage.fileExt,
-        pdfPages: optimisticMessage.pdfPages
+        pdfPages: optimisticMessage.pdfPages,
+        ...(caption ? { caption } : {}),
       });
 
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -1172,16 +1181,18 @@ export default function ChatScreen() {
       
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ['images', 'videos'],
-        allowsEditing: false,
-        quality: 0.8,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.85,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
-        const mediaType = asset.type === 'video' ? 'video' : 'image';
+        const mediaType = asset.type === 'video' ? 'video' as const : 'image' as const;
         const name = (asset as any).fileName ?? (mediaType === 'video' ? 'video.mp4' : 'image.jpg');
         const size = (asset as any).fileSize;
-        uploadAndSendMessage(asset.uri, mediaType, name, size);
+        setPendingMedia({ uri: asset.uri, type: mediaType, fileName: name, fileSize: size });
+        setMediaCaption('');
       }
     } catch (err) {
       console.error('Camera launch failed', err);
@@ -1193,20 +1204,35 @@ export default function ChatScreen() {
       setShowAttachmentMenu(false);
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images', 'videos'],
-        allowsEditing: false,
-        quality: 0.8,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.85,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
-        const mediaType = asset.type === 'video' ? 'video' : 'image';
+        const mediaType = asset.type === 'video' ? 'video' as const : 'image' as const;
         const name = (asset as any).fileName ?? (mediaType === 'video' ? 'video.mp4' : 'image.jpg');
         const size = (asset as any).fileSize;
-        uploadAndSendMessage(asset.uri, mediaType, name, size);
+        setPendingMedia({ uri: asset.uri, type: mediaType, fileName: name, fileSize: size });
+        setMediaCaption('');
       }
     } catch (err) {
       console.error('Image picking failed', err);
     }
+  };
+
+  const handleCloseMediaPreview = () => {
+    setPendingMedia(null);
+    setMediaCaption('');
+  };
+
+  const handleSendFromMediaPreview = async () => {
+    if (!pendingMedia || !id || !connected) return;
+    const { uri, type, fileName, fileSize } = pendingMedia;
+    const cap = mediaCaption.trim() || undefined;
+    handleCloseMediaPreview();
+    await uploadAndSendMessage(uri, type, fileName, fileSize, cap);
   };
 
   const handleOpenFile = async (url: string) => {
@@ -2023,6 +2049,71 @@ export default function ChatScreen() {
           {viewerVideoUrl ? (
             <ChatVideoPlayerContent url={viewerVideoUrl} onClose={() => setViewerVideoUrl(null)} />
           ) : null}
+        </View>
+      </Modal>
+
+      {/* Media Preview & Edit Before Send (like WhatsApp/ref) */}
+      <Modal
+        visible={!!pendingMedia}
+        transparent
+        animationType="slide"
+        onRequestClose={handleCloseMediaPreview}
+      >
+        <View style={styles.mediaPreviewRoot}>
+          <View style={styles.mediaPreviewTopBar}>
+            <TouchableOpacity
+              onPress={handleCloseMediaPreview}
+              style={styles.mediaPreviewCloseBtn}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+              <X size={26} color="#FFF" />
+            </TouchableOpacity>
+            <View style={styles.mediaPreviewToolbar}>
+              <View style={styles.mediaPreviewToolIcon}>
+                <Text style={styles.mediaPreviewToolLabel}>HD</Text>
+              </View>
+              <View style={styles.mediaPreviewToolIcon}>
+                <ImageIcon size={20} color="#FFF" />
+              </View>
+            </View>
+          </View>
+          <View style={styles.mediaPreviewContent}>
+            {pendingMedia?.type === 'image' ? (
+              <Image
+                source={{ uri: pendingMedia.uri }}
+                style={StyleSheet.absoluteFill}
+                contentFit="contain"
+              />
+            ) : pendingMedia?.type === 'video' ? (
+              <View style={styles.mediaPreviewVideoPlaceholder}>
+                <View style={styles.mediaPreviewPlayCircle}>
+                  <Play size={40} color="#FFF" fill="#FFF" />
+                </View>
+                <Text style={styles.mediaPreviewVideoLabel}>Video</Text>
+              </View>
+            ) : null}
+          </View>
+          <View style={[styles.mediaPreviewBottomBar, { paddingBottom: insets.bottom + 12 }]}>
+            <View style={styles.mediaPreviewCaptionRow}>
+              <TextInput
+                style={[styles.mediaPreviewCaptionInput, { color: colorScheme === 'dark' ? '#F1F5F9' : '#0F172A', borderColor: colorScheme === 'dark' ? '#334155' : '#E2E8F0' }]}
+                placeholder="Add a caption..."
+                placeholderTextColor="#94A3B8"
+                value={mediaCaption}
+                onChangeText={setMediaCaption}
+                multiline
+                maxLength={500}
+              />
+              <TouchableOpacity
+                onPress={handleSendFromMediaPreview}
+                style={styles.mediaPreviewSendBtn}
+                activeOpacity={0.85}
+              >
+                <Send size={22} color="#0F172A" strokeWidth={2.2} />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.mediaPreviewYouLabel}>You</Text>
+          </View>
         </View>
       </Modal>
 
@@ -2939,6 +3030,102 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 10,
+  },
+  mediaPreviewRoot: {
+    flex: 1,
+    backgroundColor: '#0F172A',
+  },
+  mediaPreviewTopBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: Platform.OS === 'ios' ? 56 : 44,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+  },
+  mediaPreviewCloseBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  mediaPreviewToolbar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  mediaPreviewToolIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  mediaPreviewToolLabel: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  mediaPreviewContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  mediaPreviewVideoPlaceholder: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  mediaPreviewPlayCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  mediaPreviewVideoLabel: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  mediaPreviewBottomBar: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+  mediaPreviewCaptionRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 10,
+  },
+  mediaPreviewCaptionInput: {
+    flex: 1,
+    minHeight: 44,
+    maxHeight: 100,
+    borderRadius: 22,
+    borderWidth: 1,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    fontSize: 16,
+  },
+  mediaPreviewSendBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  mediaPreviewYouLabel: {
+    color: '#94A3B8',
+    fontSize: 12,
+    marginTop: 8,
+    marginLeft: 4,
   },
   fileBubble: {
     flexDirection: 'row',

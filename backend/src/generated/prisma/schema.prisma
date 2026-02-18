@@ -132,11 +132,18 @@ model Activity {
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
   category        String
-  coordinator     User           @relation("CoordinatorActivities", fields: [coordinatorId], references: [id])
-  applications    Application[]
-  attendance      Attendance[]
-  messages        Message[]
-  reviews         Review[]
+
+  // QR & Location Attendance fields
+  latitude     Float?
+  longitude    Float?
+  radius       Int?    @default(100) // Radius in meters for check-in
+  qrCodeSecret String? @default(uuid())
+
+  coordinator  User          @relation("CoordinatorActivities", fields: [coordinatorId], references: [id])
+  applications Application[]
+  attendance   Attendance[]
+  messages     Message[]
+  reviews      Review[]
 
   @@index([coordinatorId])
   @@index([status])
