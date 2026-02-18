@@ -2,6 +2,7 @@ import {
   Injectable,
   UnauthorizedException,
   BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
@@ -117,26 +118,45 @@ export class AuthService {
       throw new BadRequestException('Only student registration is allowed');
     }
 
+    const normalizedEmail = this.normalizeEmail(payload.email);
+
+    // Check if user already exists in permanent table
+    const existingPermanent = await this.usersService.findByEmail(normalizedEmail);
+    if (existingPermanent) {
+      throw new ConflictException('User with this email already is registered');
+    }
+
     // Generate 6-digit verification code
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
     const verificationCodeHash = await bcrypt.hash(verificationCode, 10);
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
-    const normalizedEmail = this.normalizeEmail(payload.email);
-    const createdUser = await this.usersService.create({
-      ...payload,
-      email: normalizedEmail,
-      role,
-      status: 'inactive',
-      emailVerified: false,
-    });
+    // Hash password for pending storage
+    const passwordHash = await bcrypt.hash(payload.password, 10);
 
-    // Save verification code details
-    await this.prisma.user.update({
-      where: { id: createdUser.id },
-      data: {
-        emailVerificationCodeHash: verificationCodeHash,
-        emailVerificationCodeExpiresAt: expiresAt,
+    // Store in PendingUser (upsert so they can retry registration if they made a mistake)
+    await this.prisma.pendingUser.upsert({
+      where: { email: normalizedEmail },
+      update: {
+        name: payload.name,
+        passwordHash,
+        role,
+        studentId: payload.studentId,
+        department: payload.department,
+        avatar: payload.avatar,
+        verificationCodeHash,
+        verificationCodeExpiresAt: expiresAt,
+      },
+      create: {
+        email: normalizedEmail,
+        name: payload.name,
+        passwordHash,
+        role,
+        studentId: payload.studentId,
+        department: payload.department,
+        avatar: payload.avatar,
+        verificationCodeHash,
+        verificationCodeExpiresAt: expiresAt,
       },
     });
 
@@ -147,18 +167,9 @@ export class AuthService {
       console.error('Failed to send registration verification email:', error);
     }
 
-    const createdForToken = await this.prisma.user.findFirst({
-      where: { id: createdUser.id },
-      select: { id: true, email: true, role: true, passwordVersion: true },
-    });
-
-    const token = createdForToken ? this.signToken(createdForToken) : null;
-
     return {
       success: true,
-      user: createdUser,
       email: normalizedEmail,
-      token,
     };
   }
 
@@ -168,12 +179,56 @@ export class AuthService {
     }
 
     const normalizedEmail = this.normalizeEmail(email);
+
+    // 1. Check PendingUser first (New Flow)
+    const pendingUser = await this.prisma.pendingUser.findUnique({
+      where: { email: normalizedEmail },
+    });
+
+    if (pendingUser) {
+      // Verify code
+      if (pendingUser.verificationCodeExpiresAt < new Date()) {
+        throw new BadRequestException('Verification code expired');
+      }
+
+      const isValid = await bcrypt.compare(code, pendingUser.verificationCodeHash);
+      if (!isValid) {
+        throw new BadRequestException('Invalid verification code');
+      }
+
+      // Create permanent user
+      const user = await this.prisma.user.create({
+        data: {
+          email: pendingUser.email,
+          name: pendingUser.name,
+          passwordHash: pendingUser.passwordHash,
+          role: pendingUser.role as any,
+          studentId: pendingUser.studentId,
+          department: pendingUser.department,
+          avatar: pendingUser.avatar,
+          joinedAt: new Date(),
+          status: 'active',
+          emailVerified: true,
+          passwordVersion: 1,
+        },
+      });
+
+      // Delete from pending
+      await this.prisma.pendingUser.delete({
+        where: { email: normalizedEmail },
+      });
+
+      const token = this.signToken(user);
+      return { success: true, user: this.sanitizeUser(user), token };
+    }
+
+    // 2. Fallback to User table (Legacy/Re-verification Flow)
     const user = await this.usersService.findByEmail(normalizedEmail);
     if (!user) {
       throw new UnauthorizedException('Invalid email');
     }
 
-    // Verify code
+    // Verify code for existing user
     if (!user.emailVerificationCodeExpiresAt || user.emailVerificationCodeExpiresAt < new Date()) {
       throw new BadRequestException('Verification code expired');
     }
@@ -193,13 +248,7 @@ export class AuthService {
       },
     });
 
-    const token = this.signToken({
-      id: updated.id,
-      email: updated.email,
-      role: updated.role,
-      passwordVersion: updated.passwordVersion,
-    });
-
+    const token = this.signToken(updated);
     return { success: true, user: this.sanitizeUser(updated), token };
   }
 
@@ -209,15 +258,33 @@ export class AuthService {
     }
 
     const normalizedEmail = this.normalizeEmail(email);
+
+    // Check pending first
+    const pending = await this.prisma.pendingUser.findUnique({
+      where: { email: normalizedEmail },
+    });
+
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const verificationCodeHash = await bcrypt.hash(verificationCode, 10);
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+    if (pending) {
+      await this.prisma.pendingUser.update({
+        where: { email: normalizedEmail },
+        data: {
+          verificationCodeHash,
+          verificationCodeExpiresAt: expiresAt,
+        },
+      });
+      await this.mailService.sendVerificationCode(normalizedEmail, verificationCode);
+      return { success: true };
+    }
+
+    // Fallback to user
     const user = await this.usersService.findByEmail(normalizedEmail);
     if (!user) {
       throw new UnauthorizedException('Invalid email');
     }
-
-    // Generate new code
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const verificationCodeHash = await bcrypt.hash(verificationCode, 10);
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
     if (!user.emailVerified || user.status !== 'active') {
       await this.prisma.user.update({
@@ -227,8 +294,6 @@ export class AuthService {
           emailVerificationCodeExpiresAt: expiresAt,
         },
       });
-
-      // Send email
       await this.mailService.sendVerificationCode(user.email, verificationCode);
     }
 

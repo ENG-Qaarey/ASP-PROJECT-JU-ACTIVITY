@@ -1,6 +1,6 @@
 import { config } from 'dotenv';
 import { createClerkClient } from '@clerk/backend';
-import { PrismaClient } from '../generated/prisma';
+import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import * as bcrypt from 'bcrypt';
@@ -26,7 +26,7 @@ async function setupPrismaUser() {
 
   try {
     console.log('\n📊 Setting up admin user in Prisma database...');
-    
+
     const existingUser = await prisma.user.findFirst({
       where: {
         email: {
@@ -42,7 +42,7 @@ async function setupPrismaUser() {
     if (existingUser) {
       console.log(`✅ User already exists in Prisma`);
       const passwordHash = await bcrypt.hash(securePassword, 10);
-      
+
       await prisma.user.update({
         where: { id: existingUser.id },
         data: {
@@ -74,7 +74,7 @@ async function setupPrismaUser() {
       console.log(`✅ Prisma user updated successfully!`);
     } else {
       const passwordHash = await bcrypt.hash(securePassword, 10);
-      
+
       await prisma.user.create({
         data: {
           name: name,
@@ -109,7 +109,7 @@ async function setupPrismaUser() {
 
 async function createClerkUser() {
   const secretKey = process.env.CLERK_SECRET_KEY;
-  
+
   if (!secretKey) {
     throw new Error('CLERK_SECRET_KEY environment variable is not set');
   }
@@ -126,14 +126,14 @@ async function createClerkUser() {
 
   try {
     console.log(`🔍 Checking if user with email ${email} exists in Clerk...`);
-    
+
     // Check if user already exists
     let existingUser: any = null;
     try {
-      const users = await client.users.getUserList({ 
-        emailAddress: [email.toLowerCase()] 
+      const users = await client.users.getUserList({
+        emailAddress: [email.toLowerCase()]
       });
-      
+
       if (users.data && users.data.length > 0) {
         existingUser = users.data[0];
       }
@@ -141,7 +141,7 @@ async function createClerkUser() {
       // If getUserList fails, try alternative method or continue to create
       console.log(`⚠️  Could not check existing users: ${error.message}`);
     }
-    
+
     if (existingUser) {
       const userId = existingUser.id as string;
       console.log(`✅ User already exists in Clerk with ID: ${userId}`);
@@ -150,7 +150,7 @@ async function createClerkUser() {
         (e: any) => e.id === existingUser.primaryEmailAddressId
       ) || emailAddresses[0];
       console.log(`   Email: ${primaryEmail?.emailAddress || 'N/A'}`);
-      
+
       // Update the user if needed
       console.log(`🔄 Updating user metadata...`);
       try {
@@ -166,7 +166,7 @@ async function createClerkUser() {
       } catch (error: any) {
         console.warn(`⚠️  Could not update metadata: ${error.message}`);
       }
-      
+
       // Remove MFA methods if any exist
       try {
         console.log(`🔒 Checking for MFA methods...`);
@@ -186,7 +186,7 @@ async function createClerkUser() {
       } catch (mfaError: any) {
         console.log(`   ℹ️  MFA check skipped (may not be available via API)`);
       }
-      
+
       // Update password if needed
       try {
         console.log(`🔑 Resetting password...`);
@@ -198,7 +198,7 @@ async function createClerkUser() {
         console.warn(`⚠️  Could not update password: ${error.message}`);
         console.warn(`   Note: Password might need to meet Clerk's password requirements`);
       }
-      
+
       console.log(`✅ User updated successfully!`);
       console.log(`\n📧 Email: ${email}`);
       console.log(`🔑 Password: ${password}`);
@@ -210,7 +210,7 @@ async function createClerkUser() {
     }
 
     console.log(`👤 Creating new user in Clerk...`);
-    
+
     // Create new user in Clerk
     // Note: Email is stored in lowercase internally
     const newUser = await client.users.createUser({
@@ -254,7 +254,7 @@ async function createClerkUser() {
     console.log(`   2. Navigate to: Settings → Multi-factor Authentication`);
     console.log(`   3. Disable "Require MFA" or set it to "Optional"`);
     console.log(`   4. Save changes`);
-    
+
   } catch (error: any) {
     console.error('❌ Error creating/updating user in Clerk:', error);
     if (error.errors) {
@@ -272,7 +272,7 @@ async function createClerkUser() {
 async function main() {
   // First setup Prisma
   await setupPrismaUser();
-  
+
   // Then setup Clerk
   await createClerkUser();
 }

@@ -1,5 +1,5 @@
 import { config } from 'dotenv';
-import { PrismaClient } from '../generated/prisma';
+import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import * as bcrypt from 'bcrypt';
@@ -20,7 +20,7 @@ async function setupAdmin() {
   const email = 'jamiila@gmail.com';
   const name = 'ENG-jamiila';
   const securePassword = 'Jamiila@JU2024Secure!';
-  
+
   console.log(`🔍 Checking for admin user: ${email}...`);
 
   // Normalize email to lowercase for lookup
@@ -48,7 +48,7 @@ async function setupAdmin() {
 
     // Update password and ensure admin profile exists
     const passwordHash = await bcrypt.hash(securePassword, 10);
-    
+
     await prisma.user.update({
       where: { id: existingUser.id },
       data: {
@@ -86,9 +86,9 @@ async function setupAdmin() {
     console.log(`   👤 Role: admin`);
   } else {
     console.log(`👤 Creating new admin user...`);
-    
+
     const passwordHash = await bcrypt.hash(securePassword, 10);
-    
+
     const admin = await prisma.user.create({
       data: {
         name: name,

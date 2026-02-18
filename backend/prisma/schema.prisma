@@ -1,6 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -319,4 +318,20 @@ enum AuditAction {
   ATTENDANCE_MARK
   NOTIFICATION_CREATE
   NOTIFICATION_MARK_READ
+}
+
+model PendingUser {
+  id                             String   @id @default(uuid())
+  email                          String   @unique
+  name                           String
+  passwordHash                   String
+  role                           String   @default("student")
+  studentId                      String?
+  department                     String?
+  avatar                         String?
+  verificationCodeHash           String
+  verificationCodeExpiresAt      DateTime
+  createdAt                      DateTime @default(now())
+
+  @@map("pending_users")
 }

@@ -11,7 +11,7 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { NotificationType, UserRole } from '../generated/prisma';
+import { NotificationType, UserRole } from '@prisma/client';
 import { NotificationsService } from './notifications.service';
 import { JwtAuthGuard } from '../authz/jwt-auth.guard';
 import { Roles } from '../authz/roles.decorator';

@@ -3,7 +3,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
 import { NotificationsService } from '../notifications/notifications.service';
-import { NotificationType } from '../generated/prisma';
+import { NotificationType } from '@prisma/client';
 
 @Injectable()
 export class RemindersService {

@@ -1,6 +1,6 @@
 import { config } from 'dotenv';
 import { createClerkClient } from '@clerk/backend';
-import { PrismaClient } from '../generated/prisma';
+import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import * as bcrypt from 'bcrypt';
@@ -22,7 +22,7 @@ async function setupAdminComplete() {
   // Step 1: Setup in Prisma Database
   // ============================================
   console.log('📊 Step 1: Setting up in Prisma database...');
-  
+
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
     throw new Error('DATABASE_URL environment variable is not set');
@@ -56,7 +56,7 @@ async function setupAdminComplete() {
 
       // Update password and ensure admin profile exists
       const passwordHash = await bcrypt.hash(securePassword, 10);
-      
+
       await prisma.user.update({
         where: { id: existingPrismaUser.id },
         data: {
@@ -91,9 +91,9 @@ async function setupAdminComplete() {
       console.log(`✅ Prisma user updated successfully!\n`);
     } else {
       console.log(`👤 Creating new admin user in Prisma...`);
-      
+
       const passwordHash = await bcrypt.hash(securePassword, 10);
-      
+
       const admin = await prisma.user.create({
         data: {
           name: name,
@@ -140,9 +140,9 @@ async function setupAdminComplete() {
   // Step 2: Setup in Clerk
   // ============================================
   console.log('🔐 Step 2: Setting up in Clerk...');
-  
+
   const secretKey = process.env.CLERK_SECRET_KEY;
-  
+
   if (!secretKey) {
     console.warn('⚠️  CLERK_SECRET_KEY not set. Skipping Clerk setup.');
     console.warn('   User will only exist in Prisma database.');
@@ -153,25 +153,25 @@ async function setupAdminComplete() {
 
   try {
     console.log(`🔍 Checking if user exists in Clerk...`);
-    
+
     // Check if user already exists
     let existingClerkUser: any = null;
     try {
-      const users = await client.users.getUserList({ 
-        emailAddress: [email.toLowerCase()] 
+      const users = await client.users.getUserList({
+        emailAddress: [email.toLowerCase()]
       });
-      
+
       if (users.data && users.data.length > 0) {
         existingClerkUser = users.data[0];
       }
     } catch (error: any) {
       console.log(`⚠️  Could not check existing users: ${error.message}`);
     }
-    
+
     if (existingClerkUser) {
       const userId = existingClerkUser.id as string;
       console.log(`✅ User already exists in Clerk with ID: ${userId}`);
-      
+
       // Update metadata
       try {
         await client.users.updateUser(userId, {
@@ -186,7 +186,7 @@ async function setupAdminComplete() {
       } catch (error: any) {
         console.warn(`⚠️  Could not update metadata: ${error.message}`);
       }
-      
+
       // Remove MFA methods
       try {
         const mfaMethods = await (client.users as any).getMfaMethods({ userId });
@@ -203,7 +203,7 @@ async function setupAdminComplete() {
       } catch (mfaError: any) {
         // MFA API may not be available
       }
-      
+
       // Update password
       try {
         await client.users.updateUser(userId, {
@@ -213,11 +213,11 @@ async function setupAdminComplete() {
       } catch (error: any) {
         console.warn(`⚠️  Could not update password: ${error.message}`);
       }
-      
+
       console.log(`✅ Clerk user updated successfully!\n`);
     } else {
       console.log(`👤 Creating new user in Clerk...`);
-      
+
       const newUser = await client.users.createUser({
         emailAddress: [email.toLowerCase()],
         password: securePassword,
@@ -258,7 +258,7 @@ async function setupAdminComplete() {
     console.log(`   👤 Role: ${role}`);
     console.log(`\n⚠️  IMPORTANT: Disable MFA in Clerk Dashboard:`);
     console.log(`   Settings → Multi-factor Authentication → Disable "Require MFA"`);
-    
+
   } catch (error: any) {
     console.error('❌ Error setting up Clerk user:', error);
     if (error.errors) {

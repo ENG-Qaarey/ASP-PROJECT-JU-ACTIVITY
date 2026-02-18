@@ -9,7 +9,7 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { AttendanceStatus } from '../generated/prisma';
+import { AttendanceStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard } from '../authz/jwt-auth.guard';
 import { Roles } from '../authz/roles.decorator';

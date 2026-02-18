@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, ConflictException, Inject, forwardRef, ForbiddenException } from '@nestjs/common';
-import { NotificationType, UserRole } from '../generated/prisma';
+import { NotificationType, UserRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ActivitiesService } from '../activities/activities.service';
 import { NotificationsService } from '../notifications/notifications.service';
