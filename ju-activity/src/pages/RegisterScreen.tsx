@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, useRef, useEffect } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,8 @@ const RegisterScreen = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [phase, setPhase] = useState<'form' | 'verify'>('form');
-  const [verificationCodeInput, setVerificationCodeInput] = useState("");
+  const [verificationCode, setVerificationCode] = useState(["", "", "", "", "", ""]);
+  const verificationRefs = useRef<Array<HTMLInputElement | null>>([]);
   const [registeredEmail, setRegisteredEmail] = useState("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -128,18 +129,13 @@ const RegisterScreen = () => {
       });
 
       if (result.success) {
-        if (result.user) {
-          localStorage.setItem('user', JSON.stringify(result.user));
-        }
-        if (result.token) {
-          localStorage.setItem('token', result.token);
-        }
-
+        setRegisteredEmail(normalizedEmail);
+        setPhase('verify');
+        
         toast({
-          title: "Registered",
-          description: "Your account is ready. Redirecting to dashboard...",
+          title: "Registration Success",
+          description: "Please check your email for the 6-digit verification code.",
         });
-        window.location.href = '/student/dashboard';
       }
     } catch (error: any) {
       console.error("Registration error:", error);
@@ -201,10 +197,11 @@ const RegisterScreen = () => {
   };
 
   const handleVerifyCode = async () => {
-    if (!verificationCodeInput.trim()) {
+    const fullCode = verificationCode.join("");
+    if (fullCode.length !== 6) {
       toast({
         title: "Invalid code",
-        description: "Please enter the verification code sent to your email.",
+        description: "Please enter the 6-digit verification code sent to your email.",
         variant: "destructive",
       });
       return;
@@ -219,45 +216,34 @@ const RegisterScreen = () => {
       return;
     }
 
-    // Validate code format (usually 6 digits)
-    if (!/^\d{6}$/.test(verificationCodeInput.trim())) {
-      toast({
-        title: "Invalid Code Format",
-        description: "Please enter the 6-digit verification code.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsLoading(true);
     try {
       const result = await authApi.verifyEmail({
         email: registeredEmail,
-        code: verificationCodeInput.trim(),
+        code: fullCode,
       });
 
-      if (result.success && result.user) {
-        // Store user in localStorage for session management
+      if (result.success && result.user && result.token) {
         localStorage.setItem('user', JSON.stringify(result.user));
+        localStorage.setItem('token', result.token);
         
         toast({
           title: "Email Verified",
           description: "Welcome to JU Activity Hub! Your account has been created successfully.",
         });
         
-        // Redirect to dashboard
-        window.location.href = '/student/dashboard';
+        const role = result.user.role || 'student';
+        if (role === 'admin') window.location.href = '/admin/dashboard';
+        else if (role === 'coordinator') window.location.href = '/coordinator/dashboard';
+        else window.location.href = '/student/dashboard';
       } else {
-        throw new Error("Verification failed");
+        throw new Error("Verification failed - missing session data");
       }
     } catch (error: any) {
       console.error("Verification error:", error);
-      
       let errorMessage = "Code verification failed. Please try again.";
-      
       if (error.message) {
         const errorMsgLower = error.message.toLowerCase();
-        
         if (errorMsgLower.includes("incorrect") || errorMsgLower.includes("invalid code")) {
           errorMessage = "The verification code is incorrect. Please check and try again.";
         } else if (errorMsgLower.includes("expired")) {
@@ -266,7 +252,6 @@ const RegisterScreen = () => {
           errorMessage = error.message;
         }
       }
-      
       toast({
         title: "Verification Failed",
         description: errorMessage,
@@ -274,6 +259,25 @@ const RegisterScreen = () => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleVerificationChange = (index: number, value: string) => {
+    const cleanValue = value.replace(/\D/g, "");
+    if (!cleanValue && value !== "") return;
+
+    const newCode = [...verificationCode];
+    newCode[index] = cleanValue.slice(-1);
+    setVerificationCode(newCode);
+
+    if (cleanValue && index < 5) {
+      verificationRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleVerificationKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace" && !verificationCode[index] && index > 0) {
+      verificationRefs.current[index - 1]?.focus();
     }
   };
 
@@ -492,33 +496,32 @@ const RegisterScreen = () => {
                     Check your inbox and spam folder if you don't see it
                   </p>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="verificationCode" className="text-slate-700 font-semibold text-sm">Verification Code</Label>
-                  <div className="relative">
-                    <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-                    <Input
-                      id="verificationCode"
-                      value={verificationCodeInput}
-                      onChange={(e) => {
-                        // Only allow numbers and limit to 6 digits
-                        const value = e.target.value.replace(/\D/g, '').slice(0, 6);
-                        setVerificationCodeInput(value);
-                      }}
-                      placeholder="000000"
-                      maxLength={6}
-                      className="pl-10 text-center text-2xl tracking-widest bg-white text-slate-900 border-transparent focus-visible:border-sky-500 focus-visible:ring-sky-500 h-14 transition-all"
-                      autoComplete="one-time-code"
-                    />
+                <div className="space-y-4">
+                  <Label className="text-slate-700 font-semibold text-sm block text-center">Verification Code</Label>
+                  <div className="flex justify-between gap-2 sm:gap-4">
+                    {verificationCode.map((digit, index) => (
+                      <input
+                        key={index}
+                        ref={(el) => (verificationRefs.current[index] = el)}
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={1}
+                        value={digit}
+                        onChange={(e) => handleVerificationChange(index, e.target.value)}
+                        onKeyDown={(e) => handleVerificationKeyDown(index, e)}
+                        className="w-10 h-12 sm:w-12 sm:h-14 text-center text-xl sm:text-2xl font-bold rounded-xl border-2 border-slate-200 bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-200 outline-none transition-all"
+                      />
+                    ))}
                   </div>
                   <p className="text-xs text-muted-foreground text-center">
-                    6-digit code
+                    Enter the 6-digit security code
                   </p>
                 </div>
                 <Button
                   type="button"
                   className="w-full"
                   size="lg"
-                  disabled={isLoading || verificationCodeInput.trim().length !== 6}
+                  disabled={isLoading || verificationCode.join("").length !== 6}
                   onClick={handleVerifyCode}
                 >
                   {isLoading ? 'Verifying...' : 'Verify Email'}
@@ -539,7 +542,7 @@ const RegisterScreen = () => {
                     className="px-0 text-sm"
                     onClick={() => {
                       setPhase('form');
-                      setVerificationCodeInput('');
+                      setVerificationCode(["", "", "", "", "", ""]);
                     }}
                     disabled={isLoading}
                   >

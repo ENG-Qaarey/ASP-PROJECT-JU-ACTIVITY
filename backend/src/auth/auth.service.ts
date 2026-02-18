@@ -11,6 +11,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import * as jwt from 'jsonwebtoken';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class AuthService {
@@ -19,6 +20,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
     private readonly auditLogs: AuditLogsService,
+    private readonly mailService: MailService,
   ) { }
 
   private signToken(user: { id: string; email: string; role: any; passwordVersion: number }) {
@@ -82,20 +84,9 @@ export class AuthService {
 
     // Email verification is disabled. For backward compatibility with existing
     // accounts created under the old flow, auto-activate students on login.
+    // Require active status for all roles
     if (user.status !== 'active') {
-      if (user.role === 'student') {
-        await this.prisma.user.update({
-          where: { id: user.id },
-          data: {
-            status: 'active',
-            emailVerified: true,
-            emailVerificationCodeHash: null,
-            emailVerificationCodeExpiresAt: null,
-          },
-        });
-      } else {
-        throw new UnauthorizedException('Account is inactive');
-      }
+      throw new UnauthorizedException('Please verify your email to activate your account');
     }
 
     const token = this.signToken(user);
@@ -126,16 +117,37 @@ export class AuthService {
       throw new BadRequestException('Only student registration is allowed');
     }
 
+    // Generate 6-digit verification code
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const verificationCodeHash = await bcrypt.hash(verificationCode, 10);
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
     const normalizedEmail = this.normalizeEmail(payload.email);
     const createdUser = await this.usersService.create({
       ...payload,
       email: normalizedEmail,
       role,
-      status: 'active',
-      emailVerified: true,
+      status: 'inactive',
+      emailVerified: false,
     });
 
-    const createdForToken = await this.prisma.user.findUnique({
+    // Save verification code details
+    await this.prisma.user.update({
+      where: { id: createdUser.id },
+      data: {
+        emailVerificationCodeHash: verificationCodeHash,
+        emailVerificationCodeExpiresAt: expiresAt,
+      },
+    });
+
+    // Send verification email
+    try {
+      await this.mailService.sendVerificationCode(normalizedEmail, verificationCode);
+    } catch (error) {
+      console.error('Failed to send registration verification email:', error);
+    }
+
+    const createdForToken = await this.prisma.user.findFirst({
       where: { id: createdUser.id },
       select: { id: true, email: true, role: true, passwordVersion: true },
     });
@@ -161,7 +173,16 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email');
     }
 
-    // Email verification is disabled. Treat this endpoint as an account activation.
+    // Verify code
+    if (!user.emailVerificationCodeExpiresAt || user.emailVerificationCodeExpiresAt < new Date()) {
+      throw new BadRequestException('Verification code expired');
+    }
+
+    const isValid = await bcrypt.compare(code, user.emailVerificationCodeHash || '');
+    if (!isValid) {
+      throw new BadRequestException('Invalid verification code');
+    }
+
     const updated = await this.prisma.user.update({
       where: { id: user.id },
       data: {
@@ -172,7 +193,14 @@ export class AuthService {
       },
     });
 
-    return { success: true, user: this.sanitizeUser(updated) };
+    const token = this.signToken({
+      id: updated.id,
+      email: updated.email,
+      role: updated.role,
+      passwordVersion: updated.passwordVersion,
+    });
+
+    return { success: true, user: this.sanitizeUser(updated), token };
   }
 
   async resendVerification(email: string) {
@@ -186,18 +214,22 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email');
     }
 
-    // Email verification is disabled; nothing to resend.
-    // Keep endpoint for frontend compatibility.
+    // Generate new code
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const verificationCodeHash = await bcrypt.hash(verificationCode, 10);
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
     if (!user.emailVerified || user.status !== 'active') {
       await this.prisma.user.update({
         where: { id: user.id },
         data: {
-          emailVerified: true,
-          status: 'active',
-          emailVerificationCodeHash: null,
-          emailVerificationCodeExpiresAt: null,
+          emailVerificationCodeHash: verificationCodeHash,
+          emailVerificationCodeExpiresAt: expiresAt,
         },
       });
+
+      // Send email
+      await this.mailService.sendVerificationCode(user.email, verificationCode);
     }
 
     return { success: true };
@@ -323,26 +355,40 @@ export class AuthService {
       message: `Password reset code generated for ${user.email}`,
     });
 
-    // In a real app, send email here. For now, log to console.
-    console.log('-----------------------------------------');
-    console.log(`PASSWORD RESET CODE FOR ${user.email}: ${resetCode}`);
-    console.log('-----------------------------------------');
+    // Send reset code via email
+    try {
+      await this.mailService.sendVerificationCode(user.email, resetCode);
+    } catch (error) {
+      console.error('Failed to send password reset email:', error);
+      // We don't throw here to avoid revealing user existence/error state to client
+    }
 
     return { success: true };
   }
 
-  async resetPassword(payload: { email: string; newPassword: string }) {
-    const { email, newPassword } = payload;
+  async resetPassword(payload: { email: string; code: string; newPassword: string }) {
+    const { email, code, newPassword } = payload;
 
-    if (!email || !newPassword) {
+    if (!email || !code || !newPassword) {
       throw new BadRequestException('Missing required fields');
     }
 
     const normalizedEmail = this.normalizeEmail(email);
     const user = await this.usersService.findByEmail(normalizedEmail);
 
-    if (!user) {
-      throw new BadRequestException('User not found');
+    if (!user || !user.resetPasswordCodeHash || !user.resetPasswordCodeExpiresAt) {
+      throw new BadRequestException('No active reset request found');
+    }
+
+    // Verify expiration
+    if (user.resetPasswordCodeExpiresAt < new Date()) {
+      throw new BadRequestException('Reset code expired');
+    }
+
+    // Verify code
+    const isCodeValid = await bcrypt.compare(code, user.resetPasswordCodeHash);
+    if (!isCodeValid) {
+      throw new BadRequestException('Invalid reset code');
     }
 
     const passwordHash = await bcrypt.hash(newPassword, 10);
@@ -358,12 +404,12 @@ export class AuthService {
     });
 
     await this.auditLogs.create({
-      action: 'PASSWORD_RESET_SUCCESS',
+      action: 'USER_UPDATE',
       actorId: user.id,
       targetId: user.id,
       entity: 'user',
       entityId: user.id,
-      message: `Password successfully reset (direct) for ${user.email}`,
+      message: `Password reset successfully for ${user.email}`,
     });
 
     console.log(`✅ PASSWORD RESET SUCCESSFUL FOR: ${user.email}`);

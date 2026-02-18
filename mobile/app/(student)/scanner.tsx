@@ -3,7 +3,9 @@ import { StyleSheet, Text, View, TouchableOpacity, Alert, Dimensions } from 'rea
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
-import { X, Zap, MapPin, ShieldCheck, RefreshCw } from 'lucide-react-native';
+import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
+import { runOnJS } from 'react-native-reanimated';
+import { X, Zap, MapPin, ShieldCheck, RefreshCw, ZoomIn, ZoomOut } from 'lucide-react-native';
 import { client } from '@/src/lib/api';
 import { useColorScheme } from '@/src/hooks/use-color-scheme';
 import { Colors } from '@/src/data/theme';
@@ -17,10 +19,26 @@ export default function AttendanceScanner() {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [zoom, setZoom] = useState(0);
   const [locationPermission, setLocationPermission] = useState<boolean | null>(null);
   const router = useRouter();
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
+  const [baseZoom, setBaseZoom] = useState(0);
+
+  const pinchGesture = Gesture.Pinch()
+    .onBegin(() => {
+      runOnJS(setBaseZoom)(zoom);
+    })
+    .onUpdate((event) => {
+      const scale = event.scale;
+      const velocity = event.velocity;
+      // Adjust sensitivity and limits
+      let newZoom = baseZoom + (scale - 1) * 0.5;
+      if (newZoom < 0) newZoom = 0;
+      if (newZoom > 1) newZoom = 1;
+      runOnJS(setZoom)(newZoom);
+    });
 
   useEffect(() => {
     (async () => {
@@ -89,7 +107,13 @@ export default function AttendanceScanner() {
       Alert.alert(
         "Success",
         "Your attendance has been marked successfully!",
-        [{ text: "OK", onPress: () => router.back() }]
+        [{ text: "OK", onPress: () => {
+          if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace('/(student)/(tabs)/dashboard');
+          }
+        } }]
       );
     } catch (error: any) {
       console.error('QR Scan error:', error);
@@ -106,54 +130,78 @@ export default function AttendanceScanner() {
   };
 
   return (
-    <View style={styles.container}>
-      <CameraView
-        style={StyleSheet.absoluteFillObject}
-        onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
-        barcodeScannerSettings={{
-          barcodeTypes: ["qr"],
-        }}
-      >
-        <View style={styles.overlay}>
-          <TouchableOpacity 
-            style={styles.closeButton} 
-            onPress={() => router.back()}
+    <GestureDetector gesture={pinchGesture}>
+      <View style={styles.container}>
+          <CameraView
+            style={StyleSheet.absoluteFillObject}
+            onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+            zoom={zoom}
+            barcodeScannerSettings={{
+              barcodeTypes: ["qr"],
+            }}
           >
-            <X size={28} color="#FFF" />
-          </TouchableOpacity>
+            <View style={styles.overlay}>
+              <TouchableOpacity 
+                style={styles.closeButton} 
+                onPress={() => {
+                  if (router.canGoBack()) {
+                    router.back();
+                  } else {
+                    router.replace('/(student)/(tabs)/dashboard');
+                  }
+                }}
+              >
+                <X size={28} color="#FFF" />
+              </TouchableOpacity>
 
-          <View style={styles.scanContainer}>
-            <View style={styles.scanFrame} />
-            <ThemedText style={styles.scanText}>
-              Scan the activity QR code
-            </ThemedText>
-          </View>
+              <View style={styles.scanContainer}>
+                <View style={styles.scanFrame} />
+                <ThemedText style={styles.scanText}>
+                  Scan the activity QR code
+                </ThemedText>
+              </View>
 
-          <View style={styles.infoContainer}>
-            <View style={styles.infoRow}>
-              <MapPin size={18} color={locationPermission ? "#10B981" : "#EF4444"} />
-              <Text style={styles.infoText}>
-                {locationPermission ? "Location enabled" : "Location required"}
-              </Text>
+              <View style={styles.zoomContainer}>
+                <TouchableOpacity 
+                  style={styles.zoomButton} 
+                  onPress={() => setZoom(Math.min(zoom + 0.1, 1))}
+                >
+                  <ZoomIn size={24} color="#FFF" />
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.zoomButton} 
+                  onPress={() => setZoom(Math.max(zoom - 0.1, 0))}
+                >
+                  <ZoomOut size={24} color="#FFF" />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.infoContainer}>
+                <View style={styles.infoRow}>
+                  <MapPin size={18} color={locationPermission ? "#10B981" : "#EF4444"} />
+                  <Text style={styles.infoText}>
+                    {locationPermission ? "Location enabled" : "Location required"}
+                  </Text>
+                </View>
+                <View style={styles.infoRow}>
+                  <Zap size={18} color="#F59E0B" />
+                  <Text style={styles.infoText}>Instant Check-in</Text>
+                </View>
+              </View>
+              
+              {scanned && (
+                <TouchableOpacity 
+                  style={styles.reScanButton} 
+                  onPress={() => setScanned(false)}
+                >
+                  <RefreshCw size={20} color="#FFF" style={{ marginRight: 10 }} />
+                  <Text style={styles.buttonText}>Scan Again</Text>
+                </TouchableOpacity>
+              )}
             </View>
-            <View style={styles.infoRow}>
-              <Zap size={18} color="#F59E0B" />
-              <Text style={styles.infoText}>Instant Check-in</Text>
-            </View>
-          </View>
-          
-          {scanned && (
-            <TouchableOpacity 
-              style={styles.reScanButton} 
-              onPress={() => setScanned(false)}
-            >
-              <RefreshCw size={20} color="#FFF" style={{ marginRight: 10 }} />
-              <Text style={styles.buttonText}>Scan Again</Text>
-            </TouchableOpacity>
-          )}
+          </CameraView>
         </View>
-      </CameraView>
-    </View>
+    </GestureDetector>
   );
 }
 
@@ -244,5 +292,22 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     position: 'absolute',
     bottom: 40,
+  },
+  zoomContainer: {
+    position: 'absolute',
+    right: 20,
+    top: '35%',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    borderRadius: 30,
+    padding: 10,
+    gap: 20,
+  },
+  zoomButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
   }
 });

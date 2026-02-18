@@ -34,9 +34,9 @@ model User {
   auditLogsAsActor               AuditLog[]     @relation("AuditActor")
   auditLogsAsTarget              AuditLog[]     @relation("AuditTarget")
   coordinatorProfile             Coordinator?
-  notifications                  Notification[]
-  sentMessages                   Message[]      @relation("SentMessages")
   receivedMessages               Message[]      @relation("ReceivedMessages")
+  sentMessages                   Message[]      @relation("SentMessages")
+  notifications                  Notification[]
   pushTokens                     PushToken[]
   reviews                        Review[]
 
@@ -47,35 +47,26 @@ model User {
 }
 
 model Message {
-  id        String   @id @default(uuid())
-  content   String
-  type      MessageType @default(text)
-  metadata  Json?
-  senderId  String
+  id         String      @id @default(uuid())
+  content    String
+  type       MessageType @default(text)
+  metadata   Json?
+  senderId   String
   receiverId String?
-  groupId   String?
-  createdAt DateTime @default(now())
-  read      Boolean  @default(false)
-  replyTo   Json?
-  hiddenBy  String[] @default([])
-  isDeleted Boolean  @default(false)
-
-  sender    User     @relation("SentMessages", fields: [senderId], references: [id])
-  receiver  User?    @relation("ReceivedMessages", fields: [receiverId], references: [id])
-  activity  Activity? @relation(fields: [groupId], references: [id])
+  groupId    String?
+  createdAt  DateTime    @default(now())
+  read       Boolean     @default(false)
+  replyTo    Json?
+  hiddenBy   String[]    @default([])
+  isDeleted  Boolean     @default(false)
+  activity   Activity?   @relation(fields: [groupId], references: [id])
+  receiver   User?       @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  sender     User        @relation("SentMessages", fields: [senderId], references: [id])
 
   @@index([senderId])
   @@index([receiverId])
   @@index([groupId])
   @@map("messages")
-}
-
-enum MessageType {
-  text
-  audio
-  image
-  video
-  file
 }
 
 model Admin {
@@ -127,18 +118,15 @@ model Activity {
   enrolled        Int            @default(0)
   coordinatorId   String
   coordinatorName String
-  image           String?        // Added for group profile image
   status          ActivityStatus @default(upcoming)
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
   category        String
-  
-  // QR & Location Attendance fields
+  image           String?
   latitude        Float?
   longitude       Float?
-  radius          Int?           @default(100) // Radius in meters for check-in
   qrCodeSecret    String?        @default(uuid())
-
+  radius          Int?           @default(100)
   coordinator     User           @relation("CoordinatorActivities", fields: [coordinatorId], references: [id])
   applications    Application[]
   attendance      Attendance[]
@@ -161,9 +149,9 @@ model Application {
   appliedAt     DateTime          @db.Date
   status        ApplicationStatus @default(pending)
   notes         String?
-  isAdmin       Boolean           @default(false) // Added for group admin privileges
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
+  isAdmin       Boolean           @default(false)
   activity      Activity          @relation(fields: [activityId], references: [id])
   student       User              @relation(fields: [studentId], references: [id])
   attendance    Attendance?
@@ -240,6 +228,43 @@ model AuditLog {
   @@map("audit_logs")
 }
 
+model PushToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_tokens")
+}
+
+model Review {
+  id         String   @id @default(uuid())
+  rating     Int
+  comment    String?
+  studentId  String
+  activityId String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  activity   Activity @relation(fields: [activityId], references: [id])
+  student    User     @relation(fields: [studentId], references: [id])
+
+  @@unique([studentId, activityId])
+  @@index([studentId])
+  @@index([activityId])
+  @@index([rating])
+  @@map("reviews")
+}
+
+enum MessageType {
+  text
+  audio
+  image
+  video
+  file
+}
+
 enum UserRole {
   student
   coordinator
@@ -261,6 +286,7 @@ enum ApplicationStatus {
   pending
   approved
   rejected
+  waitlisted
 }
 
 enum NotificationType {
@@ -268,6 +294,7 @@ enum NotificationType {
   rejection
   announcement
   reminder
+  waitlist
 }
 
 enum AttendanceStatus {
@@ -292,33 +319,4 @@ enum AuditAction {
   ATTENDANCE_MARK
   NOTIFICATION_CREATE
   NOTIFICATION_MARK_READ
-}
-
-model PushToken {
-  id        String   @id @default(uuid())
-  token     String   @unique
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-
-  @@index([userId])
-  @@map("push_tokens")
-}
-
-model Review {
-  id          String   @id @default(uuid())
-  rating      Int      // 1-5
-  comment     String?
-  studentId   String
-  activityId  String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  student     User     @relation(fields: [studentId], references: [id])
-  activity    Activity @relation(fields: [activityId], references: [id])
-
-  @@unique([studentId, activityId])
-  @@index([studentId])
-  @@index([activityId])
-  @@index([rating])
-  @@map("reviews")
 }

@@ -326,14 +326,16 @@ exports.ActivityStatus = exports.$Enums.ActivityStatus = {
 exports.ApplicationStatus = exports.$Enums.ApplicationStatus = {
   pending: 'pending',
   approved: 'approved',
-  rejected: 'rejected'
+  rejected: 'rejected',
+  waitlisted: 'waitlisted'
 };
 
 exports.NotificationType = exports.$Enums.NotificationType = {
   approval: 'approval',
   rejection: 'rejection',
   announcement: 'announcement',
-  reminder: 'reminder'
+  reminder: 'reminder',
+  waitlist: 'waitlist'
 };
 
 exports.AttendanceStatus = exports.$Enums.AttendanceStatus = {

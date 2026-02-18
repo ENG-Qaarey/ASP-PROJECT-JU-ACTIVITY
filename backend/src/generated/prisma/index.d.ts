@@ -118,7 +118,8 @@ export type ActivityStatus = (typeof ActivityStatus)[keyof typeof ActivityStatus
 export const ApplicationStatus: {
   pending: 'pending',
   approved: 'approved',
-  rejected: 'rejected'
+  rejected: 'rejected',
+  waitlisted: 'waitlisted'
 };
 
 export type ApplicationStatus = (typeof ApplicationStatus)[keyof typeof ApplicationStatus]
@@ -128,7 +129,8 @@ export const NotificationType: {
   approval: 'approval',
   rejection: 'rejection',
   announcement: 'announcement',
-  reminder: 'reminder'
+  reminder: 'reminder',
+  waitlist: 'waitlist'
 };
 
 export type NotificationType = (typeof NotificationType)[keyof typeof NotificationType]

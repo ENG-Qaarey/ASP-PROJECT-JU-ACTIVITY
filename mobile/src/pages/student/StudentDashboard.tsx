@@ -5,7 +5,7 @@ import {
   Calendar, Users, Award, Sparkles, Bell, 
   Search, TrendingUp, MapPin, Clock, ChevronRight,
   Zap, Star, ShieldCheck, LayoutGrid, Rocket, Target,
-  Flame, BookmarkCheck
+  Flame, BookmarkCheck, QrCode
 } from 'lucide-react-native';
 import { useColorScheme } from '@/src/hooks/use-color-scheme';
 import { Colors } from '@/src/data/theme';
@@ -180,7 +180,7 @@ export default function StudentDashboard() {
                 style={[styles.notifBtn, { backgroundColor: theme.card, borderColor: theme.border, marginLeft: 10 }]}
                 onPress={() => router.push('/(student)/scanner')}
             >
-                <Zap size={22} color={theme.primary} />
+                <QrCode size={22} color={theme.primary} />
             </TouchableOpacity>
         </View>
 

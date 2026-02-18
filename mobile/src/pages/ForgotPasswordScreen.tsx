@@ -11,12 +11,14 @@ import {
   Animated,
   Easing,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import { Mail, Lock, ArrowLeft, ShieldCheck, Eye, EyeOff } from 'lucide-react-native';
+import { Mail, Lock, ArrowLeft, ShieldCheck, Eye, EyeOff, Hash } from 'lucide-react-native';
 import { client } from '@/src/lib/api';
+import { useToast } from '@/src/context/ToastContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -66,15 +68,20 @@ const FloatingOrb = ({ size, x, y, duration = 6000, delay = 0 }: any) => {
 
 export default function ForgotPassword() {
   const router = useRouter();
+  const { showToast } = useToast();
+  
+  const [step, setStep] = useState(1); // 1: Email, 2: Code & New Password
   const [email, setEmail] = useState('');
+  const [code, setCode] = useState(['', '', '', '', '', '']);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPasswords, setShowPasswords] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
+  const [submitted, setSubmitted] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(0));
+  
+  const inputs = useRef<Array<TextInput | null>>([]);
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -82,30 +89,70 @@ export default function ForgotPassword() {
       duration: 800,
       useNativeDriver: true,
     }).start();
-  }, []);
+  }, [step]);
 
-  const handleReset = async () => {
-    if (!email || !newPassword || !confirmPassword) {
-      setError('Please fill in all fields');
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-    if (newPassword.length < 6) {
-      setError('Password must be at least 6 characters');
+  const handleSendCode = async () => {
+    if (!email) {
+      showToast({ message: 'Please enter your email', type: 'error' });
       return;
     }
 
     setLoading(true);
-    setError('');
+    try {
+      await client.post('/auth/forgot-password', { email }, true);
+      showToast({ message: 'Reset code sent to your email!', type: 'success' });
+      setStep(2);
+      fadeAnim.setValue(0);
+    } catch (err: any) {
+      showToast({ message: err.message || 'Failed to send code', type: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInputChange = (text: string, index: number) => {
+    const newCode = [...code];
+    newCode[index] = text;
+    setCode(newCode);
+
+    if (text.length === 1 && index < 5) {
+      inputs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleKeyPress = (e: any, index: number) => {
+    if (e.nativeEvent.key === 'Backspace' && !code[index] && index > 0) {
+      inputs.current[index - 1]?.focus();
+    }
+  };
+
+  const handleReset = async () => {
+    const fullCode = code.join('');
+    if (fullCode.length !== 6 || !newPassword || !confirmPassword) {
+      showToast({ message: 'Please fill in all fields', type: 'error' });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      showToast({ message: 'Passwords do not match', type: 'error' });
+      return;
+    }
+    if (newPassword.length < 8) {
+      showToast({ message: 'Password must be at least 8 characters', type: 'error' });
+      return;
+    }
+
+    setLoading(true);
 
     try {
-      await client.post('/auth/reset-password', { email, newPassword }, true);
+      await client.post('/auth/reset-password', { 
+        email, 
+        code: fullCode, 
+        newPassword 
+      }, true);
       setSubmitted(true);
+      showToast({ message: 'Password reset successful!', type: 'success' });
     } catch (err: any) {
-      setError(err.message || 'Reset failed');
+      showToast({ message: err.message || 'Reset failed', type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -130,7 +177,7 @@ export default function ForgotPassword() {
             </View>
             <Text style={styles.successTitle}>Reset Successful</Text>
             <Text style={styles.successDescription}>
-              Your password has been updated. You can now use your new password to sign in to your account.
+              Your password has been updated. You can now use your new password to sign in.
             </Text>
             <TouchableOpacity 
               style={styles.button}
@@ -164,7 +211,7 @@ export default function ForgotPassword() {
 
       <TouchableOpacity 
         style={styles.backBtn}
-        onPress={() => router.back()}
+        onPress={() => step === 1 ? router.back() : setStep(1)}
         activeOpacity={0.7}
       >
         <ArrowLeft size={24} color="#0C4A6E" />
@@ -180,18 +227,22 @@ export default function ForgotPassword() {
         >
           <Animated.View style={[styles.main, { opacity: fadeAnim }]}>
             <View style={styles.header}>
-              <Text style={styles.title}>New Password</Text>
-              <Text style={styles.subtitle}>Secure your account by choosing a fresh password below</Text>
+              <Text style={styles.title}>{step === 1 ? 'Forgot Password' : 'Reset Password'}</Text>
+              <Text style={styles.subtitle}>
+                {step === 1 
+                  ? 'Enter your registered email to receive a secure recovery code' 
+                  : `Enter the 6-digit code sent to ${email} and choose a new password`}
+              </Text>
             </View>
 
             <BlurView intensity={90} tint="light" style={styles.glass}>
-              <View style={styles.inputStack}>
+              {step === 1 ? (
                 <View style={styles.field}>
-                  <Text style={styles.label}>Registered Email</Text>
+                  <Text style={styles.label}>Email Address</Text>
                   <View style={styles.inputContainer}>
                     <Mail size={18} color="#94A3B8" style={styles.inputIcon} />
                     <TextInput
-                      placeholder="e.g. jazeera@example.com"
+                      placeholder="e.g. name@gmail.com"
                       placeholderTextColor="#94A3B8"
                       style={styles.input}
                       value={email}
@@ -200,63 +251,94 @@ export default function ForgotPassword() {
                       keyboardType="email-address"
                     />
                   </View>
+                  <TouchableOpacity 
+                    style={styles.button}
+                    onPress={handleSendCode}
+                    disabled={loading}
+                    activeOpacity={0.9}
+                  >
+                    <LinearGradient
+                      colors={['#0284C7', '#0EA5E9']}
+                      style={styles.buttonGrad}
+                    >
+                      {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.buttonText}>Send Recovery Code</Text>}
+                    </LinearGradient>
+                  </TouchableOpacity>
                 </View>
-
-                <View style={styles.field}>
-                  <Text style={styles.label}>Create Password</Text>
-                  <View style={styles.inputContainer}>
-                    <Lock size={18} color="#94A3B8" style={styles.inputIcon} />
-                    <TextInput
-                      placeholder="Minimum 6 characters"
-                      placeholderTextColor="#94A3B8"
-                      style={styles.input}
-                      secureTextEntry={!showPasswords}
-                      value={newPassword}
-                      onChangeText={setNewPassword}
-                    />
+              ) : (
+                <View style={styles.inputStack}>
+                  <Text style={styles.label}>6-Digit Recovery Code</Text>
+                  <View style={styles.codeContainer}>
+                    {code.map((digit, index) => (
+                      <TextInput
+                        key={index}
+                        ref={(ref) => (inputs.current[index] = ref)}
+                        style={[styles.codeInput, digit ? styles.codeInputActive : null]}
+                        maxLength={1}
+                        keyboardType="number-pad"
+                        value={digit}
+                        onChangeText={(text) => handleInputChange(text, index)}
+                        onKeyPress={(e) => handleKeyPress(e, index)}
+                      />
+                    ))}
                   </View>
-                </View>
 
-                <View style={styles.field}>
-                  <Text style={styles.label}>Confirm Password</Text>
-                  <View style={styles.inputContainer}>
-                    <Lock size={18} color="#94A3B8" style={styles.inputIcon} />
-                    <TextInput
-                      placeholder="Repeat your password"
-                      placeholderTextColor="#94A3B8"
-                      style={styles.input}
-                      secureTextEntry={!showPasswords}
-                      value={confirmPassword}
-                      onChangeText={setConfirmPassword}
-                    />
-                    <TouchableOpacity onPress={() => setShowPasswords(!showPasswords)} style={styles.eyeIcon}>
-                      {showPasswords ? <EyeOff size={18} color="#94A3B8" /> : <Eye size={18} color="#94A3B8" />}
-                    </TouchableOpacity>
+                  <View style={styles.field}>
+                    <Text style={styles.label}>New Password</Text>
+                    <View style={styles.inputContainer}>
+                      <Lock size={18} color="#94A3B8" style={styles.inputIcon} />
+                      <TextInput
+                        placeholder="At least 8 characters"
+                        placeholderTextColor="#94A3B8"
+                        style={styles.input}
+                        secureTextEntry={!showPasswords}
+                        value={newPassword}
+                        onChangeText={setNewPassword}
+                      />
+                    </View>
                   </View>
-                </View>
-              </View>
 
-              {error ? (
-                <View style={styles.errorBox}>
-                  <Text style={styles.errorText}>{error}</Text>
-                </View>
-              ) : null}
+                  <View style={styles.field}>
+                    <Text style={styles.label}>Confirm New Password</Text>
+                    <View style={styles.inputContainer}>
+                      <Lock size={18} color="#94A3B8" style={styles.inputIcon} />
+                      <TextInput
+                        placeholder="Repeat your new password"
+                        placeholderTextColor="#94A3B8"
+                        style={styles.input}
+                        secureTextEntry={!showPasswords}
+                        value={confirmPassword}
+                        onChangeText={setConfirmPassword}
+                      />
+                      <TouchableOpacity onPress={() => setShowPasswords(!showPasswords)} style={styles.eyeIcon}>
+                        {showPasswords ? <EyeOff size={18} color="#94A3B8" /> : <Eye size={18} color="#94A3B8" />}
+                      </TouchableOpacity>
+                    </View>
+                  </View>
 
-              <TouchableOpacity 
-                style={styles.button}
-                onPress={handleReset}
-                disabled={loading}
-                activeOpacity={0.9}
-              >
-                <LinearGradient
-                  colors={['#0284C7', '#0EA5E9']}
-                  style={styles.buttonGrad}
-                >
-                  <Text style={styles.buttonText}>
-                    {loading ? 'Updating...' : 'Set New Password'}
-                  </Text>
-                </LinearGradient>
-              </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[styles.button, { marginTop: 10 }]}
+                    onPress={handleReset}
+                    disabled={loading}
+                    activeOpacity={0.9}
+                  >
+                    <LinearGradient
+                      colors={['#0284C7', '#0EA5E9']}
+                      style={styles.buttonGrad}
+                    >
+                      {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.buttonText}>Reset Password</Text>}
+                    </LinearGradient>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                    style={styles.resendBtn}
+                    onPress={handleSendCode}
+                    disabled={loading}
+                  >
+                    <Text style={styles.resendText}>Didn't get the code? Resend</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
             </BlurView>
           </Animated.View>
         </ScrollView>
@@ -269,8 +351,6 @@ const styles = StyleSheet.create({
   orb: {
     position: 'absolute',
     borderRadius: 999,
-    backgroundColor: '#FFFFFF',
-    opacity: 0.8,
   },
   scrollContent: {
     flexGrow: 1,
@@ -354,8 +434,30 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   eyeIcon: { padding: 12 },
+  codeContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginVertical: 10,
+  },
+  codeInput: {
+    width: 42,
+    height: 52,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(203,213,225,0.5)',
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#0F172A',
+    textAlign: 'center',
+  },
+  codeInputActive: {
+    borderColor: '#0EA5E9',
+    backgroundColor: '#FFFFFF',
+    elevation: 4,
+  },
   button: {
-    marginTop: 32,
+    marginTop: 20,
     borderRadius: 18,
     overflow: 'hidden',
     elevation: 4,
@@ -367,6 +469,8 @@ const styles = StyleSheet.create({
   buttonGrad: {
     paddingVertical: 16,
     alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 56,
   },
   buttonText: {
     color: '#FFFFFF',
@@ -374,19 +478,14 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: 0.5,
   },
-  errorBox: {
+  resendBtn: {
     marginTop: 16,
-    backgroundColor: 'rgba(254,226,226,0.8)',
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(220,38,38,0.2)',
+    alignItems: 'center',
   },
-  errorText: {
-    color: '#DC2626',
-    fontSize: 13,
-    fontWeight: '800',
-    textAlign: 'center',
+  resendText: {
+    color: '#0284C7',
+    fontWeight: '700',
+    fontSize: 14,
   },
   successIconBox: {
     alignItems: 'center',

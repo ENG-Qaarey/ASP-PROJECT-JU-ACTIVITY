@@ -31,6 +31,8 @@ export const ENDPOINTS = {
         LOGIN: '/auth/login',
         REGISTER: '/auth/register',
         ME: '/auth/me',
+        VERIFY_EMAIL: '/auth/verify-email',
+        RESEND_VERIFICATION: '/auth/resend-verification',
     },
     ACTIVITIES: '/activities',
     CATEGORIES: '/categories',

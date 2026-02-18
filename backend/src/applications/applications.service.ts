@@ -3,6 +3,7 @@ import { NotificationType, UserRole } from '../generated/prisma';
 import { PrismaService } from '../prisma/prisma.service';
 import { ActivitiesService } from '../activities/activities.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { MailService } from '../mail/mail.service';
 
 type ActorContext = { id: string; role: UserRole };
 
@@ -13,7 +14,8 @@ export class ApplicationsService {
     @Inject(forwardRef(() => ActivitiesService))
     private activitiesService: ActivitiesService,
     private notificationsService: NotificationsService,
-  ) {}
+    private mailService: MailService,
+  ) { }
 
   async findAll(
     status?: string,
@@ -142,9 +144,10 @@ export class ApplicationsService {
     if (activity.status === 'completed') {
       throw new ConflictException('Activity is completed. You can no longer apply.');
     }
-    if (activity.enrolled >= activity.capacity) {
-      throw new ConflictException('Activity is at full capacity');
-    }
+
+    // Determine status: if full, go to waitlist
+    const isFull = activity.enrolled >= activity.capacity;
+    const initialStatus = isFull ? 'waitlisted' : 'pending';
 
     const application = await this.prisma.application.create({
       data: {
@@ -153,7 +156,7 @@ export class ApplicationsService {
         activityId: applicationData.activityId,
         activityTitle: applicationData.activityTitle,
         appliedAt: new Date(),
-        status: 'pending',
+        status: initialStatus as any,
       },
     });
 
@@ -167,24 +170,39 @@ export class ApplicationsService {
       ]);
 
       const notifications = recipients.map((recipientId) => {
-        // Student gets a confirmation; staff get a pending alert.
         const isStudentRecipient = recipientId === applicationData.studentId;
+        let title = 'Application Submitted';
+        let message = `Your application for "${applicationData.activityTitle}" has been submitted and is pending review.`;
+        let type: NotificationType = NotificationType.announcement;
+
+        if (initialStatus === 'waitlisted') {
+          if (isStudentRecipient) {
+            title = 'Joined Waitlist';
+            message = `The activity "${applicationData.activityTitle}" is currently full. You've been added to the waitlist.`;
+            type = NotificationType.waitlist as any;
+          } else {
+            title = 'New Waitlist Participant';
+            message = `${applicationData.studentName} joined the waitlist for "${applicationData.activityTitle}".`;
+            type = NotificationType.waitlist as any;
+          }
+        } else if (!isStudentRecipient) {
+          title = 'New application pending';
+          message = `${applicationData.studentName} applied for "${applicationData.activityTitle}". Review is required.`;
+          type = NotificationType.reminder;
+        }
 
         return {
           recipientId,
           senderRole: UserRole.student,
-          type: isStudentRecipient ? NotificationType.announcement : NotificationType.reminder,
-          title: isStudentRecipient ? 'Application Submitted' : 'New application pending',
-          message: isStudentRecipient
-            ? `Your application for "${applicationData.activityTitle}" has been submitted and is pending review.`
-            : `${applicationData.studentName} applied for "${applicationData.activityTitle}". Review is required.`,
+          type,
+          title,
+          message,
         };
       });
 
       await this.notificationsService.createBatch(notifications);
     } catch (notificationError) {
-      // Do not block application creation if notifications fail.
-      console.warn('Failed to create application-submitted notification:', notificationError);
+      console.warn('Failed to create application notifications:', notificationError);
     }
 
     return application;
@@ -213,7 +231,7 @@ export class ApplicationsService {
 
     // Create notification for the student
     const notificationType = status === 'approved' ? NotificationType.approval : NotificationType.rejection;
-    const notificationTitle = status === 'approved' 
+    const notificationTitle = status === 'approved'
       ? 'Application Approved'
       : 'Application Rejected';
     const notificationMessage = status === 'approved'
@@ -251,7 +269,69 @@ export class ApplicationsService {
 
     await this.notificationsService.createBatch(batch);
 
+    // Send email notification to student
+    try {
+      if (application.student?.email) {
+        await this.mailService.sendApplicationStatusUpdate(
+          application.student.email,
+          application.student.name,
+          application.activity.title,
+          status as 'approved' | 'rejected',
+          notes
+        );
+      }
+    } catch (error) {
+      console.warn('Failed to send application status email:', error);
+    }
+
+    // If a spot opened up, process waitlist
+    if (application.status === 'approved' && status !== 'approved') {
+      await this.processWaitlist(application.activityId);
+    }
+
     return updated;
+  }
+
+  async processWaitlist(activityId: string) {
+    const activity = await this.prisma.activity.findUnique({
+      where: { id: activityId },
+      select: { id: true, title: true, capacity: true, enrolled: true },
+    });
+
+    if (!activity || activity.enrolled >= activity.capacity) {
+      return;
+    }
+
+    // Find the next student in the waitlist (FIFO)
+    const nextApplication = await this.prisma.application.findFirst({
+      where: {
+        activityId,
+        status: 'waitlisted' as any,
+      },
+      orderBy: {
+        appliedAt: 'asc',
+      },
+      include: {
+        student: true,
+      },
+    });
+
+    if (nextApplication) {
+      await this.prisma.application.update({
+        where: { id: nextApplication.id },
+        data: { status: 'pending' as any },
+      });
+
+      // Notify the student
+      await this.notificationsService.create({
+        recipientId: nextApplication.studentId,
+        title: 'Spot Available! 📢',
+        message: `A spot has opened up for "${activity.title}". Your application has been moved from the waitlist to pending.`,
+        type: NotificationType.announcement,
+      });
+
+      // Notify staff? (Optional)
+    }
   }
 
   private async getAdminIds(): Promise<string[]> {
@@ -271,7 +351,18 @@ export class ApplicationsService {
   }
 
   async delete(id: string) {
-    await this.prisma.application.delete({ where: { id } });
+    const application = await this.prisma.application.findUnique({
+      where: { id },
+    });
+
+    if (application?.status === 'approved') {
+      await this.activitiesService.decrementEnrolled(application.activityId);
+      await this.prisma.application.delete({ where: { id } });
+      await this.processWaitlist(application.activityId);
+    } else {
+      await this.prisma.application.delete({ where: { id } });
+    }
+
     return { success: true };
   }
 

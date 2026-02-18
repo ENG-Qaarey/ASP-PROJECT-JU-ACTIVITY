@@ -156,11 +156,12 @@ export default function Register() {
               studentId // Assuming backend accepts this field or logic handles it
           }, true);
 
-          if (response && response.access_token) {
-              await AsyncStorage.setItem('user_token', response.access_token);
-              await AsyncStorage.setItem('current-user', email);
-              // Default to student home after registration
-              router.push('/(student)/home' as any); 
+          if (response && response.success) {
+              showToast({ message: 'Registration successful! Please verify your email.', type: 'success' });
+              router.push({
+                pathname: '/verify-email',
+                params: { email }
+              });
           } else {
               // If backend just returns success: true without token, redirect to login
               router.push('/login');

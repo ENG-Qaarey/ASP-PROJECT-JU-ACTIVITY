@@ -1,5 +1,6 @@
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
@@ -15,10 +16,13 @@ import { AuthzModule } from './authz/authz.module';
 import { AuditLogsModule } from './audit-logs/audit-logs.module';
 import { CategoriesModule } from './categories/categories.module';
 import { ChatModule } from './chat/chat.module';
+import { MailModule } from './mail/mail.module';
+import { RemindersModule } from './reminders/reminders.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ScheduleModule.forRoot(),
     AuthzModule,
     PrismaModule,
     AuthModule,
@@ -32,6 +36,8 @@ import { ChatModule } from './chat/chat.module';
     AuditLogsModule,
     CategoriesModule,
     ChatModule,
+    MailModule,
+    RemindersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
