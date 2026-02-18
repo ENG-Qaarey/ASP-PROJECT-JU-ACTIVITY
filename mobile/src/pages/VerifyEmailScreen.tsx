@@ -69,11 +69,11 @@ const FloatingOrb = ({ size, x, y, duration = 6000, delay = 0 }: any) => {
 };
 
 export default function VerifyEmailScreen() {
-  const { email } = useLocalSearchParams<{ email: string }>();
+  const { email } = useLocalSearchParams() as any;
   const { showToast } = useToast();
   const { setUser } = useAuth();
   const [code, setCode] = useState(['', '', '', '', '', '']);
-  const inputs = useRef<Array<TextInput | null>>([]);
+  const inputs = useRef<Array<any | null>>([]);
   
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
@@ -177,24 +177,31 @@ export default function VerifyEmailScreen() {
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
+        <Animated.ScrollView
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.scrollContainer}
+          showsVerticalScrollIndicator={false}
+          style={{ opacity: fadeAnim }}
+        >
           <View style={styles.header}>
-            <View style={styles.iconCircle}>
-              <Mail size={40} color="#0EA5E9" />
+            <Text style={styles.title}>Create Account</Text>
+            <Text style={styles.subtitle}>Register as a new student</Text>
+            
+            <View style={styles.instructionContainer}>
+              <Text style={styles.instructionText}>Enter the verification code we emailed to</Text>
+              <Text style={styles.emailText}>{email}</Text>
+              <Text style={styles.spamNotice}>Check your inbox and spam folder if you don't see it</Text>
             </View>
-            <Text style={styles.title}>Verify your email</Text>
-            <Text style={styles.subtitle}>
-              We've sent a 6-digit code to{' '}
-              <Text style={{ fontWeight: '800', color: '#0369A1' }}>{email}</Text>
-            </Text>
           </View>
 
           <BlurView intensity={90} tint="light" style={styles.glass}>
+            <Text style={styles.inputLabel}>Verification Code</Text>
+            
             <View style={styles.codeContainer}>
               {code.map((digit, index) => (
                 <TextInput
                   key={index}
-                  ref={(ref) => (inputs.current[index] = ref)}
+                  ref={(ref: any) => (inputs.current[index] = ref)}
                   style={[
                     styles.codeInput,
                     digit ? styles.codeInputActive : null
@@ -202,11 +209,14 @@ export default function VerifyEmailScreen() {
                   maxLength={1}
                   keyboardType="number-pad"
                   value={digit}
-                  onChangeText={(text) => handleInputChange(text, index)}
-                  onKeyPress={(e) => handleKeyPress(e, index)}
+                  onChangeText={(text: string) => handleInputChange(text, index)}
+                  onKeyPress={(e: any) => handleKeyPress(e, index)}
+                  selectionColor="#38BDF8"
                 />
               ))}
             </View>
+
+            <Text style={styles.helpText}>Enter the 6-digit security code</Text>
 
             <TouchableOpacity 
               style={styles.button}
@@ -215,133 +225,157 @@ export default function VerifyEmailScreen() {
               activeOpacity={0.9}
             >
               <LinearGradient
-                colors={['#0284C7', '#0EA5E9']}
+                colors={['#7DD3FC', '#38BDF8']}
                 style={styles.buttonGrad}
               >
                 {loading ? (
                   <ActivityIndicator color="#FFF" />
                 ) : (
-                  <Text style={styles.buttonText}>Verify Account</Text>
+                  <Text style={styles.buttonText}>Verify Email</Text>
                 )}
               </LinearGradient>
             </TouchableOpacity>
 
-            <TouchableOpacity 
-              style={styles.resendBtn}
-              onPress={handleResend}
-              disabled={resending}
-            >
-              {resending ? (
-                <ActivityIndicator size="small" color="#0284C7" />
-              ) : (
-                <>
-                  <RefreshCw size={16} color="#0284C7" style={{ marginRight: 8 }} />
-                  <Text style={styles.resendText}>Resend Code</Text>
-                </>
-              )}
-            </TouchableOpacity>
+            <View style={styles.actionRow}>
+              <TouchableOpacity 
+                style={styles.actionBtn}
+                onPress={handleResend}
+                disabled={resending}
+              >
+                <Text style={styles.actionText}>{resending ? 'Resending...' : 'Resend code'}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={styles.actionBtn}
+                onPress={() => router.back()}
+              >
+                <Text style={styles.actionText}>Edit registration info</Text>
+              </TouchableOpacity>
+            </View>
           </BlurView>
 
-          <View style={styles.footer}>
-            <ShieldCheck size={18} color="#64748B" />
-            <Text style={styles.footerText}>Secure Verification System</Text>
+          <View style={styles.loginContainer}>
+            <Text style={styles.loginText}>Already have an account? </Text>
+            <TouchableOpacity onPress={() => router.replace('/login')}>
+              <Text style={styles.loginLink}>Sign in here</Text>
+            </TouchableOpacity>
           </View>
-        </Animated.View>
+        </Animated.ScrollView>
       </KeyboardAvoidingView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 24,
-    justifyContent: 'center',
-  },
   orb: {
     position: 'absolute',
     borderRadius: 999,
+    backgroundColor: '#FFFFFF',
+    opacity: 0.5,
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: height * 0.12,
+    paddingBottom: 40,
   },
   backBtn: {
     position: 'absolute',
-    top: 60,
-    left: 24,
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    top: Platform.OS === 'ios' ? 50 : 30,
+    left: 15,
     zIndex: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
+    padding: 10,
   },
   header: {
     alignItems: 'center',
-    marginBottom: 40,
-  },
-  iconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(255,255,255,0.8)',
-    justifyContent: 'center',
-    alignItems: 'center',
     marginBottom: 20,
-    elevation: 4,
-    shadowColor: '#0EA5E9',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
+    width: '100%',
   },
   title: {
-    fontSize: 28,
-    fontWeight: '900',
-    color: '#0C4A6E',
-    marginBottom: 10,
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#1E293B',
+    textAlign: 'center',
+    marginBottom: 8,
   },
   subtitle: {
-    fontSize: 15,
-    color: '#475569',
+    fontSize: 18,
+    color: '#64748B',
     textAlign: 'center',
-    lineHeight: 22,
-    paddingHorizontal: 20,
+    marginBottom: 24,
+  },
+  instructionContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  instructionText: {
+    fontSize: 16,
+    color: '#64748B',
+    textAlign: 'center',
+  },
+  emailText: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginVertical: 4,
+  },
+  spamNotice: {
+    fontSize: 14,
+    color: '#94A3B8',
+    textAlign: 'center',
+    marginTop: 4,
   },
   glass: {
-    borderRadius: 32,
-    padding: 28,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.6)',
+    borderRadius: 24,
+    padding: 24,
+    backgroundColor: 'rgba(255,255,255,0.4)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.7)',
+    width: width * 0.9,
     overflow: 'hidden',
+  },
+  inputLabel: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#334155',
+    textAlign: 'center',
+    marginBottom: 16,
   },
   codeContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 30,
+    justifyContent: 'center',
+    gap: 6,
+    marginBottom: 8,
   },
   codeInput: {
-    width: 45,
-    height: 56,
+    width: 42,
+    height: 54,
     borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.7)',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1.5,
-    borderColor: 'rgba(203,213,225,0.5)',
+    borderColor: '#E2E8F0',
     fontSize: 24,
-    fontWeight: '900',
+    fontWeight: '700',
     color: '#0F172A',
     textAlign: 'center',
   },
   codeInputActive: {
-    borderColor: '#0EA5E9',
+    borderColor: '#38BDF8',
     backgroundColor: '#FFFFFF',
-    elevation: 4,
+  },
+  helpText: {
+    fontSize: 13,
+    color: '#64748B',
+    textAlign: 'center',
+    marginBottom: 24,
   },
   button: {
-    borderRadius: 18,
+    borderRadius: 14,
     overflow: 'hidden',
-    elevation: 4,
-    shadowColor: '#0284C7',
+    marginBottom: 20,
+    elevation: 3,
+    shadowColor: '#38BDF8',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -350,36 +384,38 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 56,
   },
   buttonText: {
     color: '#FFFFFF',
     fontSize: 17,
-    fontWeight: '900',
-    letterSpacing: 0.5,
+    fontWeight: '700',
   },
-  resendBtn: {
+  actionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  actionBtn: {
+    padding: 4,
+  },
+  actionText: {
+    color: '#38BDF8',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  loginContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 24,
-    padding: 10,
+    marginTop: 32,
   },
-  resendText: {
-    color: '#0284C7',
-    fontWeight: '800',
+  loginText: {
+    color: '#64748B',
     fontSize: 15,
   },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 40,
-    gap: 8,
-  },
-  footerText: {
-    color: '#64748B',
-    fontSize: 13,
-    fontWeight: '600',
+  loginLink: {
+    color: '#38BDF8',
+    fontSize: 15,
+    fontWeight: '700',
   },
 });

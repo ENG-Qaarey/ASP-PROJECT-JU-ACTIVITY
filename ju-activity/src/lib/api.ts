@@ -98,7 +98,9 @@ export const authApi = {
   me: () => fetchApi<{ success: boolean; user: any }>('/auth/me'),
 
   verifyEmail: (data: { email: string; code: string }) =>
-    fetchApi<{ success: boolean; user: any }>('/auth/verify-email', {
+    fetchApi<{
+      token: any; success: boolean; user: any 
+}>('/auth/verify-email', {
       method: 'POST',
       body: JSON.stringify(data),
     }),

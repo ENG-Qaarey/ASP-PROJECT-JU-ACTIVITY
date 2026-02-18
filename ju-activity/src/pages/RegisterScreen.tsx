@@ -498,7 +498,7 @@ const RegisterScreen = () => {
                 </div>
                 <div className="space-y-4">
                   <Label className="text-slate-700 font-semibold text-sm block text-center">Verification Code</Label>
-                  <div className="flex justify-between gap-2 sm:gap-4">
+                  <div className="flex justify-center gap-2">
                     {verificationCode.map((digit, index) => (
                       <input
                         key={index}
