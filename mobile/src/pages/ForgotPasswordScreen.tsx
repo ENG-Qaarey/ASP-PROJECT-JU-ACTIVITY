@@ -81,7 +81,7 @@ export default function ForgotPassword() {
   const [submitted, setSubmitted] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(0));
   
-  const inputs = useRef<Array<TextInput | null>>([]);
+  const inputs = useRef<Array<any | null>>([]);
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -219,7 +219,8 @@ export default function ForgotPassword() {
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
         <ScrollView 
           contentContainerStyle={styles.scrollContent}
@@ -272,13 +273,13 @@ export default function ForgotPassword() {
                     {code.map((digit, index) => (
                       <TextInput
                         key={index}
-                        ref={(ref) => (inputs.current[index] = ref)}
+                        ref={(ref: any) => (inputs.current[index] = ref)}
                         style={[styles.codeInput, digit ? styles.codeInputActive : null]}
                         maxLength={1}
                         keyboardType="number-pad"
                         value={digit}
-                        onChangeText={(text) => handleInputChange(text, index)}
-                        onKeyPress={(e) => handleKeyPress(e, index)}
+                        onChangeText={(text: string) => handleInputChange(text, index)}
+                        onKeyPress={(e: any) => handleKeyPress(e, index)}
                       />
                     ))}
                   </View>

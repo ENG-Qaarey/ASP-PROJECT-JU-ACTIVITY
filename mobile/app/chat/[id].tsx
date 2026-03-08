@@ -1588,9 +1588,12 @@ export default function ChatScreen() {
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
-        <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
+        <StatusBar 
+          barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} 
+          backgroundColor="transparent"
+          translucent
+        />
         
         {/* Floating Header - Rendered in component for consistent cross-platform behavior */}
         <View style={[styles.floatingHeaderWrapper, { paddingTop: insets.top + 8 }]}>
@@ -1704,7 +1707,10 @@ export default function ChatScreen() {
           styles.whatsappInputWrapper, 
           { 
             backgroundColor: theme.card,
-            borderTopColor: theme.border
+            borderTopColor: theme.border,
+            paddingBottom: Platform.OS === 'android' 
+              ? (isKeyboardVisible ? 8 : Math.max(insets.bottom, 12)) 
+              : (isKeyboardVisible ? 10 : Math.max(insets.bottom, 10))
           }
         ]}>
           {/* Reply Preview - Now outside the actions row to stay on top */}
@@ -2390,7 +2396,7 @@ const styles = StyleSheet.create({
   },
   messagesList: {
     paddingHorizontal: 16,
-    paddingTop: 10,
+    paddingTop: 85,
     paddingBottom: 20,
   },
   scrollToBottom: {

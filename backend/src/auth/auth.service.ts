@@ -43,6 +43,9 @@ export class AuthService {
   }
 
   private normalizeEmail(email: string) {
+    if (!email || typeof email !== 'string') {
+      return '';
+    }
     return email.trim().toLowerCase();
   }
 
@@ -55,6 +58,9 @@ export class AuthService {
   }
 
   async login(email: string, password: string) {
+    if (!email || !password) {
+      throw new BadRequestException('Email and password are required');
+    }
     const normalizedEmail = this.normalizeEmail(email);
     const user = await this.usersService.findByEmail(normalizedEmail);
     if (!user) {
@@ -116,6 +122,10 @@ export class AuthService {
     const role = payload.role ?? 'student';
     if (role !== 'student') {
       throw new BadRequestException('Only student registration is allowed');
+    }
+
+    if (!payload.email || !payload.password || !payload.name) {
+      throw new BadRequestException('Email, password, and name are required');
     }
 
     const normalizedEmail = this.normalizeEmail(payload.email);
