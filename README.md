@@ -1,13 +1,11 @@
                                   JU_AMS – Jazeera University Activity Management System
 
-
 JU_AMS is a system designed to simplify the management of student activities such as workshops 🛠️, seminars 🎤, trainings 📘, and short courses ⏱️.
 The system enables students to view available activities 👀, apply for participation 📝, and track the status of their applications 📊 in a simple and efficient way.
 
 On the administrative side, university administrators 👨‍💼 and coordinators 👩‍💼 can create new activities ➕, review student applications 🔍, approve or reject requests ✅❌,
 and generate reports 📑 related to student participation.
 JU_AMS reduces paperwork 📂, improves operational efficiency ⚙️, and enhances communication 💬 between students and university management.
-
 
 1: SplashScren <img width="1899" height="920" alt="Splash" src="https://github.com/user-attachments/assets/3274f13d-96f5-4820-96ec-63495b470a36" />
 2: SignIn Page <img width="1901" height="921" alt="Login" src="https://github.com/user-attachments/assets/50ac3b89-aa61-45f2-8cf7-50e882bba8f7" />
