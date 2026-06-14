@@ -665,6 +665,22 @@
           }
         }
       },
+      "Scalar.AspNetCore/2.1.8": {
+        "type": "package",
+        "compile": {
+          "lib/net9.0/Scalar.AspNetCore.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net9.0/Scalar.AspNetCore.dll": {
+            "related": ".xml"
+          }
+        },
+        "frameworkReferences": [
+          "Microsoft.AspNetCore.App"
+        ]
+      },
       "System.CodeDom/6.0.0": {
         "type": "package",
         "compile": {
@@ -2329,6 +2345,23 @@
         "postgresql.png"
       ]
     },
+    "Scalar.AspNetCore/2.1.8": {
+      "sha512": "Wf9VD5Ye9HDPVc4E7VfqoiDutk/0ZZgMzpGQA2BD0odd8IEzApWyVNilsNAacfWumzZTrivFFxJuyg7KvDD05w==",
+      "type": "package",
+      "path": "scalar.aspnetcore/2.1.8",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "README.md",
+        "icon.png",
+        "lib/net8.0/Scalar.AspNetCore.dll",
+        "lib/net8.0/Scalar.AspNetCore.xml",
+        "lib/net9.0/Scalar.AspNetCore.dll",
+        "lib/net9.0/Scalar.AspNetCore.xml",
+        "scalar.aspnetcore.2.1.8.nupkg.sha512",
+        "scalar.aspnetcore.nuspec"
+      ]
+    },
     "System.CodeDom/6.0.0": {
       "sha512": "CPc6tWO1LAer3IzfZufDBRL+UZQcj5uS207NHALQzP84Vp/z6wF0Aa0YZImOQY8iStY0A2zI/e3ihKNPfUm8XA==",
       "type": "package",
@@ -2546,7 +2579,8 @@
       "Microsoft.AspNetCore.OpenApi >= 10.0.9",
       "Microsoft.EntityFrameworkCore >= 10.0.9",
       "Microsoft.EntityFrameworkCore.Design >= 10.0.9",
-      "Npgsql.EntityFrameworkCore.PostgreSQL >= 10.0.2"
+      "Npgsql.EntityFrameworkCore.PostgreSQL >= 10.0.2",
+      "Scalar.AspNetCore >= 2.1.8"
     ]
   },
   "packageFolders": {
@@ -2626,6 +2660,10 @@
           "Npgsql.EntityFrameworkCore.PostgreSQL": {
             "target": "Package",
             "version": "[10.0.2, )"
+          },
+          "Scalar.AspNetCore": {
+            "target": "Package",
+            "version": "[2.1.8, )"
           }
         },
         "imports": [

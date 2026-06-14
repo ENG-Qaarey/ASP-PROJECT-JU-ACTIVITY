@@ -4,6 +4,21 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using backend.models;
 using backend.Services;
+using Scalar.AspNetCore;
+
+const string SwaggerUiHtml = @"<!DOCTYPE html>
+<html lang=""en"">
+<head>
+  <meta charset=""utf-8"" />
+  <title>JU Activity Hub API</title>
+  <link rel=""stylesheet"" href=""https://unpkg.com/swagger-ui-dist@5/swagger-ui.css"" />
+</head>
+<body>
+  <div id=""swagger-ui""></div>
+  <script src=""https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js""></script>
+  <script>SwaggerUIBundle({ url: '/openapi/v1.json', dom_id: '#swagger-ui' });</script>
+</body>
+</html>";
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -46,10 +61,11 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
+app.MapOpenApi();
+app.MapScalarApiReference();
+
+app.MapGet("/", () => Results.Redirect("/swagger"));
+app.MapGet("/swagger", () => Results.Content(SwaggerUiHtml, "text/html"));
 
 app.UseCors();
 app.UseHttpsRedirection();
@@ -73,6 +89,8 @@ using (var scope = app.Services.CreateScope())
         db.Database.EnsureCreated();
         Console.WriteLine("Database created via EnsureCreated.");
     }
+
+    await DbSeeder.SeedAsync(db);
 }
 
 app.Run();

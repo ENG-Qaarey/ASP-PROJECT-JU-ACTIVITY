@@ -12,7 +12,7 @@ using backend.models;
 namespace backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260614102134_Initial")]
+    [Migration("20260614132954_Initial")]
     partial class Initial
     {
         /// <inheritdoc />

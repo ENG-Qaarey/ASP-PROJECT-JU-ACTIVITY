@@ -217,7 +217,7 @@ CREATE INDEX "IX_PushTokens_UserId" ON "PushTokens" ("UserId");
 CREATE UNIQUE INDEX "IX_Users_Email" ON "Users" ("Email");
 
 INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
-VALUES ('20260614102134_Initial', '10.0.9');
+VALUES ('20260614132954_Initial', '10.0.9');
 
 COMMIT;
 
