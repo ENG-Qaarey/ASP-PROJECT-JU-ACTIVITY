@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using backend.DTOs;
+using backend.Hubs;
 using backend.models;
 using backend.models.Enums;
 
@@ -13,10 +15,12 @@ namespace backend.Controllers
     public class ApplicationsController : ControllerBase
     {
         private readonly AppDbContext _db;
+        private readonly IHubContext<NotificationHub> _hub;
 
-        public ApplicationsController(AppDbContext db)
+        public ApplicationsController(AppDbContext db, IHubContext<NotificationHub> hub)
         {
             _db = db;
+            _hub = hub;
         }
 
         [HttpGet]
@@ -126,6 +130,41 @@ namespace backend.Controllers
 
             await _db.SaveChangesAsync();
 
+            var statusText = isFull ? "waitlisted" : "pending";
+
+            var studentNotif = new Notification
+            {
+                RecipientId = studentId,
+                Title = "Application Submitted",
+                Message = $"You have applied to \"{activity.Title}\". Status: {statusText}.",
+                Type = isFull ? NotificationType.Waitlist : NotificationType.Approval,
+                SenderRole = "student"
+            };
+            _db.Notifications.Add(studentNotif);
+
+            Notification? coordNotif = null;
+            if (activity.CoordinatorId != Guid.Empty)
+            {
+                coordNotif = new Notification
+                {
+                    RecipientId = activity.CoordinatorId,
+                    Title = "New Application",
+                    Message = $"{student?.Name ?? "A student"} has applied to \"{activity.Title}\".",
+                    Type = NotificationType.Announcement,
+                    SenderRole = "student"
+                };
+                _db.Notifications.Add(coordNotif);
+            }
+
+            await _db.SaveChangesAsync();
+
+            await _hub.Clients.Group($"user-{studentId}").SendAsync("NotificationReceived", MapNotification(studentNotif));
+            if (coordNotif != null)
+            {
+                await _hub.Clients.Group($"user-{activity.CoordinatorId}").SendAsync("NotificationReceived", MapNotification(coordNotif));
+            }
+            await _hub.Clients.All.SendAsync("ActivityUpdated", MapActivity(activity));
+
             return Ok(MapApplication(application));
         }
 
@@ -160,6 +199,35 @@ namespace backend.Controllers
             if (request.Notes != null) application.Notes = request.Notes;
 
             await _db.SaveChangesAsync();
+
+            var statusDisplay = newStatus.ToString().ToLower();
+            var notifType = newStatus switch
+            {
+                ApplicationStatus.Approved => NotificationType.Approval,
+                ApplicationStatus.Rejected => NotificationType.Rejection,
+                ApplicationStatus.Waitlisted => NotificationType.Waitlist,
+                _ => NotificationType.Reminder
+            };
+
+            var notif = new Notification
+            {
+                RecipientId = application.StudentId,
+                Title = $"Application {statusDisplay}",
+                Message = $"Your application for \"{application.Activity?.Title ?? application.ActivityTitle}\" has been {statusDisplay}.",
+                Type = notifType,
+                SenderRole = "coordinator"
+            };
+            _db.Notifications.Add(notif);
+
+            await _db.SaveChangesAsync();
+
+            await _hub.Clients.Group($"user-{application.StudentId}").SendAsync("NotificationReceived", MapNotification(notif));
+            await _hub.Clients.Group($"user-{application.StudentId}").SendAsync("ApplicationUpdated", MapApplication(application));
+            if (application.Activity != null)
+            {
+                await _hub.Clients.All.SendAsync("ActivityUpdated", MapActivity(application.Activity));
+            }
+
             return Ok(MapApplication(application));
         }
 
@@ -205,6 +273,47 @@ namespace backend.Controllers
                 appliedAt = a.AppliedAt.ToString("o"),
                 notes = a.Notes,
                 isAdmin = a.IsAdmin
+            };
+        }
+
+        private static object MapNotification(Notification n)
+        {
+            return new
+            {
+                id = n.Id.ToString(),
+                recipientId = n.RecipientId.ToString(),
+                title = n.Title,
+                message = n.Message,
+                type = n.Type.ToString().ToLower(),
+                read = n.IsRead,
+                createdAt = n.CreatedAt.ToString("o"),
+                senderRole = n.SenderRole
+            };
+        }
+
+        private static object MapActivity(Activity a)
+        {
+            return new
+            {
+                id = a.Id.ToString(),
+                title = a.Title,
+                description = a.Description,
+                date = a.Date.ToString("yyyy-MM-dd"),
+                time = a.Time,
+                location = a.Location,
+                capacity = a.Capacity,
+                enrolled = a.Enrolled,
+                coordinatorId = a.CoordinatorId.ToString(),
+                coordinatorName = a.CoordinatorName ?? a.Coordinator?.Name,
+                status = a.Status.ToString().ToLower(),
+                category = a.Category,
+                imageUrl = a.ImageUrl,
+                latitude = a.Latitude,
+                longitude = a.Longitude,
+                radius = a.Radius,
+                qrCodeSecret = a.QrCodeSecret,
+                createdAt = a.CreatedAt.ToString("o"),
+                updatedAt = a.UpdatedAt.ToString("o")
             };
         }
     }

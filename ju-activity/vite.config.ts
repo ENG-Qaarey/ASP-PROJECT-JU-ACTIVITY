@@ -28,6 +28,11 @@ export default defineConfig(({ mode }) => ({
         target: "http://127.0.0.1:5281",
         changeOrigin: true,
       },
+      "/hubs": {
+        target: "http://127.0.0.1:5281",
+        changeOrigin: true,
+        ws: true,
+      },
     },
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),

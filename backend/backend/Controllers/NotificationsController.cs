@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using backend.DTOs;
+using backend.Hubs;
 using backend.models;
 using backend.models.Enums;
 
@@ -13,10 +15,12 @@ namespace backend.Controllers
     public class NotificationsController : ControllerBase
     {
         private readonly AppDbContext _db;
+        private readonly IHubContext<NotificationHub> _hub;
 
-        public NotificationsController(AppDbContext db)
+        public NotificationsController(AppDbContext db, IHubContext<NotificationHub> hub)
         {
             _db = db;
+            _hub = hub;
         }
 
         [HttpGet]
@@ -87,6 +91,8 @@ namespace backend.Controllers
             _db.Notifications.Add(notification);
             await _db.SaveChangesAsync();
 
+            await _hub.Clients.Group($"user-{recipientId}").SendAsync("NotificationReceived", MapNotification(notification));
+
             return Ok(MapNotification(notification));
         }
 
@@ -103,6 +109,8 @@ namespace backend.Controllers
             notification.IsRead = true;
             await _db.SaveChangesAsync();
 
+            await _hub.Clients.Group($"user-{notification.RecipientId}").SendAsync("NotificationRead", new { id = notification.Id.ToString(), recipientId = notification.RecipientId.ToString() });
+
             return Ok(MapNotification(notification));
         }
 
@@ -110,10 +118,17 @@ namespace backend.Controllers
         public async Task<IActionResult> MarkAllAsRead([FromQuery] string? recipientId)
         {
             var query = _db.Notifications.Where(n => !n.IsRead);
-            if (!string.IsNullOrEmpty(recipientId) && Guid.TryParse(recipientId, out var rid))
+            Guid rid = Guid.Empty;
+            if (!string.IsNullOrEmpty(recipientId) && Guid.TryParse(recipientId, out rid))
                 query = query.Where(n => n.RecipientId == rid);
 
             await query.ExecuteUpdateAsync(s => s.SetProperty(n => n.IsRead, true));
+
+            if (rid != Guid.Empty)
+            {
+                await _hub.Clients.Group($"user-{rid}").SendAsync("AllNotificationsRead", new { recipientId });
+            }
+
             return Ok(new { Success = true });
         }
 
@@ -142,7 +157,7 @@ namespace backend.Controllers
                 title = n.Title,
                 message = n.Message,
                 type = n.Type.ToString().ToLower(),
-                isRead = n.IsRead,
+                read = n.IsRead,
                 createdAt = n.CreatedAt.ToString("o"),
                 senderRole = n.SenderRole
             };

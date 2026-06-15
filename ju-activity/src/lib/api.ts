@@ -97,20 +97,6 @@ export const authApi = {
 
   me: () => fetchApi<{ success: boolean; user: any }>('/auth/me'),
 
-  verifyEmail: (data: { email: string; code: string }) =>
-    fetchApi<{
-      token: any; success: boolean; user: any 
-}>('/auth/verify-email', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-
-  resendVerification: (data: { email: string }) =>
-    fetchApi<{ success: boolean }>('/auth/resend-verification', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-
   googleSignIn: (credential: string) =>
     fetchApi<{ success: boolean; user: any; token?: string | null }>('/auth/google', {
       method: 'POST',

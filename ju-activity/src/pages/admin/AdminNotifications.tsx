@@ -49,9 +49,15 @@ const notificationMeta: Record<Notification["type"], { label: string; icon: type
     accent: "text-blue-600 dark:text-blue-400",
     chip: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-200",
   },
+  waitlist: {
+    label: "Waitlist",
+    icon: Clock,
+    accent: "text-orange-500 dark:text-orange-400",
+    chip: "bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-300",
+  },
 };
 
-const typeFilters: Array<"all" | Notification["type"]> = ["all", "approval", "rejection", "announcement", "reminder"];
+const typeFilters: Array<"all" | Notification["type"]> = ["all", "approval", "rejection", "announcement", "reminder", "waitlist"];
 const statusFilters = ["all", "unread", "read"] as const;
 
 type StatusFilter = (typeof statusFilters)[number];

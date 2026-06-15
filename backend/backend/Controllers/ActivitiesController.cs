@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using backend.DTOs;
+using backend.Hubs;
 using backend.models;
 using backend.models.Enums;
 
@@ -13,10 +15,12 @@ namespace backend.Controllers
     public class ActivitiesController : ControllerBase
     {
         private readonly AppDbContext _db;
+        private readonly IHubContext<NotificationHub> _hub;
 
-        public ActivitiesController(AppDbContext db)
+        public ActivitiesController(AppDbContext db, IHubContext<NotificationHub> hub)
         {
             _db = db;
+            _hub = hub;
         }
 
         [AllowAnonymous]
@@ -89,6 +93,8 @@ namespace backend.Controllers
             _db.Activities.Add(activity);
             await _db.SaveChangesAsync();
 
+            await _hub.Clients.All.SendAsync("ActivityUpdated", MapActivity(activity));
+
             return Ok(MapActivity(activity));
         }
 
@@ -124,6 +130,9 @@ namespace backend.Controllers
             activity.UpdatedAt = DateTime.UtcNow;
 
             await _db.SaveChangesAsync();
+
+            await _hub.Clients.All.SendAsync("ActivityUpdated", MapActivity(activity));
+
             return Ok(MapActivity(activity));
         }
 
@@ -139,6 +148,8 @@ namespace backend.Controllers
 
             _db.Activities.Remove(activity);
             await _db.SaveChangesAsync();
+
+            await _hub.Clients.All.SendAsync("ActivityDeleted", new { id = guid.ToString() });
 
             return Ok(new { Success = true });
         }

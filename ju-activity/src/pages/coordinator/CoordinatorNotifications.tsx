@@ -15,6 +15,7 @@ import {
   AlertTriangle,
   Megaphone,
   Info,
+  Clock,
   Search,
   MailCheck,
   Filter,
@@ -49,6 +50,12 @@ const notificationMeta: Record<
     accent: "text-blue-600 dark:text-blue-400",
     chip: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-200",
   },
+  waitlist: {
+    label: "Waitlist",
+    icon: Clock,
+    accent: "text-orange-500 dark:text-orange-400",
+    chip: "bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-300",
+  },
 };
 
 const typeFilters: Array<"all" | Notification["type"]> = [
@@ -57,6 +64,7 @@ const typeFilters: Array<"all" | Notification["type"]> = [
   "rejection",
   "announcement",
   "reminder",
+  "waitlist",
 ];
 
 const statusFilters = ["all", "unread", "read"] as const;

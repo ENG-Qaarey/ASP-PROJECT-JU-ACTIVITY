@@ -20,7 +20,7 @@ export interface Application {
   activityId: string;
   activityTitle: string;
   appliedAt: string;
-  status: "pending" | "approved" | "rejected";
+  status: "pending" | "approved" | "rejected" | "waitlisted";
   notes?: string;
   student?: {
     id: string;
@@ -34,7 +34,7 @@ export interface Notification {
   id: string;
   title: string;
   message: string;
-  type: "approval" | "rejection" | "announcement" | "reminder";
+  type: "approval" | "rejection" | "announcement" | "reminder" | "waitlist";
   read: boolean;
   createdAt: string;
   recipientId?: string;

@@ -1,4 +1,5 @@
-import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { HubConnectionBuilder, HubConnection } from "@microsoft/signalr";
+import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity,
   Application,
@@ -76,45 +77,71 @@ export const ActivityProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user]);
 
-  // Lightweight polling so users (especially students) see new notifications
-  // created by admins/coordinators without needing a full reload.
+  // Real-time updates via SignalR — replaces the old 15s polling.
   useEffect(() => {
     if (!user) return;
 
     const token = localStorage.getItem("token");
     if (!token) return;
 
-    let cancelled = false;
+    let connection: HubConnection;
 
-    const refreshNotifications = async () => {
+    const startConnection = async () => {
+      connection = new HubConnectionBuilder()
+        .withUrl("/hubs/notifications", {
+          accessTokenFactory: () => localStorage.getItem("token") ?? "",
+        })
+        .withAutomaticReconnect()
+        .build();
+
+      connection.on("NotificationReceived", (notification: Notification) => {
+        setNotifications((prev) => [notification, ...prev]);
+      });
+
+      connection.on("NotificationRead", (data: { id: string; recipientId: string }) => {
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === data.id ? { ...n, read: true } : n))
+        );
+      });
+
+      connection.on("AllNotificationsRead", (data: { recipientId: string }) => {
+        setNotifications((prev) =>
+          prev.map((n) =>
+            n.recipientId === data.recipientId ? { ...n, read: true } : n
+          )
+        );
+      });
+
+      connection.on("ApplicationUpdated", (application: Application) => {
+        setApplications((prev) =>
+          prev.map((a) => (a.id === application.id ? application : a))
+        );
+      });
+
+      connection.on("ActivityUpdated", (activity: Activity) => {
+        setActivities((prev) =>
+          prev.map((a) => (a.id === activity.id ? activity : a))
+        );
+      });
+
+      connection.on("ActivityDeleted", (data: { id: string }) => {
+        setActivities((prev) => prev.filter((a) => a.id !== data.id));
+        setApplications((prev) => prev.filter((a) => a.activityId !== data.id));
+      });
+
       try {
-        const latest = user.role === "admin"
-          ? await notificationsApi.getAll()
-          : await notificationsApi.getAll({ recipientId: user.id });
-        if (!cancelled) {
-          setNotifications(latest);
-        }
-      } catch {
-        // Best-effort polling; ignore transient failures.
+        await connection.start();
+      } catch (err) {
+        console.error("SignalR connection failed:", err);
       }
     };
 
-    // Initial refresh + periodic polling.
-    refreshNotifications();
-    const intervalId = window.setInterval(refreshNotifications, 15000);
-
-    // Refresh when the tab regains focus.
-    const onVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        refreshNotifications();
-      }
-    };
-    document.addEventListener("visibilitychange", onVisibilityChange);
+    startConnection();
 
     return () => {
-      cancelled = true;
-      window.clearInterval(intervalId);
-      document.removeEventListener("visibilitychange", onVisibilityChange);
+      if (connection) {
+        connection.stop();
+      }
     };
   }, [user?.id, user?.role]);
 

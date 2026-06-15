@@ -34,13 +34,6 @@ namespace backend.models
         [MaxLength(20)]
         public string? Status { get; set; } = "active";
 
-        public bool EmailVerified { get; set; } = false;
-
-        [MaxLength(500)]
-        public string? EmailVerificationCodeHash { get; set; }
-
-        public DateTime? EmailVerificationCodeExpiresAt { get; set; }
-
         [MaxLength(500)]
         public string? ResetPasswordCodeHash { get; set; }
 

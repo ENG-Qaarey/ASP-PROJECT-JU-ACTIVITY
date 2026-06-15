@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { Bell, CheckCircle, XCircle, Info, AlertCircle } from "lucide-react";
+import { Bell, CheckCircle, XCircle, Info, AlertCircle, Clock } from "lucide-react";
 import { useActivity } from "@/contexts/ActivityContext";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -22,6 +22,7 @@ const NotificationsCenter = () => {
       rejection: { icon: XCircle, color: "text-destructive", bg: "bg-destructive/10" },
       announcement: { icon: Info, color: "text-primary", bg: "bg-primary/10" },
       reminder: { icon: AlertCircle, color: "text-warning", bg: "bg-warning/10" },
+      waitlist: { icon: Clock, color: "text-orange-500", bg: "bg-orange-500/10" },
     };
     return configs[type] || configs.announcement;
   };

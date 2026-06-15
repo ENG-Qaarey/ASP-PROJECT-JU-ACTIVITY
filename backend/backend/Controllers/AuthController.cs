@@ -45,34 +45,34 @@ namespace backend.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
-            if (await _db.Users.AnyAsync(u => u.Email == request.Email.ToLower()))
+            var email = request.Email.ToLower().Trim();
+
+            if (await _db.Users.AnyAsync(u => u.Email == email))
                 return BadRequest(new { Success = false, Message = "Email already registered" });
 
-            var code = new Random().Next(100000, 999999).ToString();
+            if (!string.IsNullOrWhiteSpace(request.StudentId) &&
+                await _db.Users.AnyAsync(u => u.StudentId == request.StudentId))
+                return BadRequest(new { Success = false, Message = "Student ID already registered" });
 
             var user = new User
             {
-                Name = request.Name,
-                Email = request.Email.ToLower(),
+                Name = request.Name.Trim(),
+                Email = email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
                 Role = UserRole.Student,
-                StudentId = request.StudentId,
-                Department = request.Department,
-                EmailVerificationCodeHash = BCrypt.Net.BCrypt.HashPassword(code),
-                EmailVerificationCodeExpiresAt = DateTime.UtcNow.AddMinutes(10)
+                StudentId = request.StudentId?.Trim(),
+                Department = request.Department?.Trim()
             };
 
             _db.Users.Add(user);
             await _db.SaveChangesAsync();
 
-            _ = _email.SendVerificationCodeAsync(user.Email, code);
-
+            var token = _jwt.GenerateToken(user);
             return Ok(new AuthResponse
             {
                 Success = true,
                 User = MapUser(user),
-                Token = _jwt.GenerateToken(user),
-                Email = user.Email
+                Token = token
             });
         }
 
@@ -86,51 +86,6 @@ namespace backend.Controllers
                 return NotFound(new { Success = false, Message = "User not found" });
 
             return Ok(new { Success = true, User = MapUser(user) });
-        }
-
-        [HttpPost("verify-email")]
-        public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailRequest request)
-        {
-            var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == request.Email.ToLower());
-            if (user == null)
-                return NotFound(new { Success = false, Message = "User not found" });
-
-            if (user.EmailVerified)
-                return BadRequest(new { Success = false, Message = "Email already verified" });
-
-            if (user.EmailVerificationCodeHash == null || !BCrypt.Net.BCrypt.Verify(request.Code, user.EmailVerificationCodeHash))
-                return BadRequest(new { Success = false, Message = "Invalid verification code" });
-
-            if (user.EmailVerificationCodeExpiresAt < DateTime.UtcNow)
-                return BadRequest(new { Success = false, Message = "Verification code expired. Request a new one." });
-
-            user.EmailVerified = true;
-            user.EmailVerificationCodeHash = null;
-            user.EmailVerificationCodeExpiresAt = null;
-            await _db.SaveChangesAsync();
-
-            var token = _jwt.GenerateToken(user);
-            return Ok(new AuthResponse { Success = true, User = MapUser(user), Token = token });
-        }
-
-        [HttpPost("resend-verification")]
-        public async Task<IActionResult> ResendVerification([FromBody] ResendVerificationRequest request)
-        {
-            var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == request.Email.ToLower());
-            if (user == null)
-                return Ok(new { Success = true, Message = "If the email exists, a verification code has been sent" });
-
-            if (user.EmailVerified)
-                return BadRequest(new { Success = false, Message = "Email already verified" });
-
-            var code = new Random().Next(100000, 999999).ToString();
-            user.EmailVerificationCodeHash = BCrypt.Net.BCrypt.HashPassword(code);
-            user.EmailVerificationCodeExpiresAt = DateTime.UtcNow.AddMinutes(10);
-            await _db.SaveChangesAsync();
-
-            _ = _email.SendVerificationCodeAsync(user.Email, code);
-
-            return Ok(new { Success = true, Message = "Verification code sent" });
         }
 
         [HttpPost("google")]

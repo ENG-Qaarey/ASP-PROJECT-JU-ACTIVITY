@@ -15,8 +15,7 @@ namespace backend.models
                 Email = "jamiila@gmail.com",
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword("Jamiila@JU2026Secure!"),
                 Role = UserRole.Admin,
-                Status = "active",
-                EmailVerified = true
+                Status = "active"
             };
             db.Users.Add(admin);
             await db.SaveChangesAsync();
@@ -34,8 +33,7 @@ namespace backend.models
                 Email = "amiin@gmail.com",
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword("Amiin@JU2026Secure!"),
                 Role = UserRole.Coordinator,
-                Status = "active",
-                EmailVerified = true
+                Status = "active"
             };
             db.Users.Add(coordinator);
             await db.SaveChangesAsync();
