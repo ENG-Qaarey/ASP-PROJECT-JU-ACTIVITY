@@ -65,7 +65,7 @@ namespace backend.Controllers
             _db.Users.Add(user);
             await _db.SaveChangesAsync();
 
-            await _email.SendVerificationCodeAsync(user.Email, code);
+            _ = _email.SendVerificationCodeAsync(user.Email, code);
 
             return Ok(new AuthResponse
             {
@@ -128,7 +128,7 @@ namespace backend.Controllers
             user.EmailVerificationCodeExpiresAt = DateTime.UtcNow.AddMinutes(10);
             await _db.SaveChangesAsync();
 
-            await _email.SendVerificationCodeAsync(user.Email, code);
+            _ = _email.SendVerificationCodeAsync(user.Email, code);
 
             return Ok(new { Success = true, Message = "Verification code sent" });
         }
@@ -152,7 +152,7 @@ namespace backend.Controllers
             await _db.SaveChangesAsync();
 
             var resetLink = $"http://localhost:5173/reset-password?email={Uri.EscapeDataString(user.Email)}&code={code}";
-            await _email.SendPasswordResetAsync(user.Email, resetLink);
+            _ = _email.SendPasswordResetAsync(user.Email, resetLink);
 
             return Ok(new { Success = true, Message = "If the email exists, a reset link has been sent" });
         }

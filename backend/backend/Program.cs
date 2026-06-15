@@ -68,7 +68,7 @@ app.MapGet("/", () => Results.Redirect("/swagger"));
 app.MapGet("/swagger", () => Results.Content(SwaggerUiHtml, "text/html"));
 
 app.UseCors();
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection(); // handled by reverse proxy in prod
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseStaticFiles();

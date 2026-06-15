@@ -14,29 +14,36 @@ namespace backend.Services
 
         public async Task SendAsync(string to, string subject, string body)
         {
-            var smtpHost = _config["Smtp:Host"];
-            var smtpPort = int.Parse(_config["Smtp:Port"] ?? "587");
-            var smtpUser = _config["Smtp:User"];
-            var smtpPass = _config["Smtp:Pass"];
-            var smtpFrom = _config["Smtp:From"];
-            var appName = _config["Smtp:AppName"];
-
-            using var client = new SmtpClient(smtpHost, smtpPort)
+            try
             {
-                Credentials = new NetworkCredential(smtpUser, smtpPass),
-                EnableSsl = true
-            };
+                var smtpHost = _config["Smtp:Host"];
+                var smtpPort = int.Parse(_config["Smtp:Port"] ?? "587");
+                var smtpUser = _config["Smtp:User"];
+                var smtpPass = _config["Smtp:Pass"];
+                var smtpFrom = _config["Smtp:From"];
+                var appName = _config["Smtp:AppName"];
 
-            using var message = new MailMessage
+                using var client = new SmtpClient(smtpHost, smtpPort)
+                {
+                    Credentials = new NetworkCredential(smtpUser, smtpPass),
+                    EnableSsl = true
+                };
+
+                using var message = new MailMessage
+                {
+                    From = new MailAddress(smtpFrom!, appName),
+                    Subject = subject,
+                    Body = body,
+                    IsBodyHtml = true
+                };
+
+                message.To.Add(to);
+                await client.SendMailAsync(message);
+            }
+            catch (Exception ex)
             {
-                From = new MailAddress(smtpFrom!, appName),
-                Subject = subject,
-                Body = body,
-                IsBodyHtml = true
-            };
-
-            message.To.Add(to);
-            await client.SendMailAsync(message);
+                Console.WriteLine($"[EmailService] Failed to send email to {to}: {ex.Message}");
+            }
         }
 
         public async Task SendVerificationCodeAsync(string to, string code)
