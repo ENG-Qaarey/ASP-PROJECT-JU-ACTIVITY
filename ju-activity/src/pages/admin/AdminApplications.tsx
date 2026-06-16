@@ -105,12 +105,12 @@ const AdminApplications = () => {
                     <Avatar 
                       className="h-12 w-12 border border-border/60 cursor-pointer hover:scale-105 transition-transform"
                       onClick={() => {
-                        setSelectedAvatar({ url: app.student?.avatar || null, name: app.studentName || "User" });
+                        setSelectedAvatar({ url: app.studentAvatar || app.student?.avatar || null, name: app.studentName || "User" });
                         setIsImageModalOpen(true);
                       }}
                     >
-                      {app.student?.avatar ? (
-                        <AvatarImage src={app.student.avatar} alt={app.studentName} />
+                      {app.studentAvatar || app.student?.avatar ? (
+                        <AvatarImage src={app.studentAvatar || app.student?.avatar || ""} alt={app.studentName} />
                       ) : null}
                       <AvatarFallback className="bg-muted text-muted-foreground font-bold">
                         {(app.studentName || "U").charAt(0).toUpperCase()}

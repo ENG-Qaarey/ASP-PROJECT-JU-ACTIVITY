@@ -21,7 +21,8 @@ import {
 import {
   ArrowLeft, Send, Paperclip, Mic, Square, FileIcon, Play, X,
   ChevronDown, CheckCheck, MessageCircle, Trash2, Edit3, Reply,
-  Copy, SmilePlus, Users, Search, Phone, Video, Smile,
+  Copy, SmilePlus, Users, Search, Phone, Video, Smile, Image,
+  Pause, Undo2, Timer,
 } from "lucide-react";
 
 interface ChatMessage {
@@ -51,6 +52,150 @@ interface Member {
 
 const EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥", "🎉"];
 
+function WaveformVisualizer({ audioUrl, isMine, isPlaying: controlledPlaying, onPlayPause }: {
+  audioUrl: string;
+  isMine: boolean;
+  isPlaying?: boolean;
+  onPlayPause?: () => void;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const animRef = useRef<number | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [duration, setDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+
+  const actualPlaying = controlledPlaying !== undefined ? controlledPlaying : isPlaying;
+
+  useEffect(() => {
+    if (!canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const drawStaticWaveform = () => {
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+      const bars = 40;
+      for (let i = 0; i < bars; i++) {
+        const barHeight = Math.max(2, Math.sin((i / bars) * Math.PI * 3) * h * 0.6 + h * 0.2 + Math.random() * 4);
+        const x = (i / bars) * w;
+        const barW = w / bars - 1.5;
+        ctx.fillStyle = isMine ? "rgba(255,255,255,0.5)" : "hsl(var(--primary))";
+        ctx.globalAlpha = 0.4;
+        ctx.beginPath();
+        ctx.roundRect(x, h - barHeight, barW, barHeight, 2);
+        ctx.fill();
+      }
+    };
+    drawStaticWaveform();
+  }, [isMine]);
+
+  useEffect(() => {
+    if (!audioUrl) return;
+    const audio = new Audio(audioUrl);
+    audioRef.current = audio;
+
+    audio.addEventListener("loadedmetadata", () => setDuration(audio.duration));
+    audio.addEventListener("timeupdate", () => setCurrentTime(audio.currentTime));
+    audio.addEventListener("ended", () => {
+      setIsPlaying(false);
+      if (animRef.current) cancelAnimationFrame(animRef.current);
+    });
+
+    return () => {
+      audio.pause();
+      audio.src = "";
+      if (audioCtxRef.current) audioCtxRef.current.close();
+    };
+  }, [audioUrl]);
+
+  const togglePlay = () => {
+    if (onPlayPause) { onPlayPause(); return; }
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (actualPlaying) {
+      audio.pause();
+      setIsPlaying(false);
+      if (animRef.current) cancelAnimationFrame(animRef.current);
+    } else {
+      audio.play();
+      setIsPlaying(true);
+      if (!audioCtxRef.current) {
+        const audioCtx = new AudioContext();
+        audioCtxRef.current = audioCtx;
+        const analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 64;
+        analyserRef.current = analyser;
+        const source = audioCtx.createMediaElementSource(audio);
+        sourceRef.current = source;
+        source.connect(analyser);
+        analyser.connect(audioCtx.destination);
+      }
+      const animate = () => {
+        const canvas = canvasRef.current;
+        const ctx = canvas?.getContext("2d");
+        if (!canvas || !ctx || !analyserRef.current) return;
+        const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+        analyserRef.current.getByteFrequencyData(dataArray);
+        const w = canvas.width;
+        const h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+        const bars = 40;
+        for (let i = 0; i < bars; i++) {
+          const idx = Math.floor((i / bars) * dataArray.length);
+          const barHeight = Math.max(2, (dataArray[idx] / 255) * h);
+          const x = (i / bars) * w;
+          const barW = w / bars - 1.5;
+          ctx.fillStyle = isMine ? "rgba(255,255,255,0.8)" : "hsl(var(--primary))";
+          ctx.globalAlpha = 0.7;
+          ctx.beginPath();
+          ctx.roundRect(x, h - barHeight, barW, barHeight, 2);
+          ctx.fill();
+        }
+        animRef.current = requestAnimationFrame(animate);
+      };
+      animate();
+    }
+  };
+
+  const formatDur = (s: number) => {
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return `${m}:${sec.toString().padStart(2, "0")}`;
+  };
+
+  const progress = duration > 0 ? currentTime / duration : 0;
+
+  return (
+    <div className={`flex items-center gap-2 py-1 ${isMine ? "flex-row" : ""}`}>
+      <button onClick={togglePlay}
+        className={`rounded-full p-1.5 shrink-0 transition-all hover:scale-110 ${
+          isMine ? "bg-white/20 hover:bg-white/30" : "bg-primary/10 hover:bg-primary/20"
+        }`}>
+        {actualPlaying
+          ? <Pause className={`h-3.5 w-3.5 ${isMine ? "text-white" : "text-primary"}`} />
+          : <Play className={`h-3.5 w-3.5 ${isMine ? "text-white" : "text-primary"}`} />
+        }
+      </button>
+      <div className="relative flex-1 h-8">
+        <canvas ref={canvasRef} width={120} height={32} className="w-full h-full rounded" />
+        {progress > 0 && (
+          <div className="absolute bottom-0 left-0 h-0.5 bg-primary/40 rounded-full"
+            style={{ width: `${progress * 100}%` }} />
+        )}
+      </div>
+      <span className={`text-[11px] font-medium tabular-nums ${isMine ? "text-white/80" : "text-muted-foreground"}`}>
+        {formatDur(actualPlaying ? currentTime : duration)}
+      </span>
+    </div>
+  );
+}
+
 const ChatRoomPage = () => {
   const { activityId } = useParams<{ activityId: string }>();
   const navigate = useNavigate();
@@ -68,6 +213,12 @@ const ChatRoomPage = () => {
   const [uploading, setUploading] = useState(false);
   const [input, setInput] = useState("");
   const [recording, setRecording] = useState(false);
+  const [recordingTimer, setRecordingTimer] = useState(0);
+  const recordingTimerRef = useRef<number | null>(null);
+  const [recordingWaveform, setRecordingWaveform] = useState<number[]>([]);
+  const recordingAnalyserRef = useRef<AnalyserNode | null>(null);
+  const recordingAnimationRef = useRef<number | null>(null);
+  const recordingCancelledRef = useRef(false);
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -365,12 +516,52 @@ const ChatRoomPage = () => {
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const audioCtx = new AudioContext();
+      const source = audioCtx.createMediaStreamSource(stream);
+      const analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 128;
+      source.connect(analyser);
+      recordingAnalyserRef.current = analyser;
+
       const recorder = new MediaRecorder(stream);
       mediaRecorderRef.current = recorder;
       audioChunksRef.current = [];
+      setRecordingTimer(0);
+      setRecordingWaveform(Array(30).fill(2));
+
+      const tick = () => {
+        setRecordingTimer((t) => t + 1);
+        recordingTimerRef.current = window.setTimeout(tick, 1000);
+      };
+      tick();
+
+      const drawWaveform = () => {
+        if (!recordingAnalyserRef.current) return;
+        const dataArray = new Uint8Array(recordingAnalyserRef.current.frequencyBinCount);
+        recordingAnalyserRef.current.getByteTimeDomainData(dataArray);
+        const bars = 30;
+        const samples: number[] = [];
+        for (let i = 0; i < bars; i++) {
+          const idx = Math.floor((i / bars) * dataArray.length);
+          const val = Math.abs(dataArray[idx] - 128) / 128;
+          samples.push(Math.max(2, val * 24));
+        }
+        setRecordingWaveform(samples);
+        recordingAnimationRef.current = requestAnimationFrame(drawWaveform);
+      };
+      drawWaveform();
+
+      recordingCancelledRef.current = false;
       recorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
       recorder.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop());
+        audioCtx.close();
+        if (recordingTimerRef.current) clearTimeout(recordingTimerRef.current);
+        if (recordingAnimationRef.current) cancelAnimationFrame(recordingAnimationRef.current);
+        if (recordingCancelledRef.current) {
+          audioChunksRef.current = [];
+          return;
+        }
         const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
         if (blob.size > 0 && activityId) {
           const file = new File([blob], `voice-${Date.now()}.webm`, { type: "audio/webm" });
@@ -395,6 +586,20 @@ const ChatRoomPage = () => {
     if (mediaRecorderRef.current && recording) {
       mediaRecorderRef.current.stop();
       setRecording(false);
+      if (recordingTimerRef.current) clearTimeout(recordingTimerRef.current);
+      if (recordingAnimationRef.current) cancelAnimationFrame(recordingAnimationRef.current);
+    }
+  };
+
+  const cancelRecording = () => {
+    if (mediaRecorderRef.current && recording) {
+      recordingCancelledRef.current = true;
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current.stream?.getTracks().forEach((t) => t.stop());
+      setRecording(false);
+      setRecordingTimer(0);
+      if (recordingTimerRef.current) clearTimeout(recordingTimerRef.current);
+      if (recordingAnimationRef.current) cancelAnimationFrame(recordingAnimationRef.current);
     }
   };
 
@@ -478,9 +683,11 @@ const ChatRoomPage = () => {
     return (
       <motion.div
         key={msg.id}
-        initial={{ opacity: 0, y: 16, scale: 0.97 }}
+        layout
+        initial={{ opacity: 0, y: 20, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.25, ease: "easeOut" }}
+        exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.15 } }}
+        transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
         className={`flex items-end gap-2 px-1 group ${isMine ? "flex-row-reverse" : ""}`}
       >
         {!isMine && showAvatar && avatar}
@@ -507,30 +714,38 @@ const ChatRoomPage = () => {
               </div>
             )}
 
-            {/* Action buttons (on hover) */}
-            {isMine && !editingId && (
-              <div className={`absolute -top-7 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity z-10 ${
-                isMine ? "left-0 flex-row" : "right-0 flex-row-reverse"
+            {!editingId && (
+              <div className={`absolute -top-8 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-all duration-200 z-10 ${
+                isMine ? "left-0" : "right-0"
               }`}>
-                <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full bg-background/80 backdrop-blur-sm shadow-sm"
-                  onClick={() => handleCopy(msg.id, msg.content)} title="Copy">
-                  {copiedId === msg.id ? <CheckCheck className="h-3 w-3 text-primary" /> : <Copy className="h-3 w-3" />}
-                </Button>
-                <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full bg-background/80 backdrop-blur-sm shadow-sm"
-                  onClick={() => { setEditingId(msg.id); setEditInput(msg.content); }} title="Edit">
-                  <Edit3 className="h-3 w-3" />
-                </Button>
-                <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full bg-background/80 backdrop-blur-sm shadow-sm hover:text-destructive"
-                  onClick={() => handleDelete(msg.id)} title="Delete">
-                  <Trash2 className="h-3 w-3" />
-                </Button>
+                <div className="flex items-center gap-0.5 rounded-full bg-background/90 backdrop-blur-md border border-border/40 shadow-lg px-1 py-0.5">
+                  <button onClick={() => handleCopy(msg.id, msg.content)}
+                    className="h-6 w-6 rounded-full flex items-center justify-center hover:bg-accent transition-colors"
+                    title="Copy">
+                    {copiedId === msg.id ? <CheckCheck className="h-3 w-3 text-primary" /> : <Copy className="h-3 w-3" />}
+                  </button>
+                  {isMine && (
+                    <button onClick={() => { setEditingId(msg.id); setEditInput(msg.content); }}
+                      className="h-6 w-6 rounded-full flex items-center justify-center hover:bg-accent transition-colors"
+                      title="Edit">
+                      <Edit3 className="h-3 w-3" />
+                    </button>
+                  )}
+                  {isMine && (
+                    <button onClick={() => handleDelete(msg.id)}
+                      className="h-6 w-6 rounded-full flex items-center justify-center hover:bg-destructive/10 hover:text-destructive transition-colors"
+                      title="Delete">
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  )}
+                </div>
               </div>
             )}
 
-            <div className={`rounded-2xl px-4 py-2.5 text-sm break-words overflow-hidden shadow-sm ${
+            <div className={`px-4 py-2.5 text-sm break-words overflow-hidden ${
               isMine
-                ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground rounded-br-md shadow-primary/20"
-                : "bg-card border border-border/60 rounded-bl-md shadow-sm"
+                ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground rounded-2xl rounded-br-sm shadow-lg shadow-primary/20"
+                : "bg-card border border-border/60 rounded-2xl rounded-bl-sm shadow-sm"
             }`}>
               {/* Editing mode */}
               {editingId === msg.id ? (
@@ -564,11 +779,8 @@ const ChatRoomPage = () => {
                     </div>
                   )}
                   {msg.type === "audio" && metadata?.url && (
-                    <div className="flex items-center gap-2 py-1">
-                      <div className={`rounded-full p-1.5 ${isMine ? "bg-primary-foreground/20" : "bg-primary/10"}`}>
-                        <Play className={`h-3.5 w-3.5 ${isMine ? "text-primary-foreground" : "text-primary"}`} />
-                      </div>
-                      <audio src={metadata.url} controls className="max-w-full h-8 flex-1" preload="none" />
+                    <div className="-mx-1">
+                      <WaveformVisualizer audioUrl={metadata.url} isMine={isMine} />
                     </div>
                   )}
                   {msg.type === "file" && metadata?.url && (
@@ -607,23 +819,28 @@ const ChatRoomPage = () => {
             {/* Reactions bar + actions row */}
             {!editingId && (
               <div className={`flex items-center gap-1 mt-0.5 ${isMine ? "flex-row-reverse" : ""}`}>
-                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                  {EMOJIS.slice(0, 4).map((emoji) => (
-                    <button key={emoji} onClick={() => handleReact(msg.id, emoji)}
-                      className="h-5 w-5 rounded-full bg-background/80 backdrop-blur-sm shadow-sm text-xs hover:scale-110 transition-transform">
-                      {emoji}
+                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-all duration-200">
+                  <div className="flex items-center gap-0.5 rounded-full bg-background/80 backdrop-blur-sm border border-border/30 shadow-sm px-1 py-0.5">
+                    {EMOJIS.slice(0, 4).map((emoji) => (
+                      <button key={emoji} onClick={() => handleReact(msg.id, emoji)}
+                        className="h-5 w-5 rounded-full flex items-center justify-center text-xs hover:bg-accent hover:scale-110 transition-all">
+                        {emoji}
+                      </button>
+                    ))}
+                    <div className="w-px h-3 bg-border/40 mx-0.5" />
+                    <button onClick={() => { setReplyTo({ id: msg.id, content: msg.content, senderName: msg.senderName }); }}
+                      className="h-5 w-5 rounded-full flex items-center justify-center hover:bg-accent transition-colors">
+                      <Reply className="h-2.5 w-2.5 text-muted-foreground/70" />
                     </button>
-                  ))}
-                  <button onClick={() => { setReplyTo({ id: msg.id, content: msg.content, senderName: msg.senderName }); }}
-                    className="h-5 w-5 rounded-full bg-background/80 backdrop-blur-sm shadow-sm flex items-center justify-center hover:scale-110 transition-transform">
-                    <Reply className="h-2.5 w-2.5" />
-                  </button>
+                  </div>
                 </div>
-                <span className="text-[10px] text-muted-foreground/60 ml-auto">
+                <span className="text-[10px] text-muted-foreground/60 inline-flex items-center gap-1 ml-auto">
                   {formatTime(msg.createdAt)}
-                  {msg.editedAt && <span className="ml-1 italic">(edited)</span>}
+                  {msg.editedAt && <span className="italic font-medium text-muted-foreground/40">edited</span>}
                 </span>
-                {isMine && <CheckCheck className="h-3 w-3 text-primary/50" />}
+                {isMine && (
+                  <CheckCheck className="h-3 w-3 text-blue-400 drop-shadow-sm" />
+                )}
               </div>
             )}
           </div>
@@ -645,59 +862,70 @@ const ChatRoomPage = () => {
 
   return (
     <DashboardLayout>
-      <div className="fixed inset-0 top-14 lg:left-64 z-30 flex flex-col bg-gradient-to-b from-background via-background to-accent/20">
-        {/* Header */}
-        <div className="flex items-center gap-2 border-b border-border/60 bg-card/80 backdrop-blur-md px-3 py-2 shrink-0">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="rounded-full hover:bg-accent shrink-0">
-            <ArrowLeft className="h-5 w-5" />
+      <div className="flex flex-col flex-1 bg-gradient-to-b from-background via-background to-accent/20 min-h-0">
+        {/* Channel header */}
+        <div className="flex items-center gap-2 border-b border-border/60 bg-card/60 backdrop-blur-xl px-3 sm:px-4 h-14 shrink-0 shadow-sm">
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}
+            className="rounded-full hover:bg-accent/70 shrink-0 h-8 w-8 sm:h-9 sm:w-9 transition-colors">
+            <ArrowLeft className="h-[18px] w-[18px]" />
           </Button>
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            <div className="relative">
-              <Avatar className="h-9 w-9 ring-2 ring-background shadow-sm">
-                <AvatarFallback className="text-xs bg-primary/10 text-primary font-semibold">{(currentActivity?.title || "A").charAt(0).toUpperCase()}</AvatarFallback>
+          <div className="flex items-center gap-2.5 flex-1 min-w-0">
+            <div className="relative shrink-0">
+              <Avatar className="h-9 w-9 sm:h-10 sm:w-10 ring-2 ring-background shadow-md">
+                <AvatarFallback className="text-sm bg-gradient-to-br from-primary to-primary/70 text-primary-foreground font-bold">
+                  {(currentActivity?.title || "A").charAt(0).toUpperCase()}
+                </AvatarFallback>
               </Avatar>
-              <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 border-2 border-background" />
+              <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-400 ring-2 ring-background" />
             </div>
             <div className="min-w-0">
-              <h2 className="font-semibold text-sm truncate">{currentActivity?.title || "Activity Chat"}</h2>
-              <div className="flex items-center gap-1.5 mt-0.5">
+              <h2 className="font-semibold text-sm truncate leading-tight text-foreground/90">{currentActivity?.title || "Activity Chat"}</h2>
+              <div className="flex items-center gap-1.5 mt-px">
+                <span className="text-[11px] text-emerald-400/80 font-medium">Online</span>
+                <span className="text-[11px] text-muted-foreground/30">·</span>
                 {members.length > 0 && (
-                  <div className="flex -space-x-1.5">
+                  <div className="hidden sm:flex -space-x-1.5 items-center mr-0.5">
                     {members.slice(0, 4).map((m) => (
-                      <Avatar key={m.id} className="h-5 w-5 ring-1 ring-background">
+                      <Avatar key={m.id} className="h-5 w-5 ring-1 ring-background shadow-sm">
+                        <AvatarImage src={m.avatar} />
                         <AvatarFallback className="text-[8px] bg-muted text-muted-foreground font-medium">{m.name.charAt(0).toUpperCase()}</AvatarFallback>
                       </Avatar>
                     ))}
                     {members.length > 4 && (
-                      <span className="h-5 w-5 rounded-full bg-muted text-muted-foreground text-[8px] font-medium flex items-center justify-center ring-1 ring-background">
+                      <span className="h-5 w-5 rounded-full bg-muted text-muted-foreground text-[8px] font-medium flex items-center justify-center ring-1 ring-background shadow-sm">
                         +{members.length - 4}
                       </span>
                     )}
                   </div>
                 )}
-                <span className="text-[11px] text-muted-foreground/50">{members.length} member{members.length !== 1 ? "s" : ""}</span>
+                <span className="text-[11px] text-muted-foreground/60 whitespace-nowrap">{members.length} member{members.length !== 1 ? "s" : ""}</span>
                 <span className="text-[11px] text-muted-foreground/30">·</span>
-                <span className="text-[11px] text-muted-foreground/50">{total} message{total !== 1 ? "s" : ""}</span>
+                <span className="text-[11px] text-muted-foreground/60 whitespace-nowrap">{total} message{total !== 1 ? "s" : ""}</span>
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-0.5">
-            <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 hover:bg-accent hidden sm:inline-flex" title="Voice call">
+          <div className="flex items-center gap-px sm:gap-0.5">
+            <Button variant="ghost" size="icon"
+              className="rounded-full h-8 w-8 sm:h-9 sm:w-9 hover:bg-accent/70 hidden sm:inline-flex transition-colors" title="Voice call">
               <Phone className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 hover:bg-accent hidden sm:inline-flex" title="Video call">
+            <Button variant="ghost" size="icon"
+              className="rounded-full h-8 w-8 sm:h-9 sm:w-9 hover:bg-accent/70 hidden sm:inline-flex transition-colors" title="Video call">
               <Video className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 hover:bg-accent hidden sm:inline-flex" title="Search in chat">
+            <Button variant="ghost" size="icon"
+              className="rounded-full h-8 w-8 sm:h-9 sm:w-9 hover:bg-accent/70 hidden sm:inline-flex transition-colors" title="Search in chat">
               <Search className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 hover:bg-accent" onClick={() => setShowMembers(!showMembers)} title="Members">
+            <Button variant={showMembers ? "secondary" : "ghost"} size="icon"
+              className={`rounded-full h-8 w-8 sm:h-9 sm:w-9 transition-colors ${showMembers ? "bg-primary/10 text-primary" : "hover:bg-accent/70"}`}
+              onClick={() => setShowMembers(!showMembers)} title="Members">
               <Users className="h-4 w-4" />
             </Button>
           </div>
         </div>
 
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-1 min-h-0 overflow-hidden">
           {/* Messages Area */}
           <div className="flex-1 relative overflow-hidden">
             <ScrollArea ref={scrollRef} className="h-full px-3 sm:px-4 py-3">
@@ -716,13 +944,21 @@ const ChatRoomPage = () => {
                     </div>
                   )}
                   {groupedMessages.length === 0 ? (
-                    <div className="flex h-full items-center justify-center text-center text-sm text-muted-foreground">
-                      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center mx-auto mb-4">
-                          <MessageCircle className="w-7 h-7 text-primary/60" />
+                    <div className="flex h-full items-center justify-center">
+                      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.5, ease: "easeOut" }}
+                        className="text-center">
+                        <div className="w-20 h-20 mx-auto mb-5 rounded-full bg-gradient-to-br from-primary/20 via-primary/10 to-primary/5
+                          flex items-center justify-center ring-2 ring-primary/10 shadow-xl shadow-primary/5">
+                          <MessageCircle className="w-9 h-9 text-primary/50" />
                         </div>
-                        <p className="text-base font-semibold text-foreground/80 mb-1">No messages yet</p>
-                        <p className="text-muted-foreground/70">Be the first to send a message!</p>
+                        <h3 className="text-lg font-semibold text-foreground/90 mb-1.5">Start the conversation</h3>
+                        <p className="text-sm text-muted-foreground/70 max-w-[200px] mx-auto leading-relaxed">
+                          Send the first message to begin chatting
+                        </p>
+                        <motion.div initial={{ width: 0 }} animate={{ width: 40 }}
+                          transition={{ delay: 0.3, duration: 0.4 }}
+                          className="h-0.5 bg-primary/30 rounded-full mx-auto mt-4" />
                       </motion.div>
                     </div>
                   ) : (
@@ -844,12 +1080,12 @@ const ChatRoomPage = () => {
         {/* Emoji picker */}
         <AnimatePresence>
           {showEmojiPicker && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
-              className="border-t border-border/40 bg-card/80 backdrop-blur-md px-4 py-2">
-              <div className="flex gap-1.5">
-                {EMOJIS.map((emoji) => (
+            <motion.div initial={{ opacity: 0, y: 10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }}
+              className="border-t border-border/40 bg-card/90 backdrop-blur-lg px-4 py-3 shadow-[0_-8px_30px_rgba(0,0,0,0.12)]">
+              <div className="flex flex-wrap gap-1.5 justify-center">
+                {["😀","😃","😄","😁","😅","😂","🤣","😊","😇","🙂","😉","😌","😍","🥰","😘","😗","😋","😛","😜","🤪","😝","🤑","🤗","🤭","🤫","🤔","🤐","🤨","😐","😑","😶","😏","😒","🙄","😬","😮","😯","😲","😳","🥺","😢","😭","😤","😡","😠","🤬","😈","👿","💀","💩","🤡","👹","👺","👻","👽","👾","🤖","🎃","😺","😸","😹","😻","😼","😽","🙀","😿","😾","💋","👋","🤚","🖐","✋","🖖","👌","🤌","🤏","✌️","🤞","🫰","🤟","🤘","🤙","👈","👉","👆","🖕","👇","👍","👎","✊","👊","🤛","🤜","👏","🙌","👐","🤲","🤝","🙏","✍️","💅","🤳","💪","🦵","🦶","👂","🦻","👃","🧠","🫀","🫁","🦷","🦴","👀","👁","👅","👄","💘","❤️","🩷","🧡","💛","💚","💙","🩵","💜","🖤","🩶","🤍","🤎","💔","❣️","💕","💞","💓","💗","💖","💝","💟","♥️","🫶","🔥","⭐","🌟","✨","💫","🎉","🎊","🎈","🎁","🎀","🪄","🔮","💎","🌊","🌈","☀️","🌙","⭐️","⚡️","☄️","💥","🔥","🌈","🍕","🍔","🍟","🌭","🍿","🧁","🍦","🍩","🍪","🍫","🍬","🍭","🍺","🍻","🥂","🍷","🥃","🍸","🍹","🧉","☕️","🍵","🥤","🧃"].map((emoji) => (
                   <button key={emoji} onClick={() => { setInput((prev) => prev + emoji); setShowEmojiPicker(false); }}
-                    className="h-8 w-8 rounded-full hover:bg-accent flex items-center justify-center text-lg transition-colors">
+                    className="h-8 w-8 rounded-lg hover:bg-accent flex items-center justify-center text-lg transition-all hover:scale-110 active:scale-95">
                     {emoji}
                   </button>
                 ))}
@@ -859,60 +1095,96 @@ const ChatRoomPage = () => {
         </AnimatePresence>
 
         {/* Input Area */}
-        <div className="border-t border-border/60 bg-card/80 backdrop-blur-md px-3 sm:px-4 py-3 shrink-0">
-          <div className="flex items-center gap-1.5 max-w-4xl mx-auto">
+        <div className="border-t border-border/50 bg-card/70 backdrop-blur-xl px-3 sm:px-4 py-2.5 shrink-0 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+          <div className="flex items-end gap-1.5 max-w-4xl mx-auto">
             <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden"
               accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.zip" />
-            <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 shrink-0 hover:bg-accent"
+            <Button variant="ghost" size="icon"
+              className={`rounded-full h-9 w-9 shrink-0 transition-colors ${showEmojiPicker ? "bg-primary/10 text-primary" : "hover:bg-accent"}`}
               onClick={() => setShowEmojiPicker(!showEmojiPicker)} title="Emoji">
-              <Smile className="h-5 w-5 text-muted-foreground/70" />
+              <Smile className="h-4.5 w-4.5" />
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 shrink-0 hover:bg-accent" disabled={uploading} title="Attach file">
-                  <Paperclip className="h-5 w-5 text-muted-foreground/70" />
+                <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 shrink-0 hover:bg-accent" disabled={uploading} title="Attach file">
+                  <Paperclip className="h-4.5 w-4.5 text-muted-foreground/70" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-48">
-                <DropdownMenuLabel>Attach</DropdownMenuLabel>
+              <DropdownMenuContent align="start" className="w-48 rounded-xl">
+                <DropdownMenuLabel className="text-xs font-medium">Attach</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleFilePick}>
+                <DropdownMenuItem onClick={handleFilePick} className="rounded-lg gap-2">
                   <Image className="h-4 w-4" /> Photos & Videos
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleFilePick}>
+                <DropdownMenuItem onClick={handleFilePick} className="rounded-lg gap-2">
                   <FileIcon className="h-4 w-4" /> Document
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={startRecording} className="rounded-lg gap-2">
+                  <Mic className="h-4 w-4" /> Voice message
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             <div className="flex-1 relative">
-              <textarea ref={textareaRef} value={input}
-                onChange={handleInputChange}
-                onKeyDown={handleKeyDown}
-                placeholder={uploading ? "Uploading..." : "Type a message..."}
-                disabled={sending || uploading || recording}
-                rows={1}
-                className="w-full resize-none rounded-2xl border border-input/80 bg-background/80 backdrop-blur-sm px-4 py-2.5 text-sm shadow-sm transition-all placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:border-primary/50 disabled:opacity-50 max-h-[160px]"
-              />
+              {recording ? (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-destructive/5 border border-destructive/20">
+                  <div className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full bg-destructive animate-pulse shadow-lg shadow-destructive/30" />
+                    <span className="text-xs font-semibold text-destructive/80">Recording</span>
+                  </div>
+                  <div className="flex items-end gap-[2px] h-6 flex-1">
+                    {recordingWaveform.map((h, i) => (
+                      <span key={i} className="flex-1 rounded-full bg-destructive transition-all duration-75"
+                        style={{ height: `${Math.max(2, h)}px`, opacity: Math.max(0.3, h / 24) }} />
+                    ))}
+                  </div>
+                  <span className="text-xs font-medium tabular-nums text-destructive/80 shrink-0">
+                    {Math.floor(recordingTimer / 60)}:{(recordingTimer % 60).toString().padStart(2, "0")}
+                  </span>
+                </div>
+              ) : (
+                <textarea ref={textareaRef} value={input}
+                  onChange={handleInputChange}
+                  onKeyDown={handleKeyDown}
+                  placeholder={uploading ? "Uploading..." : "Type a message..."}
+                  disabled={sending || uploading}
+                  rows={1}
+                  className="w-full resize-none rounded-2xl border border-input/70 bg-background/60 backdrop-blur-sm px-4 py-2.5 text-sm shadow-sm transition-all placeholder:text-muted-foreground/40
+                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:border-primary/40
+                    disabled:opacity-50 max-h-[120px] leading-relaxed"
+                />
+              )}
             </div>
             {recording ? (
-              <Button variant="destructive" size="icon" className="rounded-full h-10 w-10 shrink-0 animate-pulse shadow-lg shadow-destructive/30"
-                onClick={stopRecording} title="Stop recording">
-                <Square className="h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-1 shrink-0">
+                <Button variant="ghost" size="icon"
+                  className="rounded-full h-9 w-9 hover:bg-destructive/10 hover:text-destructive transition-colors"
+                  onClick={cancelRecording} title="Cancel recording">
+                  <Undo2 className="h-4 w-4" />
+                </Button>
+                <Button size="icon"
+                  className="rounded-full h-9 w-9 bg-destructive hover:bg-destructive/90 shadow-lg shadow-destructive/30 transition-all"
+                  onClick={stopRecording} title="Send recording">
+                  <Square className="h-3.5 w-3.5" />
+                </Button>
+              </div>
             ) : (
-              <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 shrink-0 hover:bg-accent"
-                onClick={startRecording} disabled={uploading} title="Record voice">
-                <Mic className="h-5 w-5 text-muted-foreground/70" />
-              </Button>
+              <>
+                <Button variant="ghost" size="icon"
+                  className="rounded-full h-9 w-9 shrink-0 hover:bg-accent transition-colors"
+                  onClick={startRecording} disabled={uploading} title="Record voice">
+                  <Mic className="h-4.5 w-4.5 text-muted-foreground/70" />
+                </Button>
+                <Button size="icon"
+                  className="rounded-full h-9 w-9 shrink-0 bg-primary hover:bg-primary/90 shadow-md disabled:shadow-none transition-all active:scale-95"
+                  onClick={handleSend} disabled={!input.trim() || sending || uploading}>
+                  {sending ? (
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                </Button>
+              </>
             )}
-            <Button size="icon" className="rounded-full h-10 w-10 shrink-0 bg-primary hover:bg-primary/90 shadow-md disabled:shadow-none"
-              onClick={handleSend} disabled={!input.trim() || sending || uploading || recording}>
-              {sending ? (
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-            </Button>
           </div>
         </div>
       </div>

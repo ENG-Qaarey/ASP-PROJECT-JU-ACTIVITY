@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useTheme } from "next-themes";
 import { useAuth, UserRole } from "@/contexts/AuthContext";
 import { useActivity } from "@/contexts/ActivityContext";
+import AppHeader from "@/components/blocks/AppHeader";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -656,7 +657,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   );
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className={`${location.pathname.startsWith("/chat") ? "h-screen overflow-hidden" : "min-h-screen"} bg-background flex`}>
       {/* Sidebar - Desktop */}
       <aside className="hidden lg:flex w-64 bg-card border-r border-border flex-col fixed h-full">
         {/* Animated JU-AMS Header */}
@@ -738,189 +739,52 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 lg:ml-64">
-        {/* Top Bar */}
-        <header className="sticky top-0 z-40 bg-card/80 backdrop-blur-lg border-b border-border">
-          <div className="px-4 lg:px-6 py-3 flex flex-wrap items-center gap-3">
-            <div className="flex min-w-0 flex-1 items-center gap-3">
-              {/* Conditionally show full profile on the far left for students */}
-              {user?.role === "student" && (
-                <div className="flex items-center gap-3 px-1 py-1 rounded-full sm:bg-muted/30">
-                  <Avatar className="w-8 h-8 border border-primary/20">
-                    {user?.avatar ? <AvatarImage src={user.avatar} alt={user.name} /> : null}
-                    <AvatarFallback className="bg-primary text-primary-foreground text-xs uppercase">
-                      {user?.name?.charAt(0) || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="hidden sm:flex flex-col min-w-0">
-                    <span className="text-sm font-bold text-foreground truncate leading-none mb-0.5">
-                      {user.name}
-                    </span>
-                    <span className="text-[10px] font-medium text-emerald-500 flex items-center gap-1">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      Student Online
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label="Open navigation"
-                className={`lg:hidden ${frostedControlClasses}`}
-                onClick={() => setIsSidebarOpen(true)}
-              >
-                <Menu className="w-5 h-5" />
-              </Button>
-
-              {user?.role !== "student" && (
-                <div className="hidden min-w-0 flex-1 flex-col sm:flex">
-                  <span className="text-[11px] uppercase tracking-[0.35em] text-muted-foreground">{portalLabel}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-foreground truncate">{headerHandle}</span>
-                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-500">
-                      <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" aria-hidden="true" />
-                      {headerStatusLabel}
-                    </span>
-                  </div>
-                </div>
-              )}
+      <div className={`flex-1 lg:ml-64 ${location.pathname.startsWith("/chat") ? "flex flex-col min-h-0" : ""}`}>
+        <AppHeader
+          user={user}
+          unreadNotifications={unreadNotifications}
+          isAdmin={isAdmin}
+          isDarkMode={mounted && isDarkMode}
+          onMenuClick={() => setIsSidebarOpen(true)}
+          onNavigate={(path) => navigate(path)}
+          onToggleTheme={toggleTheme}
+          onLogout={handleLogout}
+          onChatClick={() => handleChatOpenChange(true)}
+        />
+        <Sheet open={isChatOpen} onOpenChange={handleChatOpenChange}>
+          <SheetContent
+            side="right"
+            className="w-[95vw] sm:max-w-3xl lg:max-w-4xl h-screen max-h-screen flex flex-col gap-4 overflow-hidden p-0 sm:p-6"
+          >
+          <SheetHeader className="px-4 pt-4 sm:px-0">
+            <SheetTitle className="text-xl">Communications Hub</SheetTitle>
+            <SheetDescription>Keep every student, coordinator, and admin within reach.</SheetDescription>
+          </SheetHeader>
+          <div className="flex flex-1 flex-col gap-4 overflow-hidden px-4 pb-4 sm:px-0">
+            <div className="hidden flex-1 min-h-0 gap-4 md:grid md:grid-cols-[260px_minmax(0,1fr)]">
+              {directoryPanel}
+              {conversationPanel}
             </div>
-
-            {/* Right Section */}
-            <div className="ml-auto flex flex-wrap items-center justify-end gap-1 sm:gap-2">
-              {/* Communications Shortcut */}
-              {user?.role && (
-                <Sheet open={isChatOpen} onOpenChange={handleChatOpenChange}>
-                  <SheetTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label="Open communications hub"
-                      className={`relative ${frostedControlClasses}`}
-                    >
-                      <MessageCircle className="w-5 h-5" />
-                      {isAdmin && (
-                        <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-emerald-400 ring-2 ring-card" />
-                      )}
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent
-                    side="right"
-                    className="w-[95vw] sm:max-w-3xl lg:max-w-4xl h-screen max-h-screen flex flex-col gap-4 overflow-hidden p-0 sm:p-6"
-                  >
-                  <SheetHeader className="px-4 pt-4 sm:px-0">
-                    <SheetTitle className="text-xl">Communications Hub</SheetTitle>
-                    <SheetDescription>Keep every student, coordinator, and admin within reach.</SheetDescription>
-                  </SheetHeader>
-                  <div className="flex flex-1 flex-col gap-4 overflow-hidden px-4 pb-4 sm:px-0">
-                    <div className="hidden flex-1 min-h-0 gap-4 md:grid md:grid-cols-[260px_minmax(0,1fr)]">
-                      {directoryPanel}
-                      {conversationPanel}
-                    </div>
-                    <div className="flex-1 min-h-0 md:hidden">
-                      <Tabs defaultValue="chat" className="flex h-full flex-col">
-                        <TabsList className="grid w-full grid-cols-2 rounded-2xl bg-muted/40">
-                          <TabsTrigger value="chat">Chat</TabsTrigger>
-                          <TabsTrigger value="people">People</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="chat" className="mt-4 flex-1">
-                          {conversationPanel}
-                        </TabsContent>
-                        <TabsContent value="people" className="mt-4 flex-1">
-                          {directoryPanel}
-                        </TabsContent>
-                      </Tabs>
-                    </div>
-                  </div>
-                  </SheetContent>
-                </Sheet>
-              )}
-
-              {/* Notifications */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate(`/${user?.role}/notifications`)}
-                className={`relative ${frostedControlClasses} ${location.pathname.includes("/notifications") ? "text-primary" : ""}`}
-                aria-label={
-                  unreadNotifications > 0
-                    ? `You have ${unreadDisplay} unread notifications`
-                    : "Notifications"
-                }
-              >
-                <Bell className={`w-5 h-5 ${bellAnimationClass}`} />
-                {unreadNotifications > 0 && (
-                  <span className="absolute -top-1 -right-1 rounded-full bg-destructive text-destructive-foreground px-1.5 py-0.5 text-[10px] font-bold">
-                    {unreadDisplay}
-                  </span>
-                )}
-              </Button>
-
-              {/* Profile Dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className={`gap-2 pl-2 pr-3 ${frostedControlClasses}`}>
-                    {user?.role !== "student" ? (
-                      <>
-                        <Avatar className="w-8 h-8">
-                          {user?.avatar ? <AvatarImage src={user.avatar} alt={user?.name ?? "User"} /> : null}
-                          <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                            {user?.name?.charAt(0) || "U"}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="hidden md:inline font-medium">{user?.name}</span>
-                      </>
-                    ) : (
-                      <Settings className="w-5 h-5 text-muted-foreground" />
-                    )}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem onClick={() => navigate(`/${user?.role}/profile`)}>
-                    <User className="w-4 h-4 mr-2" />
-                    Profile
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate(`/${user?.role}/change-password`)}>
-                    <Settings className="w-4 h-4 mr-2" />
-                    Change Password
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={toggleTheme}>
-                    {isDarkMode ? (
-                      <SunMedium className="w-4 h-4 mr-2" />
-                    ) : (
-                      <Moon className="w-4 h-4 mr-2" />
-                    )}
-                    {isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="text-destructive">
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Logout
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+            <div className="flex-1 min-h-0 md:hidden">
+              <Tabs defaultValue="chat" className="flex h-full flex-col">
+                <TabsList className="grid w-full grid-cols-2 rounded-2xl bg-muted/40">
+                  <TabsTrigger value="chat">Chat</TabsTrigger>
+                  <TabsTrigger value="people">People</TabsTrigger>
+                </TabsList>
+                <TabsContent value="chat" className="mt-4 flex-1">
+                  {conversationPanel}
+                </TabsContent>
+                <TabsContent value="people" className="mt-4 flex-1">
+                  {directoryPanel}
+                </TabsContent>
+              </Tabs>
             </div>
           </div>
-          <div className="px-4 lg:px-6 pb-3 sm:hidden">
-            <div className="flex items-center justify-between rounded-2xl border border-border/70 bg-card/70 px-4 py-2">
-              <div>
-                <p className="text-[11px] uppercase tracking-[0.35em] text-muted-foreground">{portalLabel}</p>
-                <p className="text-sm font-semibold text-foreground">
-                  {user?.role === "student" ? user.name : headerHandle}
-                </p>
-              </div>
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-600">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true" />
-                {headerStatusLabel}
-              </span>
-            </div>
-          </div>
-        </header>
+          </SheetContent>
+        </Sheet>
 
         {/* Page Content */}
-        <main className="p-4 lg:p-6">{children}</main>
+        <main className={location.pathname.startsWith("/chat") ? "flex flex-1 min-h-0 overflow-hidden" : "p-4 lg:p-6"}>{children}</main>
       </div>
 
       {/* Mobile Sidebar Overlay */}
