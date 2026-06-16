@@ -63,9 +63,13 @@ namespace backend.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> Create([FromBody] CreateActivityRequest request)
         {
-            var coordinatorId = GetUserId();
+            var adminId = GetUserId();
+            var coordinatorId = request.CoordinatorId ?? adminId;
+
+            var coordinator = await _db.Users.FindAsync(coordinatorId);
 
             var activity = new Activity
             {
@@ -76,7 +80,7 @@ namespace backend.Controllers
                 Location = request.Location,
                 Capacity = request.Capacity,
                 CoordinatorId = coordinatorId,
-                CoordinatorName = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value,
+                CoordinatorName = coordinator?.Name ?? User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value,
                 Category = request.Category,
                 Status = request.Status?.ToLower() switch
                 {

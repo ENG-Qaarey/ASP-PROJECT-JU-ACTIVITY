@@ -344,6 +344,61 @@ export const auditLogsApi = {
   },
 };
 
+// Messages API
+export const messagesApi = {
+  getByActivity: (activityId: string, offset = 0, limit = 50) =>
+    fetchApi<{ messages: any[]; total: number; offset: number; limit: number }>(
+      `/messages?activityId=${encodeURIComponent(activityId)}&offset=${offset}&limit=${limit}`
+    ),
+
+  send: (activityId: string, content: string, type?: string, metadata?: string, parentId?: string) =>
+    fetchApi<any>('/messages', {
+      method: 'POST',
+      body: JSON.stringify({ activityId, content, type, metadata, parentId }),
+    }),
+
+  edit: (id: string, content: string) =>
+    fetchApi<any>(`/messages/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ content }),
+    }),
+
+  delete: (id: string) =>
+    fetchApi<{ success: boolean }>(`/messages/${id}`, {
+      method: 'DELETE',
+    }),
+
+  toggleReaction: (id: string, emoji: string) =>
+    fetchApi<any>(`/messages/${id}/react`, {
+      method: 'POST',
+      body: JSON.stringify({ emoji }),
+    }),
+
+  getMembers: (activityId: string) =>
+    fetchApi<any[]>(`/messages/members?activityId=${encodeURIComponent(activityId)}`),
+
+  markAsRead: (activityId: string) =>
+    fetchApi<any>('/messages/read', {
+      method: 'POST',
+      body: JSON.stringify({ activityId }),
+    }),
+
+  getUnreadCounts: () =>
+    fetchApi<Record<string, number>>('/messages/unread'),
+
+  getLastMessages: () =>
+    fetchApi<Record<string, { content: string; senderName: string; createdAt: string }>>('/messages/preview'),
+
+  upload: (activityId: string, file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return fetchApi<{ url: string; fileName: string; size: number; contentType: string }>(
+      `/messages/upload?activityId=${encodeURIComponent(activityId)}`,
+      { method: 'POST', body: formData }
+    );
+  },
+};
+
 // Categories API
 export const categoriesApi = {
   getAll: () => fetchApi<{ id: string; name: string }[]>('/categories'),

@@ -34,7 +34,7 @@ namespace backend.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> Create([FromBody] CreateCategoryRequest request)
         {
             if (string.IsNullOrWhiteSpace(request.Name))

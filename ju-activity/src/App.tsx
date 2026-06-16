@@ -42,6 +42,9 @@ import AdminLogs from "./pages/admin/AdminLogs";
 import NotFound from "./pages/NotFound";
 import StudentCalendar from "./pages/student/StudentCalendar";
 import AllActivitiesCalendar from "./pages/AllActivitiesCalendar";
+import ChatListPage from "./pages/chat/ChatListPage";
+import ChatRoomPage from "./pages/chat/ChatRoomPage";
+import ChatTemplateDemo from "./pages/chat/ChatTemplateDemo";
 
 const queryClient = new QueryClient();
 
@@ -71,6 +74,8 @@ const App = () => (
                     <Route path="activities" element={<StudentActivities />} />
                     <Route path="activities/:id" element={<ActivityDetails />} />
                     <Route path="applications" element={<StudentApplications />} />
+                    <Route path="chat" element={<ChatListPage />} />
+                    <Route path="chat/:activityId" element={<ChatRoomPage />} />
                     <Route path="notifications" element={<StudentNotifications />} />
                     <Route path="calendar" element={<StudentCalendar />} />
                     <Route path="profile" element={<ProfileScreen />} />
@@ -87,11 +92,12 @@ const App = () => (
                 <ProtectedRoute allowedRoles={["coordinator"]}>
                    <Routes>
                     <Route path="dashboard" element={<CoordinatorDashboard />} />
-                    <Route path="create-activity" element={<CreateActivity />} />
                     <Route path="activities" element={<ManageActivities />} />
                     <Route path="activities/:id" element={<ActivityDetails />} />
                     <Route path="activities/:id/edit" element={<CreateActivity />} /> {/* Mock edit route reuses create */}
                     <Route path="applications" element={<CoordinatorApplications />} />
+                    <Route path="chat" element={<ChatListPage />} />
+                    <Route path="chat/:activityId" element={<ChatRoomPage />} />
                     <Route path="attendance" element={<AttendanceManagement />} />
                     <Route path="notifications" element={<CoordinatorNotifications />} />
                     <Route path="calendar" element={<StudentCalendar />} />
@@ -117,6 +123,9 @@ const App = () => (
                     <Route path="activities" element={<AdminActivities />} />
                     <Route path="activities/:id" element={<ActivityDetails />} />
                     <Route path="monitor-activities" element={<MonitorActivities />} />
+                    <Route path="chat" element={<ChatListPage />} />
+                    <Route path="chat/:activityId" element={<ChatRoomPage />} />
+                    <Route path="chat-template-demo" element={<ChatTemplateDemo />} />
                     <Route path="notifications" element={<AdminNotifications />} />
                     <Route path="reports-advanced" element={<AdminReports />} />
                     <Route path="system-logs" element={<SystemLogs />} />

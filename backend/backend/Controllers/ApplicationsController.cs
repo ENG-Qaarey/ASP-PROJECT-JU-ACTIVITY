@@ -163,6 +163,7 @@ namespace backend.Controllers
             {
                 await _hub.Clients.Group($"user-{activity.CoordinatorId}").SendAsync("NotificationReceived", MapNotification(coordNotif));
             }
+            await _hub.Clients.All.SendAsync("ApplicationUpdated", MapApplication(application));
             await _hub.Clients.All.SendAsync("ActivityUpdated", MapActivity(activity));
 
             return Ok(MapApplication(application));
@@ -222,7 +223,7 @@ namespace backend.Controllers
             await _db.SaveChangesAsync();
 
             await _hub.Clients.Group($"user-{application.StudentId}").SendAsync("NotificationReceived", MapNotification(notif));
-            await _hub.Clients.Group($"user-{application.StudentId}").SendAsync("ApplicationUpdated", MapApplication(application));
+            await _hub.Clients.All.SendAsync("ApplicationUpdated", MapApplication(application));
             if (application.Activity != null)
             {
                 await _hub.Clients.All.SendAsync("ActivityUpdated", MapActivity(application.Activity));

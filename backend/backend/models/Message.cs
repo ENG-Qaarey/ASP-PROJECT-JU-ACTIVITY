@@ -27,6 +27,11 @@ namespace backend.models
         [ForeignKey(nameof(ReceiverId))]
         public User? Receiver { get; set; }
 
+        public Guid? ActivityId { get; set; }
+
+        [ForeignKey(nameof(ActivityId))]
+        public Activity? Activity { get; set; }
+
         public Guid? GroupId { get; set; }
 
         public bool IsRead { get; set; } = false;
@@ -38,5 +43,14 @@ namespace backend.models
         public bool IsDeleted { get; set; } = false;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public DateTime? EditedAt { get; set; }
+
+        public string? Reactions { get; set; }
+
+        public Guid? ParentId { get; set; }
+
+        [ForeignKey(nameof(ParentId))]
+        public Message? Parent { get; set; }
     }
 }

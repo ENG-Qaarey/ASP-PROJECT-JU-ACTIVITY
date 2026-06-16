@@ -306,7 +306,7 @@ const ManageActivities = () => {
                 <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="font-semibold text-lg mb-2">No activities found</h3>
                 <p className="text-muted-foreground">
-                  {search ? "Try adjusting your search" : "Create your first activity to get started"}
+                  {search ? "Try adjusting your search" : "No activities available yet"}
                 </p>
               </CardContent>
             </Card>

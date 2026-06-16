@@ -101,6 +101,31 @@ namespace backend.models.Migrations
                     b.ToTable("Activities");
                 });
 
+            modelBuilder.Entity("backend.models.ActivityReadStatus", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ActivityId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("LastReadAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActivityId");
+
+                    b.HasIndex("UserId", "ActivityId")
+                        .IsUnique();
+
+                    b.ToTable("ActivityReadStatuses");
+                });
+
             modelBuilder.Entity("backend.models.AdminProfile", b =>
                 {
                     b.Property<Guid>("Id")
@@ -328,6 +353,9 @@ namespace backend.models.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("EditedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Guid?>("GroupId")
                         .HasColumnType("uuid");
 
@@ -341,6 +369,12 @@ namespace backend.models.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("Metadata")
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("ParentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Reactions")
                         .HasColumnType("text");
 
                     b.Property<Guid?>("ReceiverId")
@@ -360,6 +394,8 @@ namespace backend.models.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ActivityId");
+
+                    b.HasIndex("ParentId");
 
                     b.HasIndex("ReceiverId");
 
@@ -565,6 +601,25 @@ namespace backend.models.Migrations
                     b.Navigation("Coordinator");
                 });
 
+            modelBuilder.Entity("backend.models.ActivityReadStatus", b =>
+                {
+                    b.HasOne("backend.models.Activity", "Activity")
+                        .WithMany()
+                        .HasForeignKey("ActivityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("backend.models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Activity");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("backend.models.AdminProfile", b =>
                 {
                     b.HasOne("backend.models.User", "User")
@@ -653,9 +708,15 @@ namespace backend.models.Migrations
 
             modelBuilder.Entity("backend.models.Message", b =>
                 {
-                    b.HasOne("backend.models.Activity", null)
+                    b.HasOne("backend.models.Activity", "Activity")
                         .WithMany("Messages")
-                        .HasForeignKey("ActivityId");
+                        .HasForeignKey("ActivityId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("backend.models.Message", "Parent")
+                        .WithMany()
+                        .HasForeignKey("ParentId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("backend.models.User", "Receiver")
                         .WithMany("ReceivedMessages")
@@ -667,6 +728,10 @@ namespace backend.models.Migrations
                         .HasForeignKey("SenderId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Activity");
+
+                    b.Navigation("Parent");
 
                     b.Navigation("Receiver");
 

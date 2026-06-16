@@ -19,6 +19,7 @@ namespace backend.models
         public DbSet<Category> Categories => Set<Category>();
         public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
         public DbSet<PendingUser> PendingUsers => Set<PendingUser>();
+        public DbSet<ActivityReadStatus> ActivityReadStatuses => Set<ActivityReadStatus>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -67,6 +68,16 @@ namespace backend.models
                 entity.Property(m => m.Type).HasConversion<string>().HasMaxLength(20);
                 entity.HasOne(m => m.Sender).WithMany(u => u.SentMessages).HasForeignKey(m => m.SenderId).OnDelete(DeleteBehavior.Restrict);
                 entity.HasOne(m => m.Receiver).WithMany(u => u.ReceivedMessages).HasForeignKey(m => m.ReceiverId).OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(m => m.Activity).WithMany(a => a.Messages).HasForeignKey(m => m.ActivityId).OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(m => m.Parent).WithMany().HasForeignKey(m => m.ParentId).OnDelete(DeleteBehavior.SetNull);
+                entity.HasIndex(m => m.ActivityId);
+            });
+
+            modelBuilder.Entity<ActivityReadStatus>(entity =>
+            {
+                entity.HasIndex(r => new { r.UserId, r.ActivityId }).IsUnique();
+                entity.HasOne(r => r.User).WithMany().HasForeignKey(r => r.UserId).OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(r => r.Activity).WithMany().HasForeignKey(r => r.ActivityId).OnDelete(DeleteBehavior.Cascade);
             });
 
             modelBuilder.Entity<PushToken>(entity =>

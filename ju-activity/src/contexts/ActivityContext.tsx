@@ -248,8 +248,8 @@ export const ActivityProvider = ({ children }: { children: ReactNode }) => {
       throw new Error("You must be logged in to create an activity");
     }
 
-    if (user.role !== "admin" && user.role !== "coordinator") {
-      throw new Error("You do not have permission to create activities");
+    if (user.role !== "admin") {
+      throw new Error("Only administrators can create activities");
     }
     
     try {
