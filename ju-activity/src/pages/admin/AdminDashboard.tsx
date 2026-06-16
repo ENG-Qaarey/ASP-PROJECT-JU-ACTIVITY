@@ -24,6 +24,7 @@ import {
   Percent
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import { toast } from "@/hooks/use-toast";
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -49,8 +50,8 @@ const AdminDashboard = () => {
           ...stats,
           loading: false
         }));
-      } catch (error) {
-        console.error('Failed to fetch user stats:', error);
+      } catch {
+        toast({ title: "Error", description: "Failed to load user statistics.", variant: "destructive" });
         setUserStats(prev => ({
           ...prev,
           loading: false

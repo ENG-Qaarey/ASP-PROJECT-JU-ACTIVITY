@@ -67,11 +67,11 @@ const LoginScreen = () => {
           // Trigger page reload to update auth context
           const role = (result.user.role || 'student') as string;
           if (role === 'admin') {
-            window.location.href = '/admin/dashboard';
+            navigate('/admin/dashboard');
           } else if (role === 'coordinator') {
-            window.location.href = '/coordinator/dashboard';
+            navigate('/coordinator/dashboard');
           } else {
-            window.location.href = '/student/dashboard';
+            navigate('/student/dashboard');
           }
       } else {
           toast({
@@ -82,9 +82,6 @@ const LoginScreen = () => {
       }
 
     } catch (error: any) {
-      console.error("Login error:", error);
-      
-      // Provide more helpful error messages
       let errorMessage = "Invalid credentials";
       
       if (error.message) {

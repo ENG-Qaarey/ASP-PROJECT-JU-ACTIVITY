@@ -6,6 +6,7 @@ import { useActivity } from "@/contexts/ActivityContext";
 import { useAuth } from "@/contexts/AuthContext";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { messagesApi } from "@/lib/api";
+import { formatRelativeTime } from "@/lib/format";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -78,18 +79,6 @@ const ChatListPage = () => {
   }, [user, activities, applications, search]);
 
   const rolePrefix = user?.role === "admin" ? "admin" : user?.role === "coordinator" ? "coordinator" : "student";
-
-  const formatTime = (iso: string) => {
-    const d = new Date(iso);
-    const now = new Date();
-    const diffMs = now.getTime() - d.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    if (diffMins < 1) return "Now";
-    if (diffMins < 60) return `${diffMins}m`;
-    const diffHours = Math.floor(diffMins / 60);
-    if (diffHours < 24) return `${diffHours}h`;
-    return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-  };
 
   return (
     <DashboardLayout>
@@ -186,7 +175,7 @@ const ChatListPage = () => {
                           <h3 className="text-sm font-semibold truncate">{activity.title}</h3>
                           {preview && (
                             <span className="text-[11px] text-muted-foreground/50 shrink-0">
-                              {formatTime(preview.createdAt)}
+                              {formatRelativeTime(preview.createdAt)}
                             </span>
                           )}
                         </div>

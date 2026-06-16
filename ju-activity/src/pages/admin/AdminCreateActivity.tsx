@@ -57,9 +57,8 @@ const AdminCreateActivity = () => {
     try {
       const data = await categoriesApi.getAll();
       setCategories(data);
-    } catch (error) {
-      console.error("Failed to fetch categories", error);
-      // Fallback to default categories if needed
+    } catch {
+      toast({ title: "Error", description: "Failed to load categories. Using defaults.", variant: "destructive" });
     }
   };
 

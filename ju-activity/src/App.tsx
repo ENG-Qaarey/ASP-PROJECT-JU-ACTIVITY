@@ -49,14 +49,14 @@ import ChatTemplateDemo from "./pages/chat/ChatTemplateDemo";
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <ActivityProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <ConnectionError />
-          <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+  <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <ActivityProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <ConnectionError />
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<SplashScreen />} />
@@ -141,11 +141,11 @@ const App = () => (
             {/* Catch-all */}
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </BrowserRouter>
         </TooltipProvider>
       </ActivityProvider>
     </AuthProvider>
   </QueryClientProvider>
+</BrowserRouter>
 );
 
 export default App;

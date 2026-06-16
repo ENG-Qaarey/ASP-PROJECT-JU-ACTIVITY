@@ -5,8 +5,8 @@ export const userService = {
     try {
       const users = await usersApi.getAll();
       return users.length;
-    } catch (error) {
-      console.error('Error fetching users:', error);
+    } catch {
+      console.warn('Failed to fetch users, returning 0');
       return 0;
     }
   },
@@ -33,8 +33,8 @@ export const userService = {
           admins
         }
       };
-    } catch (error) {
-      console.error('Error fetching user stats:', error);
+    } catch {
+      console.warn('Failed to fetch user stats, returning zeros');
       return {
         total: 0,
         active: 0,

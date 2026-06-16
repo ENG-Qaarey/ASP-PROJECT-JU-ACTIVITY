@@ -1,6 +1,7 @@
 import { Calendar, dateFnsLocalizer, View } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -71,6 +72,7 @@ export default function ActivitiesCalendar({ userOnly = false }: ActivitiesCalen
   const [date, setDate] = useState(new Date());
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -137,7 +139,6 @@ export default function ActivitiesCalendar({ userOnly = false }: ActivitiesCalen
 
       setEvents(calendarEvents);
     } catch (error) {
-      console.error('Error fetching activities:', error);
       toast({
         title: 'Error',
         description: 'Failed to load calendar activities',
@@ -188,7 +189,6 @@ export default function ActivitiesCalendar({ userOnly = false }: ActivitiesCalen
         description: 'Calendar exported successfully! You can now import it into Google Calendar, Outlook, or Apple Calendar.',
       });
     } catch (error) {
-      console.error('Error exporting calendar:', error);
       toast({
         title: 'Error',
         description: 'Failed to export calendar',
@@ -399,7 +399,7 @@ export default function ActivitiesCalendar({ userOnly = false }: ActivitiesCalen
                 <Button
                   className="w-full"
                   onClick={() => {
-                    window.location.href = `/student/activities/${selectedEvent?.id}`;
+                    navigate(`/student/activities/${selectedEvent?.id}`);
                   }}
                 >
                   View Details

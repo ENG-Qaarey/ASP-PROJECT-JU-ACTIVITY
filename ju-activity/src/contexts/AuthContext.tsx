@@ -1,4 +1,6 @@
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "@/hooks/use-toast";
 import { authApi, setTokenProvider, usersApi } from "@/lib/api";
 
 export type UserRole = "student" | "coordinator" | "admin";
@@ -19,19 +21,26 @@ export type AuthState =
   | "anonymous"
   | "authenticated";
 
+/** Everything exposed by the auth provider — current user, user list, session management. */
 interface AuthContextType {
+  /** Currently authenticated user, or null if anonymous. */
   user: User | null;
-  users: User[]; // For admin listing, optional/legacy
-  // Legacy methods that we might keep for compatibility or administrative actions
+  /** All registered users (populated for admin role). */
+  users: User[];
+  /** Admin: permanently remove a user account. */
   deleteUser: (userId: string) => Promise<void>;
+  /** Admin: create a new coordinator account. */
   createCoordinator: (data: {
     fullName: string;
     email: string;
     password: string;
     department?: string;
   }) => Promise<void>;
+  /** Clear the session and redirect to the landing page. */
   logout: () => Promise<void>;
+  /** Update the current user's password. */
   changePassword: (oldPassword: string, newPassword: string) => Promise<void>;
+  /** Update the current user's profile (name, email, avatar, etc.). */
   updateProfile: (updates: {
     name: string;
     email: string;
@@ -39,23 +48,31 @@ interface AuthContextType {
     studentId?: string;
     avatar?: string | File;
   }) => Promise<void>;
+  /** Admin: toggle a user between active/inactive. */
   toggleUserStatus: (userId: string) => Promise<void>;
+  /** Re-fetch the user list from the server. */
   refreshUsers: () => Promise<void>;
   
+  /** True when a user session is active. */
   isAuthenticated: boolean;
-  isHydrated: boolean; // if false, still loading
+  /** False while the stored session is still being loaded. */
+  isHydrated: boolean;
+  /** Current authentication state machine value. */
   authState: AuthState;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/** Provides the current user session, authentication state, and user management methods.
+ *  Hydrates from localStorage on mount and verifies the token with the server. */
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]); // simplified for now
   const [isHydrated, setIsHydrated] = useState(false);
   const [authState, setAuthState] = useState<AuthState>("anonymous");
 
-  // Load user from localStorage on mount
+  /** Hydrate the session from localStorage on mount. Verifies the stored token with the backend. */
   useEffect(() => {
     setTokenProvider(async () => {
       return localStorage.getItem('token');
@@ -97,7 +114,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setAuthState("anonymous");
         }
       } catch (e) {
-        console.error("Failed to load user from storage:", e);
+        toast({ title: "Session Error", description: "Failed to restore your session. Please log in again.", variant: "destructive" });
         localStorage.removeItem('user');
         localStorage.removeItem('token');
         setUser(null);
@@ -110,8 +127,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     loadUserFromStorage();
   }, []);
 
-  // Compatibility: load all users for admin usage
-  // This arguably belongs in a separate context or hook, but simplifying for migration
+  /** Re-fetch the full user list from the backend (admin-only). */
   const refreshUsers = async () => {
      // Only attempt fetch when we actually have an auth token to send
      const token = localStorage.getItem('token');
@@ -128,30 +144,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
      }
   };
 
+  /** Auto-fetch users for admin on mount. */
   useEffect(() => {
     if (user?.role === 'admin') {
         refreshUsers();
     }
   }, [user]);
 
-
+  /** Clear the session from state and localStorage, then redirect to landing. */
   const logout = async () => {
     localStorage.removeItem('user');
     localStorage.removeItem('token');
     setUser(null);
     setAuthState("anonymous");
-    // Redirect to home page
-    window.location.href = '/';
+    navigate('/');
   };
 
-  // Administrative functions - keep relying on backend APIs for now 
-  // or implement them via Clerk API calls if we had a backend proxy.
-  // Assuming the existing backend `usersApi` still works for basic DB operations if they exist.
+  /** Permanently delete a user account by ID (admin only). */
   const deleteUser = async (userId: string) => {
       await usersApi.delete(userId);
       await refreshUsers();
   };
 
+  /** Create a new coordinator account (admin only). */
   const createCoordinator = async (data: {
     fullName: string;
     email: string;
@@ -168,14 +183,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await refreshUsers();
   };
 
+  /** Change the current user's password. */
   const changePassword = async (oldPassword: string, newPassword: string) => {
      if (!user) {
        throw new Error("You must be logged in to change your password.");
      }
       await usersApi.updateMyPassword(oldPassword, newPassword);
-     // Optionally refresh user data
   };
 
+  /** Update the current user's profile (name, email, avatar, etc.). */
   const updateProfile = async (updates: {
     name: string;
     email: string;
@@ -197,7 +213,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
            updatedAfterAvatar = await usersApi.uploadMyAvatar(avatar);
          }
 
-         // Update local state
          const newUser: User = {
            ...user,
            ...updatedAfterAvatar,
@@ -205,11 +220,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
          setUser(newUser);
          localStorage.setItem('user', JSON.stringify(newUser));
       } catch(e) {
-          console.error("Failed to update profile:", e);
+          toast({ title: "Update Failed", description: "Could not update your profile. Please try again.", variant: "destructive" });
           throw e;
       }
   };
   
+  /** Toggle a user between active/inactive status (admin only). */
   const toggleUserStatus = async (userId: string) => {
       await usersApi.toggleStatus(userId);
       await refreshUsers();

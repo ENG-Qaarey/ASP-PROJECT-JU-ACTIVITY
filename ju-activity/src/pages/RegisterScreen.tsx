@@ -126,13 +126,11 @@ const RegisterScreen = () => {
         });
 
         const role = result.user.role || 'student';
-        if (role === 'admin') window.location.href = '/admin/dashboard';
-        else if (role === 'coordinator') window.location.href = '/coordinator/dashboard';
-        else window.location.href = '/student/dashboard';
+        if (role === 'admin') navigate('/admin/dashboard');
+        else if (role === 'coordinator') navigate('/coordinator/dashboard');
+        else navigate('/student/dashboard');
       }
     } catch (error: any) {
-      console.error("Registration error:", error);
-
       let errorMessage = "Unable to register. Please try again.";
 
       if (error.message) {

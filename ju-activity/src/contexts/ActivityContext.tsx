@@ -9,6 +9,7 @@ import {
   mockNotifications as mockNotificationsSeed,
 } from "@/data/mockData";
 import { useAuth } from "./AuthContext";
+import { toast } from "@/hooks/use-toast";
 import { activitiesApi, applicationsApi, notificationsApi, attendanceApi, categoriesApi } from "@/lib/api";
 
 type Attendance = {
@@ -31,6 +32,7 @@ type CreateActivityInput = Pick<
   coordinatorId?: string;
 };
 
+/** Central data store for activities, applications, notifications, and attendance. */
 interface ActivityContextType {
   activities: Activity[];
   categories: { id: string; name: string }[];
@@ -56,11 +58,14 @@ interface ActivityContextType {
   refreshAttendanceForActivity: (activityId: string) => Promise<Attendance[]>;
   saveAttendanceBatch: (activityId: string, attendanceData: Record<string, "present" | "absent">, markedBy: string) => Promise<void>;
   clearAllActivityData: () => void;
+  /** Re-fetch all data from the backend. */
   refreshData: () => Promise<void>;
 }
 
 const ActivityContext = createContext<ActivityContextType | undefined>(undefined);
 
+/** Provides the central data store for activities, applications, notifications, and attendance.
+ *  Fetches data from the backend on mount and subscribes to real-time updates via SignalR. */
 export const ActivityProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -70,14 +75,14 @@ export const ActivityProvider = ({ children }: { children: ReactNode }) => {
   const [attendance, setAttendance] = useState<Attendance[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Load data from backend on mount and when user changes
+  /** Fetch all data when the user changes. */
   useEffect(() => {
     if (user) {
       refreshData();
     }
   }, [user]);
 
-  // Real-time updates via SignalR — replaces the old 15s polling.
+  /** Subscribe to real-time notifications and activity updates via SignalR. */
   useEffect(() => {
     if (!user) return;
 
@@ -132,7 +137,7 @@ export const ActivityProvider = ({ children }: { children: ReactNode }) => {
       try {
         await connection.start();
       } catch (err) {
-        console.error("SignalR connection failed:", err);
+        toast({ title: "Connection Failed", description: "Could not connect to the real-time server.", variant: "destructive" });
       }
     };
 
@@ -158,6 +163,7 @@ export const ActivityProvider = ({ children }: { children: ReactNode }) => {
     setAttendance([]);
   };
 
+  /** Fetch all data from the backend — activities, categories, applications, notifications, attendance. */
   const refreshData = async () => {
     if (!user) {
       setActivities([]);
@@ -213,8 +219,7 @@ export const ActivityProvider = ({ children }: { children: ReactNode }) => {
       setAttendance(attendanceData);
       setCategories(categoriesData);
     } catch (error) {
-      console.error("Failed to load data:", error);
-      // Avoid silently switching to mock data for authenticated users.
+      toast({ title: "Failed to Load Data", description: "Could not fetch activities and notifications.", variant: "destructive" });
       setActivities([]);
       setCategories([]);
       setApplications([]);
@@ -226,7 +231,7 @@ export const ActivityProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Filter notifications for current user
+  /** Filter notifications visible to the current user based on their role. */
   const userNotifications = useMemo(() => {
     if (!user) return [];
     return notifications.filter((notif) => {
@@ -241,6 +246,7 @@ export const ActivityProvider = ({ children }: { children: ReactNode }) => {
     });
   }, [notifications, user]);
 
+  /** Create a new activity (admin only). Returns the created activity. */
   const createActivity = async (
     activityData: CreateActivityInput
   ): Promise<Activity> => {
@@ -273,6 +279,7 @@ export const ActivityProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  /** Update an existing activity's fields by ID. */
   const updateActivity = async (id: string, updates: Partial<Activity>) => {
     try {
       const updated = await activitiesApi.update(id, updates);
@@ -284,6 +291,7 @@ export const ActivityProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  /** Delete an activity and its associated applications. */
   const deleteActivity = async (id: string) => {
     try {
       await activitiesApi.delete(id);
@@ -295,6 +303,7 @@ export const ActivityProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  /** Submit a new application to an activity. */
   const createApplication = async (
     applicationData: Omit<Application, "id" | "appliedAt" | "status">
   ): Promise<Application> => {
@@ -362,6 +371,7 @@ export const ActivityProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  /** Mark a single notification as read. */
   const markNotificationAsRead = async (id: string) => {
     if (!user) return;
 
@@ -379,10 +389,11 @@ export const ActivityProvider = ({ children }: { children: ReactNode }) => {
         })
       );
     } catch (error: any) {
-      console.error("Failed to mark notification as read:", error);
+      toast({ title: "Error", description: "Failed to mark notification as read.", variant: "destructive" });
     }
   };
 
+  /** Mark all notifications for the current user as read. */
   const markAllNotificationsAsRead = async () => {
     if (!user) return;
 
@@ -394,7 +405,7 @@ export const ActivityProvider = ({ children }: { children: ReactNode }) => {
       )
     );
     } catch (error: any) {
-      console.error("Failed to mark all notifications as read:", error);
+      toast({ title: "Error", description: "Failed to mark all notifications as read.", variant: "destructive" });
     }
   };
 
