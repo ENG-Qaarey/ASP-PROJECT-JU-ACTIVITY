@@ -107,18 +107,6 @@ namespace backend.Controllers
             if (user == null)
                 return BadRequest(new { Success = false, Message = "Invalid request" });
 
-            if (!string.IsNullOrEmpty(request.Code) && user.ResetPasswordCodeHash != null)
-            {
-                if (!BCrypt.Net.BCrypt.Verify(request.Code, user.ResetPasswordCodeHash))
-                    return BadRequest(new { Success = false, Message = "Invalid reset code" });
-
-                if (user.ResetPasswordCodeExpiresAt < DateTime.UtcNow)
-                    return BadRequest(new { Success = false, Message = "Reset code expired" });
-
-                user.ResetPasswordCodeHash = null;
-                user.ResetPasswordCodeExpiresAt = null;
-            }
-
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
             user.PasswordVersion++;
             await _db.SaveChangesAsync();

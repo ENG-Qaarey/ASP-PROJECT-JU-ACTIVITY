@@ -15,7 +15,6 @@ import {
   ArrowRight,
   Clock,
   MapPin,
-  Download
 } from "lucide-react";
 
 export default function StudentDashboard() {
@@ -96,10 +95,6 @@ export default function StudentDashboard() {
             <Button variant="outline" className="hidden sm:flex rounded-xl bg-background/50 backdrop-blur-sm" onClick={() => navigate("/student/activities")}>
               <Calendar className="mr-2 h-4 w-4" />
               Browse Activities
-            </Button>
-            <Button className="rounded-xl shadow-lg shadow-primary/20">
-              <Download className="mr-2 h-4 w-4" />
-              Download Transcript
             </Button>
           </div>
         </motion.div>

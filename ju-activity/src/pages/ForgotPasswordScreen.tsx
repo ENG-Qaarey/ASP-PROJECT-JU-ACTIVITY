@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Mail, ShieldCheck, Lock, KeyRound } from "lucide-react";
+import { ArrowLeft, Mail, ShieldCheck, Lock } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { authApi } from "@/lib/api";
 
@@ -13,51 +13,18 @@ const ForgotPasswordScreen = () => {
     const navigate = useNavigate();
     const shouldReduceMotion = useReducedMotion();
     
-    const [phase, setPhase] = useState<'request' | 'reset'>('request');
     const [email, setEmail] = useState("");
-    const [code, setCode] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [showPasswords, setShowPasswords] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleRequestCode = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!email) {
-            toast({ title: "Error", description: "Please enter your email", variant: "destructive" });
-            return;
-        }
-
-        setIsLoading(true);
-        try {
-            await authApi.forgotPassword(email);
-            setPhase('reset');
-            toast({
-                title: "Code Sent",
-                description: "A recovery code has been sent to your email.",
-            });
-        } catch (error: any) {
-            toast({
-                title: "Request Failed",
-                description: error.message || "Could not send reset code",
-                variant: "destructive",
-            });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
     const handleResetPassword = async (e: React.FormEvent) => {
         e.preventDefault();
         
-        if (!code || !newPassword || !confirmPassword) {
+        if (!email || !newPassword || !confirmPassword) {
             toast({ title: "Error", description: "Please fill in all fields", variant: "destructive" });
-            return;
-        }
-
-        if (code.length !== 6) {
-            toast({ title: "Error", description: "Code must be 6 digits", variant: "destructive" });
             return;
         }
 
@@ -73,11 +40,7 @@ const ForgotPasswordScreen = () => {
 
         setIsLoading(true);
         try {
-            const res = await authApi.resetPassword({ 
-                email, 
-                code, 
-                newPassword 
-            } as any); // Cast as any because some local types might be old
+            const res = await authApi.resetPassword({ email, newPassword });
             
             if (res.success) {
                 setIsSubmitted(true);
@@ -89,7 +52,7 @@ const ForgotPasswordScreen = () => {
         } catch (error: any) {
             toast({
                 title: "Reset Failed",
-                description: error.message || "Invalid code or expired request",
+                description: error.message || "Could not reset password",
                 variant: "destructive",
             });
         } finally {
@@ -118,24 +81,22 @@ const ForgotPasswordScreen = () => {
             >
                 <Button
                     variant="ghost"
-                    onClick={() => phase === 'request' ? navigate("/login") : setPhase('request')}
+                    onClick={() => navigate("/login")}
                     className="mb-6 w-fit text-slate-700 hover:text-slate-900"
                 >
                     <ArrowLeft className="mr-2 h-4 w-4" />
-                    {phase === 'request' ? 'Back to Login' : 'Try different email'}
+                    Back to Login
                 </Button>
 
                 <Card className="border border-white/60 bg-white/60 shadow-2xl backdrop-blur-md">
                     <CardHeader className="text-center pb-4">
                         <CardTitle className="text-2xl">
-                            {isSubmitted ? 'Reset Complete' : phase === 'request' ? 'Forgot Password' : 'Set New Password'}
+                            {isSubmitted ? 'Reset Complete' : 'Forgot Password'}
                         </CardTitle>
                         <CardDescription>
-                            {isSubmitted 
+                            {isSubmitted
                                 ? 'Your password has been successfully updated.'
-                                : phase === 'request' 
-                                    ? 'Enter your email to receive a secure recovery code.' 
-                                    : `Enter the code sent to ${email} and your new password.`}
+                                : 'Enter your email and a new password to reset your account.'}
                         </CardDescription>
                     </CardHeader>
 
@@ -145,15 +106,15 @@ const ForgotPasswordScreen = () => {
                                 <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
                                     <ShieldCheck className="h-8 w-8 text-green-600" />
                                 </div>
-                                <Button 
+                                <Button
                                     onClick={() => navigate("/login")}
                                     className="w-full bg-green-600 hover:bg-green-700 text-white"
                                 >
                                     Proceed to Login
                                 </Button>
                             </div>
-                        ) : phase === 'request' ? (
-                            <form onSubmit={handleRequestCode} className="space-y-5">
+                        ) : (
+                            <form onSubmit={handleResetPassword} className="space-y-5">
                                 <div className="space-y-2">
                                     <Label htmlFor="email" className="text-slate-700 font-semibold text-sm">Email Address</Label>
                                     <div className="relative">
@@ -165,27 +126,6 @@ const ForgotPasswordScreen = () => {
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
                                             className="pl-10 bg-white text-slate-900 border-transparent focus-visible:border-sky-500 focus-visible:ring-sky-500 h-11 transition-all"
-                                        />
-                                    </div>
-                                </div>
-                                <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
-                                    {isLoading ? "Sending..." : "Send Recovery Code"}
-                                </Button>
-                            </form>
-                        ) : (
-                            <form onSubmit={handleResetPassword} className="space-y-5">
-                                <div className="space-y-2">
-                                    <Label htmlFor="code" className="text-slate-700 font-semibold text-sm">Recovery Code</Label>
-                                    <div className="relative">
-                                        <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-                                        <Input
-                                            id="code"
-                                            type="text"
-                                            placeholder="000000"
-                                            maxLength={6}
-                                            value={code}
-                                            onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-                                            className="pl-10 bg-white text-slate-900 border-transparent focus-visible:border-sky-500 focus-visible:ring-sky-500 h-11 transition-all text-center tracking-[0.5em] font-bold"
                                         />
                                     </div>
                                 </div>
@@ -221,10 +161,10 @@ const ForgotPasswordScreen = () => {
                                 </div>
 
                                 <div className="flex items-center space-x-2">
-                                    <input 
-                                        type="checkbox" 
-                                        id="show" 
-                                        checked={showPasswords} 
+                                    <input
+                                        type="checkbox"
+                                        id="show"
+                                        checked={showPasswords}
                                         onChange={() => setShowPasswords(!showPasswords)}
                                         className="rounded border-slate-300 text-sky-600 focus:ring-sky-500"
                                     />
@@ -233,16 +173,6 @@ const ForgotPasswordScreen = () => {
 
                                 <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
                                     {isLoading ? "Resetting..." : "Reset Password"}
-                                </Button>
-                                
-                                <Button 
-                                    type="button" 
-                                    variant="link" 
-                                    className="w-full text-sm"
-                                    onClick={() => handleRequestCode({ preventDefault: () => {} } as any)}
-                                    disabled={isLoading}
-                                >
-                                    Resend code
                                 </Button>
                             </form>
                         )}
