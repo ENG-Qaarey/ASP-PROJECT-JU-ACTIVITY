@@ -13,4 +13,4 @@ JU_AMS reduces paperwork 📂, improves operational efficiency ⚙️, and enhan
 4: Admin Dashboard <img width="1901" height="919" alt="image" src="https://github.com/user-attachments/assets/cb92c59f-18e4-4264-b3c0-30a9d9fa51fc" />
 5: Activities Page <img width="1901" height="919" alt="image" src="https://github.com/user-attachments/assets/1ae56633-84ce-429c-a06f-8c03d4d2772d" />
 6: Toggle Darck-Mode <img width="1901" height="919" alt="image" src="https://github.com/user-attachments/assets/3dd7f4a1-3d10-43a0-8d9e-d7dc156e7aa0" />
-
+6: chating Darck-Mode <img width="1902" height="991" alt="image" src="https://github.com/user-attachments/assets/d4291518-76b2-4d70-aa7e-0c689bf7ee6f" />
