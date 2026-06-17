@@ -11,5 +11,5 @@ JU_AMS reduces paperwork 📂, improves operational efficiency ⚙️, and enhan
 2: SignIn Page <img width="1901" height="921" alt="Login" src="https://github.com/user-attachments/assets/50ac3b89-aa61-45f2-8cf7-50e882bba8f7" />
 3: SignUp Page <img width="1898" height="919" alt="SignUp" src="https://github.com/user-attachments/assets/2b5d3252-90dd-410c-bd9f-cabe5af66b8e" />
 4: Admin Dashboard <img width="1901" height="919" alt="image" src="https://github.com/user-attachments/assets/cb92c59f-18e4-4264-b3c0-30a9d9fa51fc" />
-5: Activities Page <img width="1907" height="915" alt="Screenshot 2026-01-15 162817" src="https://github.com/user-attachments/assets/c4fec27a-f898-44ac-bdca-888a31645f50" />
+5: Activities Page <img width="1901" height="919" alt="image" src="https://github.com/user-attachments/assets/1ae56633-84ce-429c-a06f-8c03d4d2772d" />
 6: Toggle Darck-Mode <img width="1902" height="922" alt="Screenshot 2026-01-15 163852" src="https://github.com/user-attachments/assets/ddf5c329-f394-4754-be64-f1b57dab563f" />
