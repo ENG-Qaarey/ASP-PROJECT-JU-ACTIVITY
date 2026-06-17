@@ -1,30 +1,27 @@
-"use client"
-
-import React, { useState } from "react"
-
-import {
-  SidebarInset,
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarFooter,
-  useSidebar,
-} from "@/components/blocks/sidebar"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { CardDescription, CardTitle } from "@/components/ui/card"
+import { useEffect, useMemo, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-} from "@/components/ui/resizable"
+} from "@/components/ui/resizable";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Search,
+  MessageCircle,
+  User,
+  Users,
+  ListFilter,
+  SquarePen,
+  MessageSquareDot,
+  Star,
+  CircleUserRound,
+  CircleOff,
+  MessageSquareDashed,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,381 +30,214 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/contexts/AuthContext";
+import { useActivity } from "@/contexts/ActivityContext";
+import { messagesApi } from "@/lib/api";
+import { formatRelativeTime } from "@/lib/format";
+import ChatRoomView from "@/components/chat/ChatRoomView";
 
-import {
-  Brush,
-  Camera,
-  ChartBarIncreasing,
-  ChevronUp,
-  CircleFadingPlus,
-  CircleOff,
-  CircleUserRound,
-  File,
-  Image,
-  ListFilter,
-  Menu,
-  MessageCircle,
-  MessageSquareDashed,
-  MessageSquareDot,
-  Mic,
-  Paperclip,
-  Phone,
-  Search,
-  Send,
-  Settings,
-  Smile,
-  SquarePen,
-  Star,
-  User,
-  User2,
-  UserRound,
-  Users,
-  Video,
-} from "lucide-react"
-
-const contactList = [
-  {
-    name: "Manoj Rayi",
-    message: "Your Last Message Here",
-    image: "https://github.com/rayimanoj8.png",
-  },
-  {
-    name: "Anjali Kumar",
-    message: "Hello, how are you?",
-    image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&h=120&fit=crop",
-  },
-  {
-    name: "Ravi Teja",
-    message: "Looking forward to the meeting.",
-    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&h=120&fit=crop",
-  },
-  {
-    name: "Sneha Reddy",
-    message: "Can you send the report?",
-    image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=120&h=120&fit=crop",
-  },
-  {
-    name: "Arjun Das",
-    message: "Thank you for your help!",
-    image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&h=120&fit=crop",
-  },
-  {
-    name: "Priya Sharma",
-    message: "Let's catch up soon.",
-    image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&h=120&fit=crop",
-  },
-  {
-    name: "Vikram Singh",
-    message: "I will call you later.",
-    image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&h=120&fit=crop",
-  },
-  {
-    name: "Kavya Rao",
-    message: "Did you receive my email?",
-    image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120&h=120&fit=crop",
-  },
-  {
-    name: "Rahul Verma",
-    message: "Meeting rescheduled to tomorrow.",
-    image: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=120&h=120&fit=crop",
-  },
-  {
-    name: "Deepika Nair",
-    message: "Happy birthday! Have a great day!",
-    image: "https://images.unsplash.com/photo-1554151228-14d9def656e4?w=120&h=120&fit=crop",
-  },
-  {
-    name: "Rohit Malhotra",
-    message: "What's the update?",
-    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&h=120&fit=crop",
-  },
-  {
-    name: "Neha Gupta",
-    message: "Hope you're doing well!",
-    image: "https://images.unsplash.com/photo-1548532928-b34e3be62fc6?w=120&h=120&fit=crop",
-  },
-  {
-    name: "Amit Yadav",
-    message: "Let's finalize the project.",
-    image: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=120&h=120&fit=crop",
-  },
-  {
-    name: "Simran Kaur",
-    message: "Good morning!",
-    image: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=120&h=120&fit=crop",
-  },
-  {
-    name: "Varun Chopra",
-    message: "I'll send the documents soon.",
-    image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&h=120&fit=crop",
-  },
-  {
-    name: "Meera Joshi",
-    message: "How was your weekend?",
-    image: "https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=120&h=120&fit=crop",
-  },
-  {
-    name: "Karthik Reddy",
-    message: "Please confirm the time.",
-    image: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=120&h=120&fit=crop",
-  },
-  {
-    name: "Pooja Sharma",
-    message: "See you at the event!",
-    image: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=120&h=120&fit=crop",
-  },
-  {
-    name: "Sandeep Kumar",
-    message: "Just checking in.",
-    image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&h=120&fit=crop",
-  },
-  {
-    name: "Lavanya Patel",
-    message: "Don't forget the meeting.",
-    image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120&h=120&fit=crop",
-  },
-]
-
-const menuItems = [
-  { title: "Messages", url: "#", icon: MessageCircle },
-  { title: "Phone", url: "#", icon: Phone },
-  { title: "Status", url: "#", icon: CircleFadingPlus },
-]
+interface LastMessagePreview {
+  content: string;
+  senderName: string;
+  createdAt: string;
+}
 
 export function ChatTemplate() {
-  const { toggleSidebar } = useSidebar()
-  const [currentChat, setCurrentChat] = useState(contactList[0])
+  const { activityId } = useParams<{ activityId: string }>();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { activities, applications } = useActivity();
+
+  const [search, setSearch] = useState("");
+  const [previews, setPreviews] = useState<Record<string, LastMessagePreview>>({});
+
+  useEffect(() => {
+    messagesApi.getLastMessages().then(setPreviews).catch(() => {});
+  }, []);
+
+  const rolePrefix = user?.role === "admin" ? "admin" : user?.role === "coordinator" ? "coordinator" : "student";
+
+  const chatRooms = useMemo(() => {
+    if (!user) return [];
+    let available = activities;
+    if (user.role === "student") {
+      const myActivityIds = applications
+        .filter((a) => a.studentId === user.id && (a.status === "approved" || a.status === "pending"))
+        .map((a) => a.activityId);
+      available = activities.filter((a) => myActivityIds.includes(a.id));
+    } else if (user.role === "coordinator") {
+      available = activities.filter((a) =>
+        String(a.coordinatorId).toLowerCase() === String(user.id).toLowerCase()
+      );
+    }
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      available = available.filter(
+        (a) =>
+          a.title.toLowerCase().includes(q) ||
+          a.coordinatorName?.toLowerCase().includes(q)
+      );
+    }
+    return available.sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+  }, [user, activities, applications, search]);
+
+  const selectedActivity = useMemo(
+    () => activities.find((a) => a.id === activityId),
+    [activities, activityId]
+  );
+
+  const handleSelectActivity = (id: string) => {
+    navigate(`/${rolePrefix}/chat/${id}`);
+  };
 
   return (
-    <>
-      <Sidebar variant="floating" collapsible="icon">
-        <SidebarContent>
-          <SidebarGroup>
-            <SidebarGroupLabel>Navigate</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton onClick={toggleSidebar} asChild>
-                    <span>
-                      <Menu />
-                    </span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-
-                {menuItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
-                      <a href={item.url}>
-                        <item.icon />
-                        <span>{item.title}</span>
-                      </a>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        </SidebarContent>
-
-        <SidebarFooter>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton>
-                <Settings /> Settings
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
+    <ResizablePanelGroup direction="horizontal" className="flex-1 h-full overflow-hidden">
+      <ResizablePanel defaultSize={28} minSize={20} maxSize={42} className={`bg-background ${activityId ? 'max-md:hidden' : ''}`}>
+        <div className="flex flex-col h-full">
+          <div className="flex items-center px-4 py-3 border-b border-border/40 shrink-0">
+            <h1 className="text-lg font-semibold">Chats</h1>
+            <div className="flex items-center gap-0.5 ml-auto">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <SidebarMenuButton>
-                    <User2 /> Manoj Rayi
-                    <ChevronUp className="ml-auto" />
-                  </SidebarMenuButton>
+                  <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
+                    <SquarePen className="h-4 w-4" />
+                  </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  side="top"
-                  className="w-[--radix-popper-anchor-width]"
-                >
+                <DropdownMenuContent align="end">
                   <DropdownMenuItem>
-                    <a href="https://github.com/rayimanoj8/">Account</a>
+                    <User className="h-4 w-4" /> New Contact
                   </DropdownMenuItem>
                   <DropdownMenuItem>
-                    <span>Back Up</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <span>Sign out</span>
+                    <Users className="h-4 w-4" /> New Group
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarFooter>
-      </Sidebar>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
+                    <ListFilter className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>Filter Chats By</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem><MessageSquareDot className="h-4 w-4" /> Unread</DropdownMenuItem>
+                    <DropdownMenuItem><Star className="h-4 w-4" /> Favorites</DropdownMenuItem>
+                    <DropdownMenuItem><CircleUserRound className="h-4 w-4" /> Contacts</DropdownMenuItem>
+                    <DropdownMenuItem><CircleOff className="h-4 w-4" /> Non Contacts</DropdownMenuItem>
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem><Users className="h-4 w-4" /> Groups</DropdownMenuItem>
+                    <DropdownMenuItem><MessageSquareDashed className="h-4 w-4" /> Drafts</DropdownMenuItem>
+                  </DropdownMenuGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
 
-      <SidebarInset>
-        <ResizablePanelGroup direction="horizontal" className="h-screen">
-          <ResizablePanel defaultSize={25} minSize={20} className="flex-grow">
-            <div className="flex flex-col h-screen border ml-1">
-              <div className="h-10 px-2 py-4 flex items-center">
-                <p className="ml-1">Chats</p>
-                <div className="flex justify-end w-full">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger>
-                      <Button variant="ghost" size="icon">
-                        <SquarePen />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      <DropdownMenuItem>
-                        <User /> New Contact
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Users /> New Group
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+          <div className="relative px-4 py-3 shrink-0">
+            <Search className="absolute left-7 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50 pointer-events-none" />
+            <Input
+              type="text"
+              placeholder="Search or start new chat"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full h-9 rounded-xl border border-input/80 bg-background/80 pl-9 pr-3 py-1 text-sm shadow-sm transition-all placeholder:text-muted-foreground/50"
+            />
+          </div>
 
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <ListFilter />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-56">
-                      <DropdownMenuLabel>Filter Chats By</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuGroup>
-                        <DropdownMenuItem>
-                          <MessageSquareDot /> Unread
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Star /> Favorites
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <CircleUserRound /> Contacts
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <CircleOff /> Non Contacts
-                        </DropdownMenuItem>
-                      </DropdownMenuGroup>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuGroup>
-                        <DropdownMenuItem>
-                          <Users /> Groups
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <MessageSquareDashed /> Drafts
-                        </DropdownMenuItem>
-                      </DropdownMenuGroup>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+          <div className="flex-1 overflow-y-auto">
+            {chatRooms.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-center px-6">
+                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center mb-3">
+                  <MessageCircle className="w-6 h-6 text-primary/60" />
                 </div>
+                <p className="text-sm font-medium text-foreground/70">No chats yet</p>
+                <p className="text-xs text-muted-foreground/60 mt-1">
+                  {user?.role === "student"
+                    ? "Apply to an activity to start chatting"
+                    : "Create an activity to get started"}
+                </p>
               </div>
-
-              <div className="relative px-2 py-4">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5" />
-                <Input
-                  placeholder="Search or start new chat"
-                  className="pl-10"
-                />
-              </div>
-
-              <ScrollArea className="flex-grow">
-                {contactList.map((contact, index) => (
+            ) : (
+              chatRooms.map((activity) => {
+                const preview = previews[activity.id];
+                const isSelected = activity.id === activityId;
+                return (
                   <button
-                    key={index}
-                    onClick={() => setCurrentChat(contact)}
-                    className="px-4 w-full py-2 hover:bg-secondary cursor-pointer text-left"
+                    key={activity.id}
+                    onClick={() => handleSelectActivity(activity.id)}
+                    className={`w-full px-4 py-3 transition-colors text-left border-b border-border/30 last:border-0 ${
+                      isSelected
+                        ? "bg-accent/60 hover:bg-accent/80"
+                        : "hover:bg-accent/40"
+                    }`}
                   >
-                    <div className="flex flex-row gap-2">
-                      <Avatar className="size-12">
-                        <AvatarImage src={contact.image} />
-                        <AvatarFallback>{contact.name[0]}</AvatarFallback>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-11 w-11 shrink-0 ring-1 ring-border shadow-sm">
+                        <AvatarFallback className="text-sm font-semibold bg-primary/10 text-primary">
+                          {(activity.title || "A").charAt(0).toUpperCase()}
+                        </AvatarFallback>
                       </Avatar>
-                      <div className="space-y-2">
-                        <CardTitle>{contact.name}</CardTitle>
-                        <CardDescription>{contact.message}</CardDescription>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <h3 className="text-sm font-semibold truncate">{activity.title}</h3>
+                          {preview && (
+                            <span className="text-[11px] text-muted-foreground/50 shrink-0">
+                              {formatRelativeTime(preview.createdAt)}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground/60 truncate mt-0.5">
+                          {preview ? (
+                            <>{preview.senderName}: {preview.content}</>
+                          ) : (
+                            <span className="italic">No messages yet</span>
+                          )}
+                        </p>
                       </div>
                     </div>
                   </button>
-                ))}
-              </ScrollArea>
-            </div>
-          </ResizablePanel>
+                );
+              })
+            )}
+          </div>
+        </div>
+      </ResizablePanel>
 
-          <ResizableHandle />
+      <ResizableHandle className={`bg-border/40 w-[3px] hover:bg-border/60 transition-colors ${activityId ? 'max-md:hidden' : ''}`} />
 
-          <ResizablePanel defaultSize={75} minSize={40}>
-            <div className="flex flex-col justify-between h-screen ml-1 pb-2">
-              <div className="h-16 border-b flex items-center px-3">
-                <Avatar className="size-12">
-                  <AvatarImage src={currentChat?.image} />
-                  <AvatarFallback>PR</AvatarFallback>
-                </Avatar>
-                <div className="space-y-1 ml-2">
-                  <CardTitle>{currentChat?.name}</CardTitle>
-                  <CardDescription>Contact Info</CardDescription>
-                </div>
-                <div className="flex-grow flex justify-end gap-2">
-                  <Button variant="ghost" size="icon">
-                    <Video />
-                  </Button>
-                  <Button variant="ghost" size="icon">
-                    <Phone />
-                  </Button>
-                  <Button variant="ghost" size="icon">
-                    <Search />
-                  </Button>
-                </div>
+      <ResizablePanel defaultSize={72} className={`bg-background ${!activityId ? 'max-md:hidden' : ''}`}>
+        {activityId && selectedActivity ? (
+          <ChatRoomView activityId={activityId} activityTitle={selectedActivity.title} />
+        ) : (
+          <div className="h-full flex flex-col items-center justify-center bg-gradient-to-b from-background via-background to-accent/10">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="text-center px-8"
+            >
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center mx-auto mb-5">
+                <MessageCircle className="w-8 h-8 text-primary/60" />
               </div>
-
-              <div className="flex h-10 pt-2 border-t">
-                <Button variant="ghost" size="icon">
-                  <Smile />
-                </Button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger>
-                    <Button variant="ghost" size="icon">
-                      <Paperclip />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem>
-                      <Image /> Photos & Videos
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Camera /> Camera
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <File /> Document
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <UserRound /> Contact
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <ChartBarIncreasing /> Poll
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Brush /> Drawing
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                <Input
-                  className="flex-grow border-0"
-                  placeholder="Type a message"
-                />
-                <Button variant="ghost" size="icon">
-                  <Send />
-                </Button>
-                <Button variant="ghost" size="icon">
-                  <Mic />
-                </Button>
+              <h2 className="text-xl font-semibold text-foreground/80 mb-1.5">JU Activity Hub Chat</h2>
+              <p className="text-sm text-muted-foreground/60 max-w-sm mx-auto leading-relaxed">
+                Select an activity from the left to start chatting with coordinators and participants.
+              </p>
+              <div className="mt-6 flex items-center justify-center gap-1.5 text-xs text-muted-foreground/40">
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                {chatRooms.length} activit{chatRooms.length !== 1 ? "ies" : "y"} available
               </div>
-            </div>
-          </ResizablePanel>
-        </ResizablePanelGroup>
-      </SidebarInset>
-    </>
-  )
+            </motion.div>
+          </div>
+        )}
+      </ResizablePanel>
+    </ResizablePanelGroup>
+  );
 }

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { HubConnectionBuilder, HubConnection } from "@microsoft/signalr";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -8,9 +8,7 @@ import { toast } from "@/hooks/use-toast";
 import { ChevronDown, MessageCircle } from "lucide-react";
 import { messagesApi } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
-import { useActivity } from "@/contexts/ActivityContext";
-import DashboardLayout from "@/components/layout/DashboardLayout";
-import ChatRoomSkeleton from "./ChatRoomSkeleton";
+import ChatRoomSkeleton from "@/pages/chat/ChatRoomSkeleton";
 import ChatHeader from "@/components/chat/ChatHeader";
 import MessageBubble from "@/components/chat/MessageBubble";
 import ChatInput from "@/components/chat/ChatInput";
@@ -18,22 +16,18 @@ import MembersPanel from "@/components/chat/MembersPanel";
 import { ChatMessage, Member, ReplyTo } from "@/types/chat";
 import { groupByDate, formatTime } from "@/lib/format";
 
-/** Number of messages fetched per paginated request. */
 const PAGE_SIZE = 50;
 
-/** Full-featured chat room page for an activity.
- *  - Loads paginated message history
- *  - Supports real-time messaging via SignalR
- *  - Handles text/image/audio/file messages, reactions, replies, editing, deletion
- *  - Includes voice recording with waveform visualization
- *  - Shows typing indicators and a members panel */
-const ChatRoomPage = () => {
-  const { activityId } = useParams<{ activityId: string }>();
+interface ChatRoomViewProps {
+  activityId: string;
+  activityTitle: string;
+}
+
+export default function ChatRoomView({ activityId, activityTitle }: ChatRoomViewProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { activities } = useActivity();
+  const rolePrefix = user?.role === "admin" ? "admin" : user?.role === "coordinator" ? "coordinator" : "student";
   const currentUserId = user?.id || "";
-  const currentActivity = activities.find((a) => a.id === activityId);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [total, setTotal] = useState(0);
@@ -73,7 +67,6 @@ const ChatRoomPage = () => {
   const isNearBottomRef = useRef(true);
   const offsetRef = useRef(0);
 
-  /** Scroll the message list to the bottom with a short delay for rendering. */
   const scrollToBottom = () => {
     setTimeout(() => {
       if (viewportRef.current) {
@@ -82,7 +75,6 @@ const ChatRoomPage = () => {
     }, 50);
   };
 
-  /** Auto-resize the textarea height as the user types. */
   const autoResize = useCallback(() => {
     const el = textareaRef.current;
     if (!el) return;
@@ -90,14 +82,12 @@ const ChatRoomPage = () => {
     el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
   }, []);
 
-  /** Check if the scroll viewport is within 150px of the bottom. */
   const isNearBottom = () => {
     const el = viewportRef.current;
     if (!el) return true;
     return el.scrollHeight - el.scrollTop - el.clientHeight < 150;
   };
 
-  /** Handle scroll events: show/hide scroll-to-bottom button, load older messages at top. */
   const handleScroll = useCallback(() => {
     const el = viewportRef.current;
     if (!el) return;
@@ -107,7 +97,6 @@ const ChatRoomPage = () => {
     if (el.scrollTop < 80 && hasMore && !loadingMore) loadMore();
   }, [hasMore, loadingMore]);
 
-  /** Fetch messages from the backend. When append=true, prepend older messages for pagination. */
   const loadMessages = async (append = false) => {
     if (!activityId) return;
     try {
@@ -134,7 +123,6 @@ const ChatRoomPage = () => {
     }
   };
 
-  /** Load the next page of older messages. */
   const loadMore = async () => {
     if (loadingMore || !hasMore) return;
     setLoadingMore(true);
@@ -142,13 +130,12 @@ const ChatRoomPage = () => {
     setLoadingMore(false);
   };
 
-  /** Fetch the list of chat members for this activity. */
   const loadMembers = async () => {
     if (!activityId) return;
     try {
       const data = await messagesApi.getMembers(activityId);
       setMembers(data);
-    } catch { /* members silently fail — non-critical */ }
+    } catch { /* members silently fail */ }
   };
 
   useEffect(() => {
@@ -216,7 +203,7 @@ const ChatRoomPage = () => {
         await connection.invoke("JoinActivity", activityId);
         connectionRef.current = connection;
       } catch {
-        toast({ title: "Connection Failed", description: "Could not connect to real-time chat. Messages may not update live.", variant: "destructive" });
+        toast({ title: "Connection Failed", description: "Could not connect to real-time chat.", variant: "destructive" });
       }
     };
 
@@ -245,7 +232,6 @@ const ChatRoomPage = () => {
     };
   }, [loading]);
 
-  /** Send a typing indicator to the SignalR hub. Clears after 2s of inactivity. */
   const emitTyping = useCallback(async () => {
     if (!connectionRef.current || !activityId) return;
     try {
@@ -257,7 +243,6 @@ const ChatRoomPage = () => {
     } catch { /* ignore */ }
   }, [activityId]);
 
-  /** Send a message with optimistic UI update. Falls back by removing the temp message on failure. */
   const sendMessage = async (content: string, type?: string, metadata?: string, parentId?: string) => {
     if (!content.trim() || !activityId || sending) return;
     const optimistic: ChatMessage = {
@@ -315,7 +300,7 @@ const ChatRoomPage = () => {
         JSON.stringify({ url: result.url, fileName: result.fileName, size: result.size, contentType: result.contentType }),
         replyTo?.id);
       setReplyTo(null);
-    } catch { /* upload failed — message dropped */ }
+    } catch { /* upload failed */ }
     finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -433,184 +418,172 @@ const ChatRoomPage = () => {
 
   const groupedMessages = groupByDate(messages);
 
-  if (!activityId) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <p className="text-muted-foreground">No activity selected.</p>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
   return (
-    <DashboardLayout>
-      <div className="flex flex-col flex-1 min-h-0 bg-gradient-to-b from-background via-background to-accent/20 overflow-hidden">
-        <ChatHeader
-          title={currentActivity?.title || "Activity Chat"}
-          members={members}
-          total={total}
-          showMembers={showMembers}
-          onBack={() => navigate(-1)}
-          onToggleMembers={() => setShowMembers(!showMembers)}
-        />
+    <div className="h-full flex flex-col bg-gradient-to-b from-background via-background to-accent/20">
+      <ChatHeader
+        title={activityTitle}
+        members={members}
+        total={total}
+        showMembers={showMembers}
+        onBack={() => navigate(`/${rolePrefix}/chat`)}
+        onToggleMembers={() => setShowMembers(!showMembers)}
+      />
 
-        <div className="flex flex-1 min-h-0 overflow-hidden">
-          <div className="flex-1 relative overflow-hidden">
-            <ScrollArea ref={scrollRef} className="h-full px-3 sm:px-4 py-3">
-              {loading ? (
-                <ChatRoomSkeleton />
-              ) : (
-                <>
-                  {loadingMore && (
-                    <div className="flex justify-center py-2">
-                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                    </div>
-                  )}
-                  {!hasMore && messages.length > 0 && (
-                    <div className="text-center text-[10px] text-muted-foreground/40 py-2 font-medium">
-                      Beginning of conversation
-                    </div>
-                  )}
-                  {groupedMessages.length === 0 ? (
-                    <div className="flex h-full items-center justify-center">
-                      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.5, ease: "easeOut" }} className="text-center">
-                        <div className="w-20 h-20 mx-auto mb-5 rounded-full bg-gradient-to-br from-primary/20 via-primary/10 to-primary/5
-                          flex items-center justify-center ring-2 ring-primary/10 shadow-xl shadow-primary/5">
-                          <MessageCircle className="w-9 h-9 text-primary/50" />
-                        </div>
-                        <h3 className="text-lg font-semibold text-foreground/90 mb-1.5">Start the conversation</h3>
-                        <p className="text-sm text-muted-foreground/70 max-w-[200px] mx-auto leading-relaxed">
-                          Send the first message to begin chatting
-                        </p>
-                        <motion.div initial={{ width: 0 }} animate={{ width: 40 }}
-                          transition={{ delay: 0.3, duration: 0.4 }} className="h-0.5 bg-primary/30 rounded-full mx-auto mt-4" />
-                      </motion.div>
-                    </div>
-                  ) : (
-                    <AnimatePresence initial={false}>
-                      {groupedMessages.map((group) => (
-                        <div key={group.date} className="mb-5">
-                          <div className="flex items-center justify-center mb-4">
-                            <div className="flex items-center gap-3 flex-1">
-                              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border/50 to-transparent" />
-                            </div>
-                            <span className="inline-flex items-center rounded-full border border-border/60 bg-card/80 backdrop-blur-sm
-                              px-3.5 py-1 text-[11px] font-semibold text-muted-foreground/80 shadow-sm mx-3">
-                              {group.date}
-                            </span>
-                            <div className="flex items-center gap-3 flex-1">
-                              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border/50 to-transparent" />
-                            </div>
-                          </div>
-                          <div className="space-y-1">
-                            {group.items.map((msg, idx) => {
-                              const prev = idx > 0 ? group.items[idx - 1] : null;
-                              const sameSender = prev && prev.senderId === msg.senderId;
-                              const timeDiff = sameSender
-                                ? new Date(msg.createdAt).getTime() - new Date(prev!.createdAt).getTime()
-                                : Infinity;
-                              const isConsecutive = sameSender && timeDiff < 5 * 60 * 1000;
-                              return (
-                                <MessageBubble
-                                  key={msg.id}
-                                  msg={msg}
-                                  isMine={msg.senderId === currentUserId}
-                                  showAvatar={!isConsecutive}
-                                  showSender={!isConsecutive}
-                                  currentUserId={currentUserId}
-                                  editingId={editingId}
-                                  editInput={editInput}
-                                  copiedId={copiedId}
-                                  members={members}
-                                  replyTo={replyTo}
-                                  onEdit={handleEdit}
-                                  onDelete={handleDelete}
-                                  onReact={handleReact}
-                                  onCopy={handleCopy}
-                                  onReply={setReplyTo}
-                                  onStartEdit={(id, content) => { setEditingId(id); setEditInput(content); }}
-                                  onCancelEdit={() => { setEditingId(null); setEditInput(""); }}
-                                  onSetEditInput={setEditInput}
-                                  onExpandImage={setExpandedImage}
-                                />
-                              );
-                            })}
-                          </div>
-                        </div>
-                      ))}
-                    </AnimatePresence>
-                  )}
-
-                  {typingUsers.length > 0 && (
-                    <div className="flex items-center gap-2 px-1 py-1 text-xs text-muted-foreground/60" aria-live="polite">
-                      <div className="flex gap-0.5">
-                        <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40 animate-bounce" />
-                        <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40 animate-bounce [animation-delay:150ms]" />
-                        <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40 animate-bounce [animation-delay:300ms]" />
+      <div className="flex flex-1 min-h-0 overflow-hidden">
+        <div className="flex-1 relative overflow-hidden">
+          <ScrollArea ref={scrollRef} className="h-full px-3 sm:px-4 py-3">
+            {loading ? (
+              <ChatRoomSkeleton />
+            ) : (
+              <>
+                {loadingMore && (
+                  <div className="flex justify-center py-2">
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                  </div>
+                )}
+                {!hasMore && messages.length > 0 && (
+                  <div className="text-center text-[10px] text-muted-foreground/40 py-2 font-medium">
+                    Beginning of conversation
+                  </div>
+                )}
+                {groupedMessages.length === 0 ? (
+                  <div className="flex h-full items-center justify-center">
+                    <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.5, ease: "easeOut" }} className="text-center">
+                      <div className="w-20 h-20 mx-auto mb-5 rounded-full bg-gradient-to-br from-primary/20 via-primary/10 to-primary/5
+                        flex items-center justify-center ring-2 ring-primary/10 shadow-xl shadow-primary/5">
+                        <MessageCircle className="w-9 h-9 text-primary/50" />
                       </div>
-                      <span>
-                        {typingUsers.length === 1
-                          ? `${members.find((m) => m.id === typingUsers[0])?.name || "Someone"} is typing...`
-                          : `${typingUsers.length} people are typing...`}
-                      </span>
+                      <h3 className="text-lg font-semibold text-foreground/90 mb-1.5">Start the conversation</h3>
+                      <p className="text-sm text-muted-foreground/70 max-w-[200px] mx-auto leading-relaxed">
+                        Send the first message to begin chatting
+                      </p>
+                      <motion.div initial={{ width: 0 }} animate={{ width: 40 }}
+                        transition={{ delay: 0.3, duration: 0.4 }} className="h-0.5 bg-primary/30 rounded-full mx-auto mt-4" />
+                    </motion.div>
+                  </div>
+                ) : (
+                  <AnimatePresence initial={false}>
+                    {groupedMessages.map((group) => (
+                      <div key={group.date} className="mb-5">
+                        <div className="flex items-center justify-center mb-4">
+                          <div className="flex items-center gap-3 flex-1">
+                            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border/50 to-transparent" />
+                          </div>
+                          <span className="inline-flex items-center rounded-full border border-border/60 bg-card/80 backdrop-blur-sm
+                            px-3.5 py-1 text-[11px] font-semibold text-muted-foreground/80 shadow-sm mx-3">
+                            {group.date}
+                          </span>
+                          <div className="flex items-center gap-3 flex-1">
+                            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border/50 to-transparent" />
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          {group.items.map((msg, idx) => {
+                            const prev = idx > 0 ? group.items[idx - 1] : null;
+                            const sameSender = prev && prev.senderId === msg.senderId;
+                            const timeDiff = sameSender
+                              ? new Date(msg.createdAt).getTime() - new Date(prev!.createdAt).getTime()
+                              : Infinity;
+                            const isConsecutive = sameSender && timeDiff < 5 * 60 * 1000;
+                            return (
+                              <MessageBubble
+                                key={msg.id}
+                                msg={msg}
+                                isMine={msg.senderId === currentUserId}
+                                showAvatar={!isConsecutive}
+                                showSender={!isConsecutive}
+                                currentUserId={currentUserId}
+                                editingId={editingId}
+                                editInput={editInput}
+                                copiedId={copiedId}
+                                members={members}
+                                replyTo={replyTo}
+                                onEdit={handleEdit}
+                                onDelete={handleDelete}
+                                onReact={handleReact}
+                                onCopy={handleCopy}
+                                onReply={setReplyTo}
+                                onStartEdit={(id, content) => { setEditingId(id); setEditInput(content); }}
+                                onCancelEdit={() => { setEditingId(null); setEditInput(""); }}
+                                onSetEditInput={setEditInput}
+                                onExpandImage={setExpandedImage}
+                              />
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </AnimatePresence>
+                )}
+
+                {typingUsers.length > 0 && (
+                  <div className="flex items-center gap-2 px-1 py-1 text-xs text-muted-foreground/60" aria-live="polite">
+                    <div className="flex gap-0.5">
+                      <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40 animate-bounce" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40 animate-bounce [animation-delay:150ms]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40 animate-bounce [animation-delay:300ms]" />
                     </div>
-                  )}
+                    <span>
+                      {typingUsers.length === 1
+                        ? `${members.find((m) => m.id === typingUsers[0])?.name || "Someone"} is typing...`
+                        : `${typingUsers.length} people are typing...`}
+                    </span>
+                  </div>
+                )}
 
-                  <div className="h-2" />
-                </>
-              )}
-            </ScrollArea>
+                <div className="h-2" />
+              </>
+            )}
+          </ScrollArea>
 
-            <AnimatePresence>
-              {showScrollBtn && !loading && (
-                <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}
-                  className="absolute bottom-4 left-1/2 -translate-x-1/2">
-                  <Button size="icon" className="rounded-full h-9 w-9 shadow-lg shadow-primary/20" onClick={scrollToBottom}>
-                    <ChevronDown className="h-4 w-4" />
-                  </Button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-            {newMessageCount > 0 && (
-              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-                className="absolute top-4 left-1/2 -translate-x-1/2 z-10">
-                <Button variant="secondary" size="sm" className="rounded-full h-7 shadow-md text-xs gap-1.5 font-medium"
-                  onClick={() => { scrollToBottom(); setNewMessageCount(0); }}>
-                  <ChevronDown className="h-3 w-3" />
-                  {newMessageCount} new message{newMessageCount > 1 ? "s" : ""}
+          <AnimatePresence>
+            {showScrollBtn && !loading && (
+              <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}
+                className="absolute bottom-4 left-1/2 -translate-x-1/2">
+                <Button size="icon" className="rounded-full h-9 w-9 shadow-lg shadow-primary/20" onClick={scrollToBottom}>
+                  <ChevronDown className="h-4 w-4" />
                 </Button>
               </motion.div>
             )}
-          </div>
-
-          <MembersPanel show={showMembers} members={members} />
+          </AnimatePresence>
+          {newMessageCount > 0 && (
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+              className="absolute top-4 left-1/2 -translate-x-1/2 z-10">
+              <Button variant="secondary" size="sm" className="rounded-full h-7 shadow-md text-xs gap-1.5 font-medium"
+                onClick={() => { scrollToBottom(); setNewMessageCount(0); }}>
+                <ChevronDown className="h-3 w-3" />
+                {newMessageCount} new message{newMessageCount > 1 ? "s" : ""}
+              </Button>
+            </motion.div>
+          )}
         </div>
 
-        <ChatInput
-          input={input}
-          sending={sending}
-          uploading={uploading}
-          recording={recording}
-          recordingTimer={recordingTimer}
-          recordingWaveform={recordingWaveform}
-          showEmojiPicker={showEmojiPicker}
-          replyTo={replyTo}
-          textareaRef={textareaRef}
-          fileInputRef={fileInputRef}
-          onInputChange={handleInputChange}
-          onKeyDown={handleKeyDown}
-          onSend={handleSend}
-          onEmojiToggle={() => setShowEmojiPicker(!showEmojiPicker)}
-          onFilePick={handleFilePick}
-          onStartRecording={startRecording}
-          onStopRecording={stopRecording}
-          onCancelRecording={cancelRecording}
-          onCancelReply={() => setReplyTo(null)}
-          onEmojiSelect={(emoji) => { setInput((prev) => prev + emoji); setShowEmojiPicker(false); }}
-        />
+        <MembersPanel show={showMembers} members={members} />
       </div>
+
+      <ChatInput
+        input={input}
+        sending={sending}
+        uploading={uploading}
+        recording={recording}
+        recordingTimer={recordingTimer}
+        recordingWaveform={recordingWaveform}
+        showEmojiPicker={showEmojiPicker}
+        replyTo={replyTo}
+        textareaRef={textareaRef}
+        fileInputRef={fileInputRef}
+        onInputChange={handleInputChange}
+        onKeyDown={handleKeyDown}
+        onSend={handleSend}
+        onEmojiToggle={() => setShowEmojiPicker(!showEmojiPicker)}
+        onFilePick={handleFilePick}
+        onStartRecording={startRecording}
+        onStopRecording={stopRecording}
+        onCancelRecording={cancelRecording}
+        onCancelReply={() => setReplyTo(null)}
+        onEmojiSelect={(emoji) => { setInput((prev) => prev + emoji); setShowEmojiPicker(false); }}
+      />
 
       <AnimatePresence>
         {expandedImage && (
@@ -624,8 +597,8 @@ const ChatRoomPage = () => {
           </motion.div>
         )}
       </AnimatePresence>
-    </DashboardLayout>
-  );
-};
 
-export default ChatRoomPage;
+      <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
+    </div>
+  );
+}

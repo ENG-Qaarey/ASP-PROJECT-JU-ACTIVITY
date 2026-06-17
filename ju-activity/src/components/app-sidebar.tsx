@@ -1,0 +1,52 @@
+import { GalleryVerticalEnd, type LucideIcon } from "lucide-react"
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarRail,
+} from "@/components/ui/sidebar"
+import { TeamSwitcher } from "@/components/team-switcher"
+import { NavMain, type NavMainItem } from "@/components/nav-main"
+import { NavSecondary } from "@/components/nav-secondary"
+import { NavUser } from "@/components/nav-user"
+
+interface NavSecondaryItem {
+  name: string
+  url: string
+  icon: LucideIcon
+}
+
+interface AppSidebarProps {
+  navMain: NavMainItem[]
+  navSecondary: NavSecondaryItem[]
+  user: { name: string; email: string; avatar?: string | null }
+  onNavigate: (path: string) => void
+  onLogout?: () => void
+}
+
+export function AppSidebar({ navMain, navSecondary, user, onNavigate, onLogout }: AppSidebarProps) {
+  return (
+    <Sidebar collapsible="icon">
+      <SidebarHeader>
+        <TeamSwitcher
+          teams={[
+            { name: "JU-AMS", label: "Activity Hub", icon: GalleryVerticalEnd },
+          ]}
+        />
+      </SidebarHeader>
+      <SidebarContent>
+        <NavMain items={navMain} onNavigate={onNavigate} />
+        <NavSecondary items={navSecondary} label="More" onNavigate={onNavigate} />
+      </SidebarContent>
+      <SidebarFooter>
+        <NavUser
+          user={user}
+          onLogout={onLogout}
+          onNavigate={onNavigate}
+        />
+      </SidebarFooter>
+      <SidebarRail />
+    </Sidebar>
+  )
+}

@@ -3,29 +3,51 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useTheme } from "next-themes";
 import { useAuth } from "@/contexts/AuthContext";
 import { useActivity } from "@/contexts/ActivityContext";
-import AppHeader from "@/components/blocks/AppHeader";
+import { AppSidebar } from "@/components/app-sidebar";
 import CommunicationsHub from "@/components/chat/CommunicationsHub";
-import SidebarNav from "@/components/layout/SidebarNav";
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Activity,
-  BarChart3,
   Bell,
   Calendar,
   CheckSquare,
   ClipboardList,
-  FilePlus,
   FileText,
-  Inbox,
   LayoutDashboard,
+  LogOut,
   MessageCircle,
-  Terminal,
-  UserCog,
+  Moon,
+  Settings,
+  Settings2,
+  SunMedium,
+  User,
   Users,
 } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
+import type { LucideIcon } from "lucide-react";
+import type { NavMainItem } from "@/components/nav-main";
 
 interface DashboardLayoutProps {
   children: ReactNode;
+}
+
+interface SecondaryNavItem {
+  name: string;
+  url: string;
+  icon: LucideIcon;
 }
 
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
@@ -35,12 +57,10 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const { getUnreadNotificationsCount } = useActivity();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const isDarkMode = mounted && theme === "dark";
   const unreadNotifications = getUnreadNotificationsCount();
   const unreadDisplay = unreadNotifications > 99 ? "99+" : unreadNotifications.toString();
-  const isAdmin = user?.role === "admin";
 
   const handleLogout = () => {
     logout();
@@ -49,125 +69,238 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
   useEffect(() => setMounted(true), []);
 
-  const getNavItems = (role: string) => {
-    const baseItems = [
-      { icon: LayoutDashboard, label: "Dashboard", path: `/${role}/dashboard` },
+  const getNavMain = (role: string): NavMainItem[] => {
+    if (role === "admin") {
+      return [
+        {
+          title: "Dashboard",
+          url: "/admin/dashboard",
+          icon: LayoutDashboard,
+          isActive: location.pathname === "/admin/dashboard",
+        },
+        {
+          title: "Activities",
+          url: "/admin/activities",
+          icon: Activity,
+          isActive: location.pathname.startsWith("/admin/activities") || location.pathname.startsWith("/admin/create-activity") || location.pathname.startsWith("/admin/monitor"),
+          items: [
+            { title: "Create Activity", url: "/admin/create-activity" },
+            { title: "View All", url: "/admin/activities" },
+            { title: "Monitor", url: "/admin/monitor-activities" },
+          ],
+        },
+        {
+          title: "Users",
+          url: "/admin/users",
+          icon: Users,
+          isActive: location.pathname.startsWith("/admin/users") || location.pathname.startsWith("/admin/manage-users") || location.pathname.startsWith("/admin/manage-roles"),
+          items: [
+            { title: "Directory", url: "/admin/users" },
+            { title: "Manage Users", url: "/admin/manage-users" },
+            { title: "Roles", url: "/admin/manage-roles" },
+          ],
+        },
+        {
+          title: "Admin",
+          url: "/admin/applications",
+          icon: Settings2,
+          items: [
+            { title: "Applications", url: "/admin/applications" },
+            { title: "Reports", url: "/admin/reports-advanced" },
+            { title: "Audit Logs", url: "/admin/logs" },
+            { title: "System Logs", url: "/admin/system-logs" },
+          ],
+        },
+      ];
+    }
+
+    if (role === "coordinator") {
+      return [
+        {
+          title: "Dashboard",
+          url: "/coordinator/dashboard",
+          icon: LayoutDashboard,
+          isActive: location.pathname === "/coordinator/dashboard",
+        },
+        {
+          title: "Activities",
+          url: "/coordinator/activities",
+          icon: ClipboardList,
+          isActive: location.pathname.startsWith("/coordinator/activities"),
+          items: [
+            { title: "Manage", url: "/coordinator/activities" },
+            { title: "Create", url: "/coordinator/activities/new" },
+          ],
+        },
+        {
+          title: "Applications",
+          url: "/coordinator/applications",
+          icon: FileText,
+          isActive: location.pathname.startsWith("/coordinator/applications"),
+        },
+        {
+          title: "Attendance",
+          url: "/coordinator/attendance",
+          icon: CheckSquare,
+          isActive: location.pathname.startsWith("/coordinator/attendance"),
+        },
+      ];
+    }
+
+    return [
+      {
+        title: "Dashboard",
+        url: "/student/dashboard",
+        icon: LayoutDashboard,
+        isActive: location.pathname === "/student/dashboard",
+      },
+      {
+        title: "Activities",
+        url: "/student/activities",
+        icon: Calendar,
+        isActive: location.pathname.startsWith("/student/activities"),
+      },
+      {
+        title: "My Applications",
+        url: "/student/applications",
+        icon: FileText,
+        isActive: location.pathname.startsWith("/student/applications"),
+      },
     ];
-
-    const roleItems: Record<string, typeof baseItems> = {
-      student: [
-        ...baseItems,
-        { icon: Calendar, label: "Activities", path: "/student/activities" },
-        { icon: FileText, label: "My Applications", path: "/student/applications" },
-        { icon: MessageCircle, label: "Chat", path: "/student/chat" },
-        { icon: Bell, label: "Notifications", path: "/student/notifications" },
-      ],
-      coordinator: [
-        ...baseItems,
-        { icon: ClipboardList, label: "Manage Activities", path: "/coordinator/activities" },
-        { icon: FileText, label: "Applications", path: "/coordinator/applications" },
-        { icon: MessageCircle, label: "Chat", path: "/coordinator/chat" },
-        { icon: Bell, label: "Notifications", path: "/coordinator/notifications" },
-        { icon: CheckSquare, label: "Attendance", path: "/coordinator/attendance" },
-      ],
-      admin: [
-        ...baseItems,
-        { icon: FilePlus, label: "Create Activity", path: "/admin/create-activity" },
-        { icon: Calendar, label: "Admin Activities", path: "/admin/activities" },
-        { icon: Activity, label: "Monitor Activities", path: "/admin/monitor-activities" },
-        { icon: MessageCircle, label: "Chat", path: "/admin/chat" },
-        { icon: Bell, label: "Notifications", path: "/admin/notifications" },
-        { icon: Inbox, label: "Applications", path: "/admin/applications" },
-        { icon: Users, label: "Directory", path: "/admin/users" },
-        { icon: UserCog, label: "Manage Users", path: "/admin/manage-users" },
-        { icon: BarChart3, label: "Advanced Reports", path: "/admin/reports-advanced" },
-        { icon: Terminal, label: "Audit Logs", path: "/admin/logs" },
-      ],
-    };
-
-    return roleItems[role] || baseItems;
   };
 
-  const navItems = user ? getNavItems(user.role) : [];
+  const getNavSecondary = (role: string): SecondaryNavItem[] => [
+    { name: "Chat", url: `/${role}/chat`, icon: MessageCircle },
+    { name: "Notifications", url: `/${role}/notifications`, icon: Bell },
+    { name: "Calendar", url: `/${role}/calendar`, icon: Calendar },
+  ];
 
-  const toggleTheme = () => {
-    setTheme(isDarkMode ? "light" : "dark");
+  const role = user?.role ?? "student";
+  const navMain = getNavMain(role);
+  const navSecondary = getNavSecondary(role);
+
+  const onNavigate = (path: string) => {
+    if (path.startsWith("/")) navigate(path);
   };
+
+  const toggleTheme = () => setTheme(isDarkMode ? "light" : "dark");
 
   return (
-    <div className={`${location.pathname.startsWith("/chat") ? "h-screen overflow-hidden" : "min-h-screen"} bg-background flex`}>
-      <SidebarNav
-        navItems={navItems}
-        pathname={location.pathname}
-        unreadNotifications={unreadNotifications}
-        unreadDisplay={unreadDisplay}
-        user={user ? { name: user.name, email: user.email ?? "", avatar: user.avatar } : null}
-        onNavigate={(path) => navigate(path)}
+    <SidebarProvider className="h-[100dvh] max-h-[100dvh] overflow-hidden">
+      <AppSidebar
+        navMain={navMain}
+        navSecondary={navSecondary}
+        user={user ? { name: user.name, email: user.email ?? "", avatar: user.avatar } : { name: "User", email: "" }}
+        onNavigate={onNavigate}
+        onLogout={handleLogout}
       />
+      <SidebarInset className="flex flex-col h-[100dvh] max-h-[100dvh] min-h-0 overflow-hidden">
+        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 sticky top-0 z-10 bg-background/95 backdrop-blur-sm">
+          <SidebarTrigger className="-ml-1" />
+          <Separator orientation="vertical" className="mr-2 h-4" />
 
-      <div className={`flex-1 lg:ml-64 ${location.pathname.startsWith("/chat") ? "flex flex-col min-h-0" : ""}`}>
-        <AppHeader
-          user={user}
-          unreadNotifications={unreadNotifications}
-          isAdmin={isAdmin}
-          isDarkMode={mounted && isDarkMode}
-          onMenuClick={() => setIsSidebarOpen(true)}
-          onNavigate={(path) => navigate(path)}
-          onToggleTheme={toggleTheme}
-          onLogout={handleLogout}
-          onChatClick={() => setIsChatOpen(true)}
-        />
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <Avatar className="w-7 h-7 ring-1 ring-border shrink-0">
+              {user?.avatar ? <AvatarImage src={user.avatar} alt={user?.name ?? "User"} /> : null}
+              <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold uppercase">
+                {user?.name?.charAt(0) || "U"}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col min-w-0 leading-tight">
+              <span className="text-sm font-semibold text-foreground truncate">{user?.name || "User"}</span>
+              <span className="flex items-center gap-1 text-[11px] font-medium text-emerald-500">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                <span className="truncate">Online</span>
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1 shrink-0">
+            {user?.role && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative rounded-full hover:bg-accent h-9 w-9"
+                onClick={() => setIsChatOpen(true)}
+              >
+                <MessageCircle className="w-[18px] h-[18px]" />
+                {user?.role === "admin" && (
+                  <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-400 ring-2 ring-background" />
+                )}
+              </Button>
+            )}
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onNavigate(`/${user?.role}/notifications`)}
+              className="relative rounded-full hover:bg-accent h-9 w-9"
+            >
+              <Bell className="w-[18px] h-[18px]" />
+              {unreadNotifications > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 rounded-full bg-destructive text-destructive-foreground min-w-[18px] h-[18px] px-1 text-[10px] font-bold flex items-center justify-center">
+                  {unreadDisplay}
+                </span>
+              )}
+            </Button>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="rounded-full hover:bg-accent h-9 w-9 p-0">
+                  <Avatar className="w-7 h-7 ring-1 ring-border">
+                    {user?.avatar ? <AvatarImage src={user.avatar} alt={user?.name ?? "User"} /> : null}
+                    <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold uppercase">
+                      {user?.name?.charAt(0) || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={() => onNavigate(`/${user?.role}/profile`)}>
+                  <User className="w-4 h-4 mr-2" />
+                  Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onNavigate(`/${user?.role}/change-password`)}>
+                  <Settings className="w-4 h-4 mr-2" />
+                  Change Password
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={toggleTheme}>
+                  {isDarkMode ? (
+                    <SunMedium className="w-4 h-4 mr-2" />
+                  ) : (
+                    <Moon className="w-4 h-4 mr-2" />
+                  )}
+                  {isDarkMode ? "Light mode" : "Dark mode"}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={handleLogout} className="text-destructive">
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </header>
 
         <CommunicationsHub
           open={isChatOpen}
           onOpenChange={setIsChatOpen}
-          isAdmin={isAdmin}
+          isAdmin={user?.role === "admin" || false}
           users={users ?? []}
           currentUserId={user?.id}
           isDarkMode={mounted && isDarkMode}
         />
-
-        <main className={location.pathname.startsWith("/chat") ? "flex flex-1 min-h-0 overflow-hidden" : "p-4 lg:p-6"}>{children}</main>
-      </div>
-
-      <AnimatePresence>
-        {isSidebarOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-50 lg:hidden"
-              onClick={() => setIsSidebarOpen(false)}
-            />
-            <motion.div
-              initial={{ x: -280 }}
-              animate={{ x: 0 }}
-              exit={{ x: -280 }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="fixed left-0 top-0 bottom-0 w-72 bg-card z-50 lg:hidden"
-            >
-              <SidebarNav
-                navItems={navItems}
-                pathname={location.pathname}
-                unreadNotifications={unreadNotifications}
-                unreadDisplay={unreadDisplay}
-                user={user ? { name: user.name, email: user.email ?? "", avatar: user.avatar } : null}
-                onNavigate={(path) => navigate(path)}
-                onClose={() => setIsSidebarOpen(false)}
-                headerHandle={user?.department
-                  ? `${user.department.slice(0, 3).toUpperCase()}-${(user.name ?? "member").split(" ")[0]?.toLowerCase()}`
-                  : user?.name ?? "ENG-jamiila"}
-                headerStatusLabel="Online"
-                portalLabel="JU Activity Hub"
-                onLogout={handleLogout}
-                mobile
-              />
-            </motion.div>
-          </>
+        {location.pathname.match(/\/chat/) ? (
+          <main className="flex flex-col flex-1 min-h-0 overflow-hidden">
+            {children}
+          </main>
+        ) : (
+          <main className="flex-1 overflow-y-auto">
+            <div className="p-4 lg:p-6">{children}</div>
+          </main>
         )}
-      </AnimatePresence>
-    </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 };
 

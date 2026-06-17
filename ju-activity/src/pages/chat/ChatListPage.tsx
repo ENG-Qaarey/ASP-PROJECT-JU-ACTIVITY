@@ -82,9 +82,9 @@ const ChatListPage = () => {
 
   return (
     <DashboardLayout>
-      <div className="flex flex-1 min-h-10">
+      <div className="flex flex-1 min-h-0">
         {/* Left Panel - Contact List (template style) */}
-        <div className="w-full max-w-md border-r max-h-full border-border/60 bg-card/40 backdrop-blur-sm flex flex-col">
+        <div className="w-full max-w-md border-r border-border/60 bg-card/40 backdrop-blur-sm flex flex-col flex-1 min-h-0">
           {/* Header */}
           <div className="flex items-center px-4 py-3 border-b border-border/40">
             <h1 className="text-lg font-semibold">Chats</h1>

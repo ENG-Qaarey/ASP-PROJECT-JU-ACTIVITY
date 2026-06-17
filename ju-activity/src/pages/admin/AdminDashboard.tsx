@@ -1,32 +1,27 @@
-import { motion } from "framer-motion";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
-import { mockActivities, mockApplications } from "@/data/mockData";
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/contexts/AuthContext";
 import { userService } from "@/services/userService";
-import {
-  Users,
-  Calendar,
-  BarChart3,
-  Shield,
-  AlertTriangle,
-  TrendingUp,
-  Activity,
-  FileText,
-  ClipboardList,
-  FilePlus,
-  Inbox,
-  Loader2,
-  UserCheck,
-  UserX,
-  Percent
-} from "lucide-react";
+import { Overview } from "@/components/admin/Overview";
+import { RecentActivity } from "@/components/admin/RecentActivity";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { toast } from "@/hooks/use-toast";
+import {
+  Users,
+  UserCheck,
+  UserX,
+  Percent,
+  Download,
+  Calendar,
+  Activity,
+  ClipboardList
+} from "lucide-react";
 
-const AdminDashboard = () => {
+export default function AdminDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [userStats, setUserStats] = useState({
@@ -34,11 +29,6 @@ const AdminDashboard = () => {
     active: 0,
     inactive: 0,
     activePercentage: 0,
-    distribution: {
-      students: 0,
-      coordinators: 0,
-      admins: 0
-    },
     loading: true
   });
 
@@ -62,230 +52,156 @@ const AdminDashboard = () => {
     fetchUserStats();
   }, []);
 
-  const stats = [
-    {
-      label: "Total Users",
-      value: userStats.loading ? (
-        <Loader2 className="h-5 w-5 animate-spin" />
-      ) : userStats.total.toLocaleString(),
-      change: "",
-      icon: Users,
-      color: "text-primary",
-      bgColor: "bg-primary/10",
-    },
-    {
-      label: "Active Users",
-      value: userStats.loading ? (
-        <Loader2 className="h-5 w-5 animate-spin" />
-      ) : userStats.active.toLocaleString(),
-      change: "",
-      icon: UserCheck,
-      color: "text-success",
-      bgColor: "bg-success/10",
-    },
-    {
-      label: "Inactive Users",
-      value: userStats.loading ? (
-        <Loader2 className="h-5 w-5 animate-spin" />
-      ) : userStats.inactive.toLocaleString(),
-      change: "",
-      icon: UserX,
-      color: "text-warning",
-      bgColor: "bg-warning/10",
-    },
-    {
-      label: "Active Rate",
-      value: userStats.loading ? (
-        <Loader2 className="h-5 w-5 animate-spin" />
-      ) : `${userStats.activePercentage}%`,
-      change: "",
-      icon: Percent,
-      color: "text-secondary-foreground",
-      bgColor: "bg-secondary",
-    },
-  ];
-
-  const quickActions = [
-    { label: "Create Activity", icon: FilePlus, path: "/admin/create-activity" },
-    { label: "Monitor Activities", icon: Calendar, path: "/admin/monitor-activities" },
-    { label: "Review Applications", icon: ClipboardList, path: "/admin/applications" },
-    { label: "Directory", icon: Users, path: "/admin/users" },
-    { label: "Manage Users", icon: Shield, path: "/admin/manage-users" },
-    { label: "Reports", icon: BarChart3, path: "/admin/reports" },
-    { label: "Advanced Reports", icon: FileText, path: "/admin/reports-advanced" },
-    { label: "Audit Logs", icon: FileText, path: "/admin/logs" },
-  ];
-
-  const recentAlerts = [
-    { id: 1, message: "High traffic detected on activity registrations", type: "warning", time: "2 min ago" },
-    { id: 2, message: "New coordinator account created", type: "info", time: "15 min ago" },
-    { id: 3, message: "System backup completed successfully", type: "success", time: "1 hour ago" },
-  ];
-
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {/* Welcome Section */}
+      <div className="flex-1 space-y-6 p-4 md:p-8 pt-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="gradient-hero rounded-2xl p-6 text-primary-foreground"
+          className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 rounded-[20px] border border-primary/10"
         >
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold mb-2">
-                Admin Dashboard 🛡️
-              </h1>
-              <p className="text-primary-foreground/80">
-                Monitor system performance and manage users
-              </p>
-            </div>
-            <div className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl bg-card/20 backdrop-blur">
-              <Shield className="w-5 h-5" />
-              <span className="font-medium">System Status: Healthy</span>
-            </div>
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
+              Welcome back, Admin! 👋
+            </h2>
+            <p className="text-muted-foreground mt-1">Here's what's happening with your system today.</p>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button variant="outline" className="hidden sm:flex rounded-xl bg-background/50 backdrop-blur-sm">
+              <Calendar className="mr-2 h-4 w-4" />
+              Jan 20, 2026 - Feb 09, 2026
+            </Button>
+            <Button className="rounded-xl shadow-lg shadow-primary/20">
+              <Download className="mr-2 h-4 w-4" />
+              Download
+            </Button>
           </div>
         </motion.div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {stats.map((stat, index) => (
-            <motion.div
-              key={stat.label}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <Card className="hover:shadow-lg transition-shadow duration-200">
-                <CardContent className="p-4 md:p-6">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className={`w-10 h-10 rounded-xl ${stat.bgColor} flex items-center justify-center`}>
-                      <stat.icon className={`w-5 h-5 ${stat.color}`} />
-                    </div>
-                    <span className="flex items-center gap-1 text-xs font-medium text-success">
-                      <TrendingUp className="w-3 h-3" />
-                      {stat.change}
-                    </span>
+        <Tabs defaultValue="overview" className="space-y-4">
+          <TabsList className="w-full sm:w-auto overflow-x-auto justify-start">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="reports">Reports</TabsTrigger>
+            <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          </TabsList>
+          <TabsContent value="overview" className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+                  <div className="p-2 bg-primary/10 rounded-xl">
+                    <Users className="h-4 w-4 text-primary" />
                   </div>
-                  <p className="text-2xl font-bold">{stat.value}</p>
-                  <p className="text-muted-foreground text-sm">{stat.label}</p>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {userStats.loading ? "..." : userStats.total.toLocaleString()}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    +20.1% from last month
+                  </p>
                 </CardContent>
               </Card>
-            </motion.div>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Quick Actions */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="lg:col-span-1"
-          >
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Active Users</CardTitle>
+                  <div className="p-2 bg-success/10 rounded-xl">
+                    <UserCheck className="h-4 w-4 text-success" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {userStats.loading ? "..." : userStats.active.toLocaleString()}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    +180.1% from last month
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Inactive Users</CardTitle>
+                  <div className="p-2 bg-warning/10 rounded-xl">
+                    <UserX className="h-4 w-4 text-warning" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {userStats.loading ? "..." : userStats.inactive.toLocaleString()}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    +19% from last month
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Active Rate</CardTitle>
+                  <div className="p-2 bg-purple-500/10 rounded-xl">
+                    <Percent className="h-4 w-4 text-purple-500" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {userStats.loading ? "..." : `${userStats.activePercentage}%`}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    +2.4% from last month
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+              <Card className="lg:col-span-4">
+                <CardHeader>
+                  <CardTitle>Overview</CardTitle>
+                </CardHeader>
+                <CardContent className="pl-2">
+                  <Overview />
+                </CardContent>
+              </Card>
+              <Card className="lg:col-span-3">
+                <CardHeader>
+                  <CardTitle>Recent Activity</CardTitle>
+                  <CardDescription>
+                    There were 265 activities in the last 24 hours.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <RecentActivity />
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+          <TabsContent value="analytics" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Quick Actions</CardTitle>
+                <CardTitle>Analytics</CardTitle>
+                <CardDescription>View detailed analytics and metrics across the system.</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="grid gap-2">
-                {quickActions.map((action) => (
-                  <Button
-                    key={action.label}
-                    variant="outline"
-                    className="w-full justify-start"
-                    onClick={() => navigate(action.path)}
-                  >
-                    <action.icon className="w-4 h-4 mr-3" />
-                    {action.label}
-                  </Button>
-                ))}
-                </div>
+              <CardContent className="h-[400px] flex items-center justify-center border-dashed border-2 rounded-lg m-6 mt-0 border-border text-muted-foreground bg-muted/20">
+                Detailed analytics visualization will appear here.
               </CardContent>
             </Card>
-          </motion.div>
-
-          {/* System Alerts */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="lg:col-span-2"
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5 text-warning" />
-                  System Alerts
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {recentAlerts.map((alert) => (
-                  <div
-                    key={alert.id}
-                    className={`flex items-start gap-4 p-4 rounded-xl ${
-                      alert.type === "warning"
-                        ? "bg-warning/10 border border-warning/20"
-                        : alert.type === "success"
-                        ? "bg-success/10 border border-success/20"
-                        : "bg-muted/50 border border-border"
-                    }`}
-                  >
-                    <div
-                      className={`w-2 h-2 rounded-full mt-2 ${
-                        alert.type === "warning"
-                          ? "bg-warning"
-                          : alert.type === "success"
-                          ? "bg-success"
-                          : "bg-primary"
-                      }`}
-                    />
-                    <div className="flex-1">
-                      <p className="font-medium">{alert.message}</p>
-                      <p className="text-sm text-muted-foreground">{alert.time}</p>
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
-
-        {/* User Distribution Chart Placeholder */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-        >
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">User Distribution</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-around py-8">
-                {[
-                  { label: "Students", value: userStats.loading ? "..." : userStats.distribution.students, color: "bg-primary" },
-                  { label: "Coordinators", value: userStats.loading ? "..." : userStats.distribution.coordinators, color: "bg-success" },
-                  { label: "Admins", value: userStats.loading ? "..." : userStats.distribution.admins, color: "bg-warning" },
-                ].map((item) => (
-                  <div key={item.label} className="text-center">
-                    <div
-                      className={`w-20 h-20 rounded-2xl ${item.color}/10 flex items-center justify-center mx-auto mb-3`}
-                    >
-                      <span className={`text-2xl font-bold ${item.color.replace("bg-", "text-")}`}>
-                        {item.value}
-                      </span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">{item.label}</p>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+          </TabsContent>
+          <TabsContent value="reports" className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-3">
+              <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate("/admin/reports-advanced")}>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><Activity className="h-5 w-5" /> Advanced Reports</CardTitle>
+                  <CardDescription>Generate multi-level analytics reports</CardDescription>
+                </CardHeader>
+              </Card>
+              <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate("/admin/applications")}>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><ClipboardList className="h-5 w-5" /> Applications</CardTitle>
+                  <CardDescription>Review student applications and status</CardDescription>
+                </CardHeader>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </DashboardLayout>
   );
-};
-
-export default AdminDashboard;
+}

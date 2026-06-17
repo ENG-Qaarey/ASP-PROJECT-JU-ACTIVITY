@@ -1,9 +1,12 @@
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { useActivity } from "@/contexts/ActivityContext";
-import { useNavigate } from "react-router-dom";
+import { StudentOverview } from "@/components/student/StudentOverview";
+import DashboardLayout from "@/components/layout/DashboardLayout";
 import {
   Calendar,
   FileText,
@@ -12,10 +15,10 @@ import {
   ArrowRight,
   Clock,
   MapPin,
+  Download
 } from "lucide-react";
-import DashboardLayout from "@/components/layout/DashboardLayout";
 
-const StudentDashboard = () => {
+export default function StudentDashboard() {
   const { user } = useAuth();
   const { activities, applications, notifications } = useActivity();
   const navigate = useNavigate();
@@ -57,33 +60,8 @@ const StudentDashboard = () => {
     );
   };
 
-  const stats = [
-    {
-      label: "Available Activities",
-      value: activities.length,
-      icon: Calendar,
-      color: "text-primary",
-      bgColor: "bg-primary/10",
-    },
-    {
-      label: "Applied Activities",
-      value: applications.length,
-      icon: FileText,
-      color: "text-warning",
-      bgColor: "bg-warning/10",
-    },
-    {
-      label: "Approved Activities",
-      value: applications.filter((a) => a.status === "approved").length,
-      icon: CheckCircle,
-      color: "text-success",
-      bgColor: "bg-success/10",
-    },
-  ];
-
   const now = new Date();
 
-  // Opposite of "upcoming": show recent/past activities (time-aware)
   const recentActivities = activities
     .map((activity) => ({
       activity,
@@ -92,171 +70,213 @@ const StudentDashboard = () => {
     .filter(({ dateTime }) => dateTime && dateTime.getTime() <= now.getTime())
     .sort((a, b) => b.dateTime!.getTime() - a.dateTime!.getTime())
     .map(({ activity }) => activity)
-    .slice(0, 3);
+    .slice(0, 5);
 
   const unreadNotifications = notifications.filter((n) => !n.read);
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {/* Welcome Section */}
+      <div className="flex-1 space-y-6 p-4 md:p-8 pt-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="gradient-hero rounded-2xl p-6 text-primary-foreground"
+          className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 rounded-[20px] border border-primary/10"
         >
-          <h1 className="text-2xl md:text-3xl font-bold mb-2">
-            Welcome back, {(user?.name ?? "Student").split(" ")[0]}! 👋
-          </h1>
-          <p className="text-primary-foreground/80">
-            Ready to explore new activities and enhance your university experience?
-          </p>
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
+              Welcome back, {(user?.name ?? "Student").split(" ")[0]}! 👋
+            </h2>
+            <p className="text-muted-foreground mt-1">Ready to explore new activities and enhance your university experience?</p>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button variant="outline" className="hidden sm:flex rounded-xl bg-background/50 backdrop-blur-sm" onClick={() => navigate("/student/activities")}>
+              <Calendar className="mr-2 h-4 w-4" />
+              Browse Activities
+            </Button>
+            <Button className="rounded-xl shadow-lg shadow-primary/20">
+              <Download className="mr-2 h-4 w-4" />
+              Download Transcript
+            </Button>
+          </div>
         </motion.div>
+        <Tabs defaultValue="overview" className="space-y-4">
+          <TabsList className="w-full sm:w-auto overflow-x-auto justify-start">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="activities">Activities</TabsTrigger>
+            <TabsTrigger value="applications">Applications</TabsTrigger>
+            <TabsTrigger value="notifications">
+              Notifications
+              {unreadNotifications.length > 0 && (
+                <span className="ml-2 rounded-full bg-destructive w-2 h-2" />
+              )}
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="overview" className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Available Activities</CardTitle>
+                  <div className="p-2 bg-primary/10 rounded-xl">
+                    <Calendar className="h-4 w-4 text-primary" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{activities.length}</div>
+                  <p className="text-xs text-muted-foreground">Activities open for enrollment</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Applied Activities</CardTitle>
+                  <div className="p-2 bg-warning/10 rounded-xl">
+                    <FileText className="h-4 w-4 text-warning" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{applications.length}</div>
+                  <p className="text-xs text-muted-foreground">Total applications sent</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Approved</CardTitle>
+                  <div className="p-2 bg-success/10 rounded-xl">
+                    <CheckCircle className="h-4 w-4 text-success" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {applications.filter((a) => a.status === "approved").length}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Applications successfully accepted</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Notifications</CardTitle>
+                  <div className="p-2 bg-destructive/10 rounded-xl">
+                    <Bell className="h-4 w-4 text-destructive" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{unreadNotifications.length}</div>
+                  <p className="text-xs text-muted-foreground">Requires your attention</p>
+                </CardContent>
+              </Card>
+            </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {stats.map((stat, index) => (
-            <motion.div
-              key={stat.label}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <Card className="hover:shadow-lg transition-shadow duration-200">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-muted-foreground text-sm">{stat.label}</p>
-                      <p className="text-3xl font-bold mt-1">{stat.value}</p>
-                    </div>
-                    <div className={`w-12 h-12 rounded-xl ${stat.bgColor} flex items-center justify-center`}>
-                      <stat.icon className={`w-6 h-6 ${stat.color}`} />
-                    </div>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+              <Card className="lg:col-span-4">
+                <CardHeader>
+                  <CardTitle>Activity History</CardTitle>
+                </CardHeader>
+                <CardContent className="pl-2">
+                  <StudentOverview />
+                </CardContent>
+              </Card>
+              
+              <Card className="lg:col-span-3">
+                <CardHeader>
+                  <CardTitle>Recent Activities</CardTitle>
+                  <CardDescription>
+                    Your most recent interactions.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-8">
+                    {recentActivities.map((activity) => (
+                      <div key={activity.id} className="flex items-center" onClick={() => navigate(`/student/activities/${activity.id}`)} style={{ cursor: "pointer" }}>
+                        <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center mr-4">
+                          <Calendar className="w-4 h-4 text-primary" />
+                        </div>
+                        <div className="ml-0 space-y-1 flex-1 min-w-0">
+                          <p className="text-sm font-medium leading-none truncate">{activity.title}</p>
+                          <p className="text-sm text-muted-foreground truncate">
+                            {formatDate(activity.date)}
+                          </p>
+                        </div>
+                        <div className="ml-auto font-medium text-sm text-muted-foreground capitalize">
+                           {activity.category}
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {recentActivities.length === 0 && (
+                      <div className="text-sm text-muted-foreground text-center py-4">
+                        No recent activities.
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
-            </motion.div>
-          ))}
-        </div>
+            </div>
+          </TabsContent>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Recent / Past Activities */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="lg:col-span-2"
-          >
+          <TabsContent value="activities" className="space-y-4">
+             <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate("/student/activities")}>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><Calendar className="h-5 w-5" /> Browse Activities</CardTitle>
+                  <CardDescription>Find and enroll in new university activities.</CardDescription>
+                </CardHeader>
+              </Card>
+          </TabsContent>
+          
+          <TabsContent value="applications" className="space-y-4">
+             <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate("/student/applications")}>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><FileText className="h-5 w-5" /> My Applications</CardTitle>
+                  <CardDescription>Review the status of your submitted applications.</CardDescription>
+                </CardHeader>
+              </Card>
+          </TabsContent>
+
+          <TabsContent value="notifications" className="space-y-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-lg">Recent Activities</CardTitle>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate("/student/activities")}
-                >
+                <div>
+                  <CardTitle>Notifications</CardTitle>
+                  <CardDescription>System alerts and application updates.</CardDescription>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => navigate("/student/notifications")}>
                   View All <ArrowRight className="w-4 h-4 ml-1" />
                 </Button>
               </CardHeader>
               <CardContent className="space-y-4">
-                {recentActivities.map((activity) => (
-                  <div
-                    key={activity.id}
-                    className="flex items-center gap-4 p-4 rounded-xl bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
-                    onClick={() => navigate(`/student/activities/${activity.id}`)}
-                  >
-                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <Calendar className="w-6 h-6 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold truncate">{activity.title}</h3>
-                      <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-4 h-4" />
-                          {formatDate(activity.date)} {("time" in activity && (activity as any).time) ? `• ${(activity as any).time}` : ""}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <MapPin className="w-4 h-4" />
-                          {activity.location}
-                        </span>
-                      </div>
-                    </div>
-                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary capitalize">
-                      {activity.category}
-                    </span>
-                  </div>
-                ))}
-                {recentActivities.length === 0 && (
-                  <p className="text-sm text-muted-foreground">No recent activities yet.</p>
-                )}
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* Notifications */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Bell className="w-5 h-5" />
-                  Notifications
-                </CardTitle>
-                {unreadNotifications.length > 0 && (
-                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-destructive text-destructive-foreground">
-                    {unreadNotifications.length} new
-                  </span>
-                )}
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {notifications.slice(0, 4).map((notification) => (
+                {notifications.slice(0, 5).map((notification) => (
                   <div
                     key={notification.id}
-                    className={`p-3 rounded-xl border transition-colors cursor-pointer ${
+                    className={`flex items-start gap-4 p-4 rounded-xl border transition-colors ${
                       notification.read
                         ? "bg-background border-border"
                         : "bg-accent/50 border-primary/20"
                     }`}
                   >
-                    <div className="flex items-start gap-3">
-                      <div
-                        className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
-                          notification.type === "approval"
-                            ? "bg-success"
-                            : notification.type === "rejection"
-                            ? "bg-destructive"
-                            : "bg-primary"
-                        }`}
-                      />
-                      <div>
-                        <p className="font-medium text-sm">{notification.title}</p>
-                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                          {notification.message}
-                        </p>
-                      </div>
+                    <div
+                      className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
+                        notification.type === "approval"
+                          ? "bg-success"
+                          : notification.type === "rejection"
+                          ? "bg-destructive"
+                          : "bg-primary"
+                      }`}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm">{notification.title}</p>
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                        {notification.message}
+                      </p>
                     </div>
                   </div>
                 ))}
                 {notifications.length === 0 && (
-                  <p className="text-sm text-muted-foreground">No notifications yet.</p>
+                  <p className="text-sm text-muted-foreground text-center">No notifications yet.</p>
                 )}
-                <Button
-                  variant="ghost"
-                  className="w-full"
-                  onClick={() => navigate("/student/notifications")}
-                >
-                  View All Notifications
-                </Button>
               </CardContent>
             </Card>
-          </motion.div>
-        </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </DashboardLayout>
   );
-};
-
-export default StudentDashboard;
+}

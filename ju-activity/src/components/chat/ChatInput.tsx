@@ -41,7 +41,7 @@ export default function ChatInput({
   onStartRecording, onStopRecording, onCancelRecording, onCancelReply, onEmojiSelect,
 }: ChatInputProps) {
   return (
-    <>
+    <div className="shrink-0">
       {replyTo && (
         <div className="border-t border-border/40 bg-accent/30 px-4 py-2 flex items-center gap-2 text-xs text-muted-foreground">
           <Reply className="h-3 w-3 shrink-0" />
@@ -69,8 +69,8 @@ export default function ChatInput({
         )}
       </AnimatePresence>
 
-      <div className="border-t border-border/50 bg-card/70 backdrop-blur-xl px-3 sm:px-4 py-2.5 shrink-0 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-        <div className="flex items-end gap-1.5 max-w-4xl mx-auto">
+      <div className="border-t border-border/50 bg-card/70 backdrop-blur-xl px-3 sm:px-4 py-2.5 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+        <div className="flex items-center gap-1.5 max-w-4xl mx-auto">
           <input type="file" ref={fileInputRef} className="hidden"
             accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.zip" />
 
@@ -127,7 +127,7 @@ export default function ChatInput({
                 rows={1}
                 className="w-full resize-none rounded-2xl border border-input/70 bg-background/60 backdrop-blur-sm px-4 py-2.5 text-sm shadow-sm transition-all placeholder:text-muted-foreground/40
                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:border-primary/40
-                  disabled:opacity-50 max-h-[120px] leading-relaxed"
+                  disabled:opacity-50 min-h-[42px] max-h-[120px] leading-relaxed align-middle"
               />
             )}
           </div>
@@ -165,6 +165,6 @@ export default function ChatInput({
           )}
         </div>
       </div>
-    </>
+    </div>
   );
 }
