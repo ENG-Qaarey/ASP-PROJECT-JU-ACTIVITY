@@ -1,11 +1,19 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
+using backend.Services;
 
 namespace backend.Hubs
 {
     [Authorize]
     public class NotificationHub : Hub
     {
+        private readonly ReadStatusTracker _readStatus;
+
+        public NotificationHub(ReadStatusTracker readStatus)
+        {
+            _readStatus = readStatus;
+        }
+
         public override async Task OnConnectedAsync()
         {
             var userId = Context.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
@@ -48,6 +56,20 @@ namespace backend.Hubs
                 {
                     activityId,
                     userId
+                });
+            }
+        }
+
+        public async Task MarkAsRead(string activityId)
+        {
+            var userId = Context.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (!string.IsNullOrEmpty(userId) && Guid.TryParse(userId, out var uid) && Guid.TryParse(activityId, out var aid))
+            {
+                _readStatus.MarkAsRead(uid, aid);
+                await Clients.Group($"activity-{activityId}").SendAsync("ReadReceipt", new
+                {
+                    userId,
+                    activityId
                 });
             }
         }

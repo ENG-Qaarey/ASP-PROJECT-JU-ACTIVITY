@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using backend.models;
@@ -11,9 +12,11 @@ using backend.models;
 namespace backend.models.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260617133140_AddRefreshTokenSupport")]
+    partial class AddRefreshTokenSupport
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -99,6 +102,31 @@ namespace backend.models.Migrations
                     b.HasIndex("CoordinatorId");
 
                     b.ToTable("Activities");
+                });
+
+            modelBuilder.Entity("backend.models.ActivityReadStatus", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ActivityId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("LastReadAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActivityId");
+
+                    b.HasIndex("UserId", "ActivityId")
+                        .IsUnique();
+
+                    b.ToTable("ActivityReadStatuses");
                 });
 
             modelBuilder.Entity("backend.models.AdminProfile", b =>
@@ -476,6 +504,30 @@ namespace backend.models.Migrations
                     b.ToTable("PendingUsers");
                 });
 
+            modelBuilder.Entity("backend.models.PushToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Token")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("PushTokens");
+                });
+
             modelBuilder.Entity("backend.models.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
@@ -583,6 +635,25 @@ namespace backend.models.Migrations
                         .IsRequired();
 
                     b.Navigation("Coordinator");
+                });
+
+            modelBuilder.Entity("backend.models.ActivityReadStatus", b =>
+                {
+                    b.HasOne("backend.models.Activity", "Activity")
+                        .WithMany()
+                        .HasForeignKey("ActivityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("backend.models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Activity");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("backend.models.AdminProfile", b =>
@@ -714,6 +785,17 @@ namespace backend.models.Migrations
                     b.Navigation("Recipient");
                 });
 
+            modelBuilder.Entity("backend.models.PushToken", b =>
+                {
+                    b.HasOne("backend.models.User", "User")
+                        .WithMany("PushTokens")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("backend.models.RefreshToken", b =>
                 {
                     b.HasOne("backend.models.User", "User")
@@ -751,6 +833,8 @@ namespace backend.models.Migrations
                     b.Navigation("MarkedAttendances");
 
                     b.Navigation("Notifications");
+
+                    b.Navigation("PushTokens");
 
                     b.Navigation("ReceivedMessages");
 

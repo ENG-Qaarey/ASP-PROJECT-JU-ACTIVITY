@@ -1,4 +1,4 @@
-## Database Tables (11 models + 1 enum-backed)
+## Database Tables (11 models)
 
 ### 1. `users` — Core user accounts
 
@@ -20,7 +20,7 @@
 | emailVerificationCodeExpiresAt | DateTime? | 15 min TTL                                                                                                                                                                                                                                      |
 | resetPasswordCodeHash          | String?   |                                                                                                                                                                                                                                                 |
 | resetPasswordCodeExpiresAt     | DateTime? | 10 min TTL                                                                                                                                                                                                                                      |
-| **Relations**                  |           | `activitiesAsCoordinator`, `adminProfile`, `coordinatorProfile`, `applications`, `attendanceRecords`, `markedAttendance`, `sentMessages`, `receivedMessages`, `notifications`, `pushTokens`, `reviews`, `auditLogsAsActor`, `auditLogsAsTarget` |
+                            | **Relations**                  |           | `activitiesAsCoordinator`, `adminProfile`, `coordinatorProfile`, `applications`, `attendanceRecords`, `markedAttendance`, `sentMessages`, `receivedMessages`, `notifications`, `reviews`, `auditLogsAsActor`, `auditLogsAsTarget` |
 
 ### 2. `admins` — Admin profile
 
@@ -132,15 +132,7 @@
 | hiddenBy   | String[] | User IDs who hid this message             |
 | isDeleted  | Boolean  | Default false                             |
 
-### 10. `push_tokens` 
-
-| Field  | Type   | Notes                      |
-| ------ | ------ | -------------------------- |
-| id     | UUID   | PK                         |
-| token  | String | Unique, Expo push token    |
-| userId | UUID   | FK → users, CASCADE delete |
-
-### 11. `audit_logs` — Audit trail
+### 10. `audit_logs` — Audit trail
 
 | Field    | Type    | Notes                                                                                                                                                                                                                                                                                                                         |
 | -------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -153,7 +145,7 @@
 | message  | String? | Human-readable description                                                                                                                                                                                                                                                                                                    |
 | metadata | JSONB?  | Extra data                                                                                                                                                                                                                                                                                                                    |
 
-### 12. `pending_users` — Pre-registration holding
+### 11. `pending_users` — Pre-registration holding
 
 | Field                     | Type     | Notes                  |
 | ------------------------- | -------- | ---------------------- |
@@ -257,7 +249,6 @@
 | POST   | `/notifications`              | JWT  | coordinator | Create notification               |
 | PUT    | `/notifications/:id/read`     | JWT  | all         | Mark one as read                  |
 | PUT    | `/notifications/read/all`     | JWT  | all         | Mark all as read                  |
-| POST   | `/notifications/push-token`   | JWT  | all         | Register Expo push token          |
 | DELETE | `/notifications/:id`          | JWT  | all         | Delete                            |
 
 ### Chat (`/chat`) — REST

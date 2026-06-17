@@ -103,6 +103,7 @@ namespace backend.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "admin,coordinator")]
         public async Task<IActionResult> Update(string id, [FromBody] UpdateActivityRequest request)
         {
             if (!Guid.TryParse(id, out var guid))
@@ -141,6 +142,7 @@ namespace backend.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "admin,coordinator")]
         public async Task<IActionResult> Delete(string id)
         {
             if (!Guid.TryParse(id, out var guid))

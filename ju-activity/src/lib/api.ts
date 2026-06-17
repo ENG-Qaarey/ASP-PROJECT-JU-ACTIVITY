@@ -4,6 +4,7 @@ import type {
   Application,
   Attendance,
   AuditLog,
+  AuditLogsResponse,
   AuthResponse,
   Category,
   LastMessagesRecord,
@@ -397,7 +398,7 @@ export const auditLogsApi = {
         return acc;
       }, {} as Record<string, string>),
     ).toString();
-    return fetchApi<AuditLog[]>('/audit-logs' + (query ? `?${query}` : ''));
+    return fetchApi<AuditLogsResponse>('/audit-logs' + (query ? `?${query}` : ''));
   },
 };
 

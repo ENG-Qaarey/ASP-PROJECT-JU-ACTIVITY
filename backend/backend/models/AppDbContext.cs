@@ -15,11 +15,10 @@ namespace backend.models
         public DbSet<Attendance> Attendances => Set<Attendance>();
         public DbSet<Notification> Notifications => Set<Notification>();
         public DbSet<Message> Messages => Set<Message>();
-        public DbSet<PushToken> PushTokens => Set<PushToken>();
         public DbSet<Category> Categories => Set<Category>();
         public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
         public DbSet<PendingUser> PendingUsers => Set<PendingUser>();
-        public DbSet<ActivityReadStatus> ActivityReadStatuses => Set<ActivityReadStatus>();
+        public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -73,19 +72,6 @@ namespace backend.models
                 entity.HasIndex(m => m.ActivityId);
             });
 
-            modelBuilder.Entity<ActivityReadStatus>(entity =>
-            {
-                entity.HasIndex(r => new { r.UserId, r.ActivityId }).IsUnique();
-                entity.HasOne(r => r.User).WithMany().HasForeignKey(r => r.UserId).OnDelete(DeleteBehavior.Cascade);
-                entity.HasOne(r => r.Activity).WithMany().HasForeignKey(r => r.ActivityId).OnDelete(DeleteBehavior.Cascade);
-            });
-
-            modelBuilder.Entity<PushToken>(entity =>
-            {
-                entity.HasIndex(p => p.Token).IsUnique();
-                entity.HasOne(p => p.User).WithMany(u => u.PushTokens).HasForeignKey(p => p.UserId).OnDelete(DeleteBehavior.Cascade);
-            });
-
             modelBuilder.Entity<AuditLog>(entity =>
             {
                 entity.HasOne(al => al.Actor).WithMany(u => u.AuditLogsAsActor).HasForeignKey(al => al.ActorId).OnDelete(DeleteBehavior.SetNull);
@@ -109,6 +95,12 @@ namespace backend.models
             modelBuilder.Entity<CoordinatorProfile>(entity =>
             {
                 entity.HasIndex(c => c.UserId).IsUnique();
+            });
+
+            modelBuilder.Entity<RefreshToken>(entity =>
+            {
+                entity.HasIndex(r => r.Token).IsUnique();
+                entity.HasOne(r => r.User).WithMany().HasForeignKey(r => r.UserId).OnDelete(DeleteBehavior.Cascade);
             });
         }
     }

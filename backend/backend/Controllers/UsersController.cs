@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using backend.DTOs;
 using backend.models;
 using backend.models.Enums;
+using backend.Services;
 
 namespace backend.Controllers
 {
@@ -13,13 +14,16 @@ namespace backend.Controllers
     public class UsersController : ControllerBase
     {
         private readonly AppDbContext _db;
+        private readonly JwtService _jwt;
 
-        public UsersController(AppDbContext db)
+        public UsersController(AppDbContext db, JwtService jwt)
         {
             _db = db;
+            _jwt = jwt;
         }
 
         [HttpGet]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> GetAll([FromQuery] string? role, [FromQuery] string? email)
         {
             var query = _db.Users.AsQueryable();
@@ -107,10 +111,13 @@ namespace backend.Controllers
             user.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
 
+            await _jwt.RevokeAllUserRefreshTokensAsync(userId);
+
             return Ok(new { Success = true, Message = "Password updated" });
         }
 
         [HttpGet("{id}")]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> GetById(string id)
         {
             if (!Guid.TryParse(id, out var guid))
@@ -124,6 +131,7 @@ namespace backend.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> Create([FromBody] CreateUserRequest request)
         {
             if (await _db.Users.AnyAsync(u => u.Email == request.Email.ToLower()))
@@ -164,6 +172,7 @@ namespace backend.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> Update(string id, [FromBody] UpdateUserRequest request)
         {
             if (!Guid.TryParse(id, out var guid))
@@ -191,6 +200,7 @@ namespace backend.Controllers
         }
 
         [HttpPatch("{id}/password")]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> UpdatePassword(string id, [FromBody] UpdatePasswordRequest request)
         {
             if (!Guid.TryParse(id, out var guid))
@@ -205,10 +215,13 @@ namespace backend.Controllers
             user.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
 
+            await _jwt.RevokeAllUserRefreshTokensAsync(guid);
+
             return Ok(new { Success = true, Message = "Password updated" });
         }
 
         [HttpPatch("{id}/status")]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> ToggleStatus(string id)
         {
             if (!Guid.TryParse(id, out var guid))
@@ -226,6 +239,7 @@ namespace backend.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> Delete(string id)
         {
             if (!Guid.TryParse(id, out var guid))

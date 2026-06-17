@@ -5,6 +5,9 @@ import { authApi, setTokenProvider, usersApi } from "@/lib/api";
 
 export type UserRole = "student" | "coordinator" | "admin";
 
+
+
+
 export interface User {
   id: string;
   name: string;
@@ -22,7 +25,7 @@ export type AuthState =
   | "authenticated";
 
 /** Everything exposed by the auth provider — current user, user list, session management. */
-interface AuthContextType {
+export interface AuthContextType {
   /** Currently authenticated user, or null if anonymous. */
   user: User | null;
   /** All registered users (populated for admin role). */
@@ -52,6 +55,8 @@ interface AuthContextType {
   toggleUserStatus: (userId: string) => Promise<void>;
   /** Re-fetch the user list from the server. */
   refreshUsers: () => Promise<void>;
+  /** Login a user with email/password – updates context and localStorage. */
+  login: (email: string, password: string) => Promise<void>;
   
   /** True when a user session is active. */
   isAuthenticated: boolean;
@@ -64,8 +69,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 /** Provides the current user session, authentication state, and user management methods.
- *  Hydrates from localStorage on mount and verifies the token with the server. */
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+ *  Hydrates from localStorage on mount and verifies the token with the server. */export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]); // simplified for now
@@ -135,7 +139,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
        console.warn("Skipping admin user sync: missing auth token");
        return;
      }
-
+ 
      try {
        const all = await usersApi.getAll(undefined, token);
        setUsers(all);
@@ -150,6 +154,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         refreshUsers();
     }
   }, [user]);
+
+  /** Login a user – updates context, stores token/user, and sets auth state. */
+  const login = async (email: string, password: string) => {
+    try {
+      const result = await authApi.login(email.trim().toLowerCase(), password);
+      if (result.success && result.user) {
+        localStorage.setItem('user', JSON.stringify(result.user));
+        if (result.token) {
+          localStorage.setItem('token', result.token);
+        }
+        setUser(result.user);
+        setAuthState("authenticated");
+        // Navigate to appropriate dashboard based on role
+        const role = result.user.role || "student";
+        if (role === "admin") {
+          navigate('/admin/dashboard');
+        } else if (role === "coordinator") {
+          navigate('/coordinator/dashboard');
+        } else {
+          navigate('/student/dashboard');
+        }
+      } else {
+        toast({ title: "Login Failed", description: "Invalid credentials", variant: "destructive" });
+        throw new Error("Login failed");
+      }
+    } catch (e) {
+      toast({ title: "Login Error", description: (e as Error).message, variant: "destructive" });
+      throw e;
+    }
+  };
 
   /** Clear the session from state and localStorage, then redirect to landing. */
   const logout = async () => {
@@ -239,10 +273,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isAuthenticated: authState === "authenticated",
         isHydrated,
         authState,
+        login,
         logout,
         deleteUser,
         createCoordinator,
-        changePassword, // likely broken/deprecated in favor of Clerk UI
+        changePassword,
         updateProfile,
         toggleUserStatus,
         refreshUsers,

@@ -52,7 +52,6 @@ namespace backend.models
         public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
         public ICollection<Message> SentMessages { get; set; } = new List<Message>();
         public ICollection<Message> ReceivedMessages { get; set; } = new List<Message>();
-        public ICollection<PushToken> PushTokens { get; set; } = new List<PushToken>();
         public ICollection<AuditLog> AuditLogsAsActor { get; set; } = new List<AuditLog>();
     }
 }

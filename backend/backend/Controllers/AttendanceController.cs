@@ -74,6 +74,7 @@ namespace backend.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "admin,coordinator")]
         public async Task<IActionResult> MarkAttendance([FromBody] MarkAttendanceRequest request)
         {
             if (!Guid.TryParse(request.ActivityId, out var activityId)
@@ -102,6 +103,7 @@ namespace backend.Controllers
         }
 
         [HttpPost("batch")]
+        [Authorize(Roles = "admin,coordinator")]
         public async Task<IActionResult> BatchMarkAttendance([FromBody] BatchAttendanceRequest request)
         {
             if (!Guid.TryParse(request.ActivityId, out var activityId)
@@ -136,6 +138,7 @@ namespace backend.Controllers
         }
 
         [HttpGet("qr/generate/{activityId}")]
+        [Authorize(Roles = "admin,coordinator")]
         public async Task<IActionResult> GenerateQr(string activityId)
         {
             if (!Guid.TryParse(activityId, out var aid))

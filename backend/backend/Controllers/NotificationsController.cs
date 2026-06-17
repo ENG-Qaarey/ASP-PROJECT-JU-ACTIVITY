@@ -29,10 +29,21 @@ namespace backend.Controllers
             [FromQuery] bool? read,
             [FromQuery] string? type)
         {
+            var currentUserId = GetUserId();
+            var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value?.ToLower();
+
             var query = _db.Notifications.AsQueryable();
 
-            if (!string.IsNullOrEmpty(recipientId) && Guid.TryParse(recipientId, out var rid))
-                query = query.Where(n => n.RecipientId == rid);
+            if (userRole != "admin")
+            {
+                query = query.Where(n => n.RecipientId == currentUserId);
+            }
+            else
+            {
+                if (!string.IsNullOrEmpty(recipientId) && Guid.TryParse(recipientId, out var rid))
+                    query = query.Where(n => n.RecipientId == rid);
+            }
+
             if (read.HasValue)
                 query = query.Where(n => n.IsRead == read.Value);
             if (!string.IsNullOrEmpty(type))
@@ -45,9 +56,20 @@ namespace backend.Controllers
         [HttpGet("unread/count")]
         public async Task<IActionResult> GetUnreadCount([FromQuery] string? recipientId)
         {
+            var currentUserId = GetUserId();
+            var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value?.ToLower();
+
             var query = _db.Notifications.Where(n => !n.IsRead);
-            if (!string.IsNullOrEmpty(recipientId) && Guid.TryParse(recipientId, out var rid))
-                query = query.Where(n => n.RecipientId == rid);
+
+            if (userRole != "admin")
+            {
+                query = query.Where(n => n.RecipientId == currentUserId);
+            }
+            else
+            {
+                if (!string.IsNullOrEmpty(recipientId) && Guid.TryParse(recipientId, out var rid))
+                    query = query.Where(n => n.RecipientId == rid);
+            }
 
             var count = await query.CountAsync();
             return Ok(count);
@@ -63,10 +85,18 @@ namespace backend.Controllers
             if (notification == null)
                 return NotFound(new { Success = false, Message = "Notification not found" });
 
+            var currentUserId = GetUserId();
+            var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value?.ToLower();
+            if (userRole != "admin" && notification.RecipientId != currentUserId)
+            {
+                return Forbid();
+            }
+
             return Ok(MapNotification(notification));
         }
 
         [HttpPost]
+        [Authorize(Roles = "admin,coordinator")]
         public async Task<IActionResult> Create([FromBody] CreateNotificationRequest request)
         {
             if (!Guid.TryParse(request.RecipientId, out var recipientId))
@@ -106,6 +136,13 @@ namespace backend.Controllers
             if (notification == null)
                 return NotFound(new { Success = false, Message = "Notification not found" });
 
+            var currentUserId = GetUserId();
+            var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value?.ToLower();
+            if (userRole != "admin" && notification.RecipientId != currentUserId)
+            {
+                return Forbid();
+            }
+
             notification.IsRead = true;
             await _db.SaveChangesAsync();
 
@@ -117,17 +154,19 @@ namespace backend.Controllers
         [HttpPut("read/all")]
         public async Task<IActionResult> MarkAllAsRead([FromQuery] string? recipientId)
         {
-            var query = _db.Notifications.Where(n => !n.IsRead);
-            Guid rid = Guid.Empty;
-            if (!string.IsNullOrEmpty(recipientId) && Guid.TryParse(recipientId, out rid))
-                query = query.Where(n => n.RecipientId == rid);
+            var currentUserId = GetUserId();
+            var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value?.ToLower();
 
+            Guid rid = currentUserId;
+            if (userRole == "admin" && !string.IsNullOrEmpty(recipientId) && Guid.TryParse(recipientId, out var parsedId))
+            {
+                rid = parsedId;
+            }
+
+            var query = _db.Notifications.Where(n => !n.IsRead && n.RecipientId == rid);
             await query.ExecuteUpdateAsync(s => s.SetProperty(n => n.IsRead, true));
 
-            if (rid != Guid.Empty)
-            {
-                await _hub.Clients.Group($"user-{rid}").SendAsync("AllNotificationsRead", new { recipientId });
-            }
+            await _hub.Clients.Group($"user-{rid}").SendAsync("AllNotificationsRead", new { recipientId = rid.ToString() });
 
             return Ok(new { Success = true });
         }
@@ -142,10 +181,23 @@ namespace backend.Controllers
             if (notification == null)
                 return NotFound(new { Success = false, Message = "Notification not found" });
 
+            var currentUserId = GetUserId();
+            var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value?.ToLower();
+            if (userRole != "admin" && notification.RecipientId != currentUserId)
+            {
+                return Forbid();
+            }
+
             _db.Notifications.Remove(notification);
             await _db.SaveChangesAsync();
 
             return Ok(new { Success = true });
+        }
+
+        private Guid GetUserId()
+        {
+            var claim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            return Guid.TryParse(claim, out var id) ? id : Guid.Empty;
         }
 
         private static object MapNotification(Notification n)

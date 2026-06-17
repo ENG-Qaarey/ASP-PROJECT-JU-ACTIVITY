@@ -170,6 +170,7 @@ namespace backend.Controllers
         }
 
         [HttpPut("{id}/status")]
+        [Authorize(Roles = "admin,coordinator")]
         public async Task<IActionResult> UpdateStatus(string id, [FromBody] UpdateApplicationStatusRequest request)
         {
             if (!Guid.TryParse(id, out var guid))
@@ -241,6 +242,13 @@ namespace backend.Controllers
             var application = await _db.Applications.Include(a => a.Activity).FirstOrDefaultAsync(a => a.Id == guid);
             if (application == null)
                 return NotFound(new { Success = false, Message = "Application not found" });
+
+            var currentUserId = GetUserId();
+            var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value?.ToLower();
+            if (userRole != "admin" && userRole != "coordinator" && application.StudentId != currentUserId)
+            {
+                return Forbid();
+            }
 
             if (application.Status == ApplicationStatus.Approved && application.Activity != null)
             {

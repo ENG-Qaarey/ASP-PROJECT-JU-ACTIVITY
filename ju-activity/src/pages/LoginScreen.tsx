@@ -7,12 +7,12 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { authApi } from "@/lib/api";
+
 import { useAuth } from "@/contexts/AuthContext";
 
 const LoginScreen = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, isHydrated, user } = useAuth();
+  const { isAuthenticated, isHydrated, user, login } = useAuth();
   const shouldReduceMotion = useReducedMotion();
   
   const [email, setEmail] = useState("");
@@ -54,55 +54,10 @@ const LoginScreen = () => {
 
     setIsLoading(true);
     try {
-      const result = await authApi.login(normalizedEmail, password);
-
-      if (result.success && result.user) {
-          // Store user in localStorage for session management
-          localStorage.setItem('user', JSON.stringify(result.user));
-
-          if (result.token) {
-            localStorage.setItem('token', result.token);
-          }
-          
-          // Trigger page reload to update auth context
-          const role = (result.user.role || 'student') as string;
-          if (role === 'admin') {
-            navigate('/admin/dashboard');
-          } else if (role === 'coordinator') {
-            navigate('/coordinator/dashboard');
-          } else {
-            navigate('/student/dashboard');
-          }
-      } else {
-          toast({
-              title: "Login Failed",
-              description: "Invalid credentials",
-              variant: "destructive",
-          });
-      }
+      await login(normalizedEmail, password);
 
     } catch (error: any) {
-      let errorMessage = "Invalid credentials";
-      
-      if (error.message) {
-        const errorMsgLower = error.message.toLowerCase();
-        
-        if (errorMsgLower.includes("not verified") || errorMsgLower.includes("email not verified")) {
-          errorMessage = "Please verify your email address before logging in. Check your inbox for the verification code.";
-        } else if (errorMsgLower.includes("inactive")) {
-          errorMessage = "Your account is inactive. Please contact support.";
-        } else if (errorMsgLower.includes("invalid") || errorMsgLower.includes("incorrect")) {
-          errorMessage = "Invalid email or password. Please try again.";
-        } else {
-          errorMessage = error.message;
-        }
-      }
-      
-      toast({
-        title: "Login Failed",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      // Errors are handled inside login; any additional handling can be added here if needed.
     } finally {
       setIsLoading(false);
     }

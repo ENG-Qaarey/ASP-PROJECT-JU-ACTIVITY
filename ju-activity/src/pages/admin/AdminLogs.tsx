@@ -25,9 +25,9 @@ const AdminLogs = () => {
         const timer = setTimeout(async () => {
             setIsLoading(true);
             try {
-                const data = await auditLogsApi.getAll({ q: searchTerm, take: 200 });
+                const response = await auditLogsApi.getAll({ q: searchTerm, take: 200 });
                 if (!cancelled) {
-                    setLogs(Array.isArray(data) ? data : []);
+                    setLogs(response && Array.isArray(response.data) ? response.data : []);
                 }
             } catch (error) {
                 const message = error instanceof Error ? error.message : "Failed to load audit logs";

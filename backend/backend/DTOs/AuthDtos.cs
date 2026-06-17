@@ -32,11 +32,22 @@ namespace backend.DTOs
         public string? Code { get; set; }
     }
 
+    public class RefreshTokenRequest
+    {
+        public string RefreshToken { get; set; } = string.Empty;
+    }
+
+    public class LogoutRequest
+    {
+        public string RefreshToken { get; set; } = string.Empty;
+    }
+
     public class AuthResponse
     {
         public bool Success { get; set; }
         public object? User { get; set; }
         public string? Token { get; set; }
+        public string? RefreshToken { get; set; }
         public string? Email { get; set; }
     }
 }

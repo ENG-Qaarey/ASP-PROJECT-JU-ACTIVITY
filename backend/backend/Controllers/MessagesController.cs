@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using backend.DTOs;
 using backend.Hubs;
 using backend.models;
+using backend.Services;
 using backend.models.Enums;
 
 namespace backend.Controllers
@@ -16,11 +17,13 @@ namespace backend.Controllers
     {
         private readonly AppDbContext _db;
         private readonly IHubContext<NotificationHub> _hub;
+        private readonly ReadStatusTracker _readStatus;
 
-        public MessagesController(AppDbContext db, IHubContext<NotificationHub> hub)
+        public MessagesController(AppDbContext db, IHubContext<NotificationHub> hub, ReadStatusTracker readStatus)
         {
             _db = db;
             _hub = hub;
+            _readStatus = readStatus;
         }
 
         [HttpGet]
@@ -316,24 +319,8 @@ namespace backend.Controllers
                 return NotFound(new { Success = false, Message = "Activity not found" });
 
             var userId = GetUserId();
-            var existing = await _db.ActivityReadStatuses
-                .FirstOrDefaultAsync(r => r.UserId == userId && r.ActivityId == aid);
+            _readStatus.MarkAsRead(userId, aid);
 
-            if (existing != null)
-            {
-                existing.LastReadAt = DateTime.UtcNow;
-            }
-            else
-            {
-                _db.ActivityReadStatuses.Add(new ActivityReadStatus
-                {
-                    UserId = userId,
-                    ActivityId = aid,
-                    LastReadAt = DateTime.UtcNow
-                });
-            }
-
-            await _db.SaveChangesAsync();
             return Ok(new { Success = true });
         }
 
@@ -341,9 +328,7 @@ namespace backend.Controllers
         public async Task<IActionResult> GetUnreadCounts()
         {
             var userId = GetUserId();
-            var readStatuses = await _db.ActivityReadStatuses
-                .Where(r => r.UserId == userId)
-                .ToDictionaryAsync(r => r.ActivityId, r => r.LastReadAt);
+            var readStatuses = _readStatus.GetAllForUser(userId);
 
             var counts = new Dictionary<string, int>();
 

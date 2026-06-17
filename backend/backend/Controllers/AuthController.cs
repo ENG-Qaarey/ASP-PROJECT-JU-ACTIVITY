@@ -33,13 +33,7 @@ namespace backend.Controllers
             if (user.Status == "inactive")
                 return Unauthorized(new { Success = false, Message = "Account is deactivated" });
 
-            var token = _jwt.GenerateToken(user);
-            return Ok(new AuthResponse
-            {
-                Success = true,
-                User = MapUser(user),
-                Token = token
-            });
+            return await GenerateAuthResponse(user);
         }
 
         [HttpPost("register")]
@@ -67,13 +61,7 @@ namespace backend.Controllers
             _db.Users.Add(user);
             await _db.SaveChangesAsync();
 
-            var token = _jwt.GenerateToken(user);
-            return Ok(new AuthResponse
-            {
-                Success = true,
-                User = MapUser(user),
-                Token = token
-            });
+            return await GenerateAuthResponse(user);
         }
 
         [Authorize]
@@ -135,7 +123,70 @@ namespace backend.Controllers
             user.PasswordVersion++;
             await _db.SaveChangesAsync();
 
+            await _jwt.RevokeAllUserRefreshTokensAsync(user.Id);
+
             return Ok(new { Success = true, Message = "Password reset successfully" });
+        }
+
+        [HttpPost("refresh")]
+        public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest request)
+        {
+            var refreshToken = await _jwt.ValidateRefreshTokenAsync(request.RefreshToken);
+            if (refreshToken == null)
+                return Unauthorized(new { Success = false, Message = "Invalid or expired refresh token" });
+
+            var user = refreshToken.User;
+
+            if (user.Status == "inactive")
+                return Unauthorized(new { Success = false, Message = "Account is deactivated" });
+
+            refreshToken.RevokedAt = DateTime.UtcNow;
+            await _db.SaveChangesAsync();
+
+            return await GenerateAuthResponse(user);
+        }
+
+        [Authorize]
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
+        {
+            await _jwt.RevokeRefreshTokenAsync(request.RefreshToken);
+            return Ok(new { Success = true, Message = "Logged out successfully" });
+        }
+
+        [Authorize]
+        [HttpPost("logout-all")]
+        public async Task<IActionResult> LogoutAll()
+        {
+            var userId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+            await _jwt.RevokeAllUserRefreshTokensAsync(userId);
+            return Ok(new { Success = true, Message = "Logged out from all devices" });
+        }
+
+        private async Task<IActionResult> GenerateAuthResponse(User user)
+        {
+            var accessToken = _jwt.GenerateToken(user);
+            var refreshTokenValue = _jwt.GenerateRefreshToken();
+
+            var refreshTokenExpiryDays = int.Parse(_jwt.GetConfig("Jwt:RefreshTokenExpireDays") ?? "30");
+
+            var refreshToken = new RefreshToken
+            {
+                UserId = user.Id,
+                Token = refreshTokenValue,
+                ExpiresAt = DateTime.UtcNow.AddDays(refreshTokenExpiryDays)
+            };
+
+            _db.RefreshTokens.Add(refreshToken);
+            await _db.SaveChangesAsync();
+
+            return Ok(new AuthResponse
+            {
+                Success = true,
+                User = MapUser(user),
+                Token = accessToken,
+                RefreshToken = refreshTokenValue
+            });
         }
 
         private static object MapUser(User user)

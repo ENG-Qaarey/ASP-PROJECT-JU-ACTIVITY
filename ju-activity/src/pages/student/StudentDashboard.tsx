@@ -67,8 +67,12 @@ export default function StudentDashboard() {
       activity,
       dateTime: parseActivityDateTime(activity.date, (activity as any).time),
     }))
-    .filter(({ dateTime }) => dateTime && dateTime.getTime() <= now.getTime())
-    .sort((a, b) => b.dateTime!.getTime() - a.dateTime!.getTime())
+    .filter(({ dateTime }) => dateTime !== null)
+    .sort((a, b) => {
+      if (!a.dateTime) return 1;
+      if (!b.dateTime) return -1;
+      return b.dateTime.getTime() - a.dateTime.getTime();
+    })
     .map(({ activity }) => activity)
     .slice(0, 5);
 

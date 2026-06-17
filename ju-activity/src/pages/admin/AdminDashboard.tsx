@@ -164,7 +164,7 @@ export default function AdminDashboard() {
                 <CardHeader>
                   <CardTitle>Recent Activity</CardTitle>
                   <CardDescription>
-                    There were 265 activities in the last 24 hours.
+                    Latest system events and audit logs.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>

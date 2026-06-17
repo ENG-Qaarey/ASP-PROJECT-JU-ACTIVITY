@@ -90,6 +90,11 @@ export interface AuditLog {
   details?: string;
 }
 
+export interface AuditLogsResponse {
+  data: AuditLog[];
+  total: number;
+}
+
 export interface MessageResponse {
   messages: ChatMessage[];
   total: number;
