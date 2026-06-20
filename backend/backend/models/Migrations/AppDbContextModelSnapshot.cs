@@ -4,11 +4,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using backend.models;
+using backend.Models;
 
 #nullable disable
 
-namespace backend.models.Migrations
+namespace backend.Models.Migrations
 {
     [DbContext(typeof(AppDbContext))]
     partial class AppDbContextModelSnapshot : ModelSnapshot
@@ -22,7 +22,7 @@ namespace backend.models.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("backend.models.Activity", b =>
+            modelBuilder.Entity("backend.Models.Activity", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -101,7 +101,7 @@ namespace backend.models.Migrations
                     b.ToTable("Activities");
                 });
 
-            modelBuilder.Entity("backend.models.AdminProfile", b =>
+            modelBuilder.Entity("backend.Models.AdminProfile", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -129,7 +129,7 @@ namespace backend.models.Migrations
                     b.ToTable("AdminProfiles");
                 });
 
-            modelBuilder.Entity("backend.models.Application", b =>
+            modelBuilder.Entity("backend.Models.Application", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -174,7 +174,7 @@ namespace backend.models.Migrations
                     b.ToTable("Applications");
                 });
 
-            modelBuilder.Entity("backend.models.Attendance", b =>
+            modelBuilder.Entity("backend.Models.Attendance", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -218,7 +218,7 @@ namespace backend.models.Migrations
                     b.ToTable("Attendances");
                 });
 
-            modelBuilder.Entity("backend.models.AuditLog", b =>
+            modelBuilder.Entity("backend.Models.AuditLog", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -260,7 +260,7 @@ namespace backend.models.Migrations
                     b.ToTable("AuditLogs");
                 });
 
-            modelBuilder.Entity("backend.models.Category", b =>
+            modelBuilder.Entity("backend.Models.Category", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -279,7 +279,7 @@ namespace backend.models.Migrations
                     b.ToTable("Categories");
                 });
 
-            modelBuilder.Entity("backend.models.CoordinatorProfile", b =>
+            modelBuilder.Entity("backend.Models.CoordinatorProfile", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -312,7 +312,7 @@ namespace backend.models.Migrations
                     b.ToTable("CoordinatorProfiles");
                 });
 
-            modelBuilder.Entity("backend.models.Message", b =>
+            modelBuilder.Entity("backend.Models.Message", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -379,7 +379,7 @@ namespace backend.models.Migrations
                     b.ToTable("Messages");
                 });
 
-            modelBuilder.Entity("backend.models.Notification", b =>
+            modelBuilder.Entity("backend.Models.Notification", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -420,7 +420,7 @@ namespace backend.models.Migrations
                     b.ToTable("Notifications");
                 });
 
-            modelBuilder.Entity("backend.models.PendingUser", b =>
+            modelBuilder.Entity("backend.Models.PendingUser", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -476,7 +476,7 @@ namespace backend.models.Migrations
                     b.ToTable("PendingUsers");
                 });
 
-            modelBuilder.Entity("backend.models.RefreshToken", b =>
+            modelBuilder.Entity("backend.Models.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -509,7 +509,7 @@ namespace backend.models.Migrations
                     b.ToTable("RefreshTokens");
                 });
 
-            modelBuilder.Entity("backend.models.User", b =>
+            modelBuilder.Entity("backend.Models.User", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -574,9 +574,9 @@ namespace backend.models.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("backend.models.Activity", b =>
+            modelBuilder.Entity("backend.Models.Activity", b =>
                 {
-                    b.HasOne("backend.models.User", "Coordinator")
+                    b.HasOne("backend.Models.User", "Coordinator")
                         .WithMany("CoordinatedActivities")
                         .HasForeignKey("CoordinatorId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -585,26 +585,26 @@ namespace backend.models.Migrations
                     b.Navigation("Coordinator");
                 });
 
-            modelBuilder.Entity("backend.models.AdminProfile", b =>
+            modelBuilder.Entity("backend.Models.AdminProfile", b =>
                 {
-                    b.HasOne("backend.models.User", "User")
+                    b.HasOne("backend.Models.User", "User")
                         .WithOne("AdminProfile")
-                        .HasForeignKey("backend.models.AdminProfile", "UserId")
+                        .HasForeignKey("backend.Models.AdminProfile", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("backend.models.Application", b =>
+            modelBuilder.Entity("backend.Models.Application", b =>
                 {
-                    b.HasOne("backend.models.Activity", "Activity")
+                    b.HasOne("backend.Models.Activity", "Activity")
                         .WithMany("Applications")
                         .HasForeignKey("ActivityId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("backend.models.User", "Student")
+                    b.HasOne("backend.Models.User", "Student")
                         .WithMany("Applications")
                         .HasForeignKey("StudentId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -615,27 +615,27 @@ namespace backend.models.Migrations
                     b.Navigation("Student");
                 });
 
-            modelBuilder.Entity("backend.models.Attendance", b =>
+            modelBuilder.Entity("backend.Models.Attendance", b =>
                 {
-                    b.HasOne("backend.models.Activity", "Activity")
+                    b.HasOne("backend.Models.Activity", "Activity")
                         .WithMany("Attendances")
                         .HasForeignKey("ActivityId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("backend.models.Application", "Application")
+                    b.HasOne("backend.Models.Application", "Application")
                         .WithMany()
                         .HasForeignKey("ApplicationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("backend.models.User", "MarkedBy")
+                    b.HasOne("backend.Models.User", "MarkedBy")
                         .WithMany("MarkedAttendances")
                         .HasForeignKey("MarkedById")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("backend.models.User", "Student")
+                    b.HasOne("backend.Models.User", "Student")
                         .WithMany("AttendanceRecords")
                         .HasForeignKey("StudentId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -650,9 +650,9 @@ namespace backend.models.Migrations
                     b.Navigation("Student");
                 });
 
-            modelBuilder.Entity("backend.models.AuditLog", b =>
+            modelBuilder.Entity("backend.Models.AuditLog", b =>
                 {
-                    b.HasOne("backend.models.User", "Actor")
+                    b.HasOne("backend.Models.User", "Actor")
                         .WithMany("AuditLogsAsActor")
                         .HasForeignKey("ActorId")
                         .OnDelete(DeleteBehavior.SetNull);
@@ -660,35 +660,35 @@ namespace backend.models.Migrations
                     b.Navigation("Actor");
                 });
 
-            modelBuilder.Entity("backend.models.CoordinatorProfile", b =>
+            modelBuilder.Entity("backend.Models.CoordinatorProfile", b =>
                 {
-                    b.HasOne("backend.models.User", "User")
+                    b.HasOne("backend.Models.User", "User")
                         .WithOne("CoordinatorProfile")
-                        .HasForeignKey("backend.models.CoordinatorProfile", "UserId")
+                        .HasForeignKey("backend.Models.CoordinatorProfile", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("backend.models.Message", b =>
+            modelBuilder.Entity("backend.Models.Message", b =>
                 {
-                    b.HasOne("backend.models.Activity", "Activity")
+                    b.HasOne("backend.Models.Activity", "Activity")
                         .WithMany("Messages")
                         .HasForeignKey("ActivityId")
                         .OnDelete(DeleteBehavior.Cascade);
 
-                    b.HasOne("backend.models.Message", "Parent")
+                    b.HasOne("backend.Models.Message", "Parent")
                         .WithMany()
                         .HasForeignKey("ParentId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("backend.models.User", "Receiver")
+                    b.HasOne("backend.Models.User", "Receiver")
                         .WithMany("ReceivedMessages")
                         .HasForeignKey("ReceiverId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("backend.models.User", "Sender")
+                    b.HasOne("backend.Models.User", "Sender")
                         .WithMany("SentMessages")
                         .HasForeignKey("SenderId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -703,9 +703,9 @@ namespace backend.models.Migrations
                     b.Navigation("Sender");
                 });
 
-            modelBuilder.Entity("backend.models.Notification", b =>
+            modelBuilder.Entity("backend.Models.Notification", b =>
                 {
-                    b.HasOne("backend.models.User", "Recipient")
+                    b.HasOne("backend.Models.User", "Recipient")
                         .WithMany("Notifications")
                         .HasForeignKey("RecipientId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -714,9 +714,9 @@ namespace backend.models.Migrations
                     b.Navigation("Recipient");
                 });
 
-            modelBuilder.Entity("backend.models.RefreshToken", b =>
+            modelBuilder.Entity("backend.Models.RefreshToken", b =>
                 {
-                    b.HasOne("backend.models.User", "User")
+                    b.HasOne("backend.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -725,7 +725,7 @@ namespace backend.models.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("backend.models.Activity", b =>
+            modelBuilder.Entity("backend.Models.Activity", b =>
                 {
                     b.Navigation("Applications");
 
@@ -734,7 +734,7 @@ namespace backend.models.Migrations
                     b.Navigation("Messages");
                 });
 
-            modelBuilder.Entity("backend.models.User", b =>
+            modelBuilder.Entity("backend.Models.User", b =>
                 {
                     b.Navigation("AdminProfile");
 

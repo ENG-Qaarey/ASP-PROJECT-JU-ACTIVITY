@@ -2,8 +2,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using backend.DTOs;
-using backend.models;
-using backend.models.Enums;
+using backend.Models;
+using backend.Models.Enums;
 using backend.Services;
 
 namespace backend.Controllers

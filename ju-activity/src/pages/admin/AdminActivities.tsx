@@ -39,7 +39,7 @@ import {
   Trash2,
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import type { Activity } from "@/data/mockData";
+import type { Activity } from "@/types/api";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -206,26 +206,26 @@ const AdminActivities = () => {
     <DashboardLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold">Monitor Activities</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">Monitor Activities</h1>
+          <p className="text-muted-foreground text-sm md:text-base mt-1">
             Oversee all scheduled events across the university
           </p>
         </div>
 
         {/* Filters */}
-        <Card>
-           <CardContent className="p-4 flex gap-4">
+        <Card className="rounded-3xl border border-muted/40 shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:border-primary/30">
+           <CardContent className="p-4 md:p-6 flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search by title or coordinator..."
-                className="pl-9"
+                className="pl-9 h-12 rounded-2xl border-muted/40 focus-visible:border-primary/50 focus-visible:ring-primary/30 transition-all duration-300"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Button variant="outline">
-               <Filter className="w-4 h-4 mr-2" />
+            <Button variant="outline" className="w-full sm:w-auto justify-center gap-2 h-12 rounded-2xl border-primary/30 text-primary hover:bg-primary/10 hover:border-primary/50 transition-all duration-300 hover:scale-105 active:scale-95">
+               <Filter className="w-4 h-4" />
                Filters
             </Button>
            </CardContent>
@@ -236,70 +236,132 @@ const AdminActivities = () => {
           {filteredActivities.map((activity) => (
             <motion.div
               key={activity.id}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              whileHover={{ y: -4 }}
             >
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex flex-col md:flex-row gap-6">
-                    {/* Date Box */}
-                    <div className="hidden md:flex flex-col items-center justify-center w-28 h-28 bg-primary/5 rounded-2xl border border-primary/10 flex-shrink-0">
-                      <span className="text-sm font-semibold text-primary uppercase">
-                        {new Date(activity.date).toLocaleString('default', { month: 'short' })}
-                      </span>
-                      <span className="text-3xl font-bold text-foreground">
-                        {new Date(activity.date).getDate()}
-                      </span>
-                    </div>
-
-                    <div className="flex-1 min-w-0 py-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Badge variant="outline" className="capitalize">{activity.category}</Badge>
-                        <span className="text-xs text-muted-foreground">• Created by {activity.coordinatorName}</span>
-                      </div>
-                      
-                      <h3 className="text-lg font-semibold mb-2">{activity.title}</h3>
-                      
-                      <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-4 h-4" />
-                          {activity.time}
+              <Card className="rounded-3xl shadow-lg border border-muted/40 overflow-hidden transition-all duration-300 hover:shadow-2xl hover:border-primary/30 group">
+                <CardContent className="p-4 md:p-6">
+                  {/* Mobile & Small Tablet Layout (xs-md) */}
+                  <div className="flex flex-col gap-4 lg:hidden">
+                    <div className="flex gap-4 items-start">
+                      <div className="flex flex-col items-center justify-center w-20 h-20 md:w-24 md:h-24 bg-gradient-to-br from-primary/10 to-primary/5 rounded-3xl border border-primary/20 flex-shrink-0 shadow-sm transition-all duration-300 group-hover:from-primary/20 group-hover:to-primary/10 group-hover:shadow-md">
+                        <span className="text-xs md:text-sm font-semibold text-primary uppercase">
+                          {new Date(activity.date).toLocaleString('default', { month: 'short' })}
                         </span>
-                        <span className="flex items-center gap-1">
-                          <MapPin className="w-4 h-4" />
-                          {activity.location}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Users className="w-4 h-4" />
-                          {activity.enrolled}/{activity.capacity}
+                        <span className="text-2xl md:text-3xl font-bold text-foreground transition-all duration-300 group-hover:text-primary">
+                          {new Date(activity.date).getDate()}
                         </span>
                       </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                          <Badge className="capitalize bg-primary/10 text-primary border-primary/20 transition-all duration-300 group-hover:bg-primary/20">{activity.category}</Badge>
+                          <span className="text-xs text-muted-foreground">• Created by {activity.coordinatorName}</span>
+                        </div>
+                        <h3 className="text-lg md:text-xl font-semibold mb-2 truncate transition-all duration-300 group-hover:text-primary">{activity.title}</h3>
+                        <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-4 h-4" />
+                            {activity.time}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <MapPin className="w-4 h-4" />
+                            {activity.location}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Users className="w-4 h-4" />
+                            {activity.enrolled}/{activity.capacity}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-
-                    <div className="flex flex-wrap items-center gap-2 border-t md:border-t-0 md:border-l pt-4 md:pt-0 md:pl-6 mt-4 md:mt-0">
-                      <Button variant="ghost" size="sm" onClick={() => openDetails(activity)}>
-                        <Eye className="w-4 h-4 mr-2" />
+                    <div className="grid grid-cols-2 gap-2 border-t border-muted/30 pt-4 mt-2">
+                      <Button variant="ghost" size="sm" onClick={() => openDetails(activity)} className="w-full justify-center gap-2 bg-muted/20 hover:bg-muted/40 transition-all duration-300 hover:scale-105 active:scale-95">
+                        <Eye className="w-4 h-4" />
                         Quick View
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => navigate(`/admin/activities/${activity.id}`)}
+                        className="w-full justify-center gap-2 bg-muted/20 hover:bg-muted/40 transition-all duration-300 hover:scale-105 active:scale-95"
                       >
-                        <Eye className="w-4 h-4 mr-2" />
+                        <Eye className="w-4 h-4" />
                         View Page
                       </Button>
-                      <Button variant="outline" size="sm" onClick={() => openEditDialog(activity)}>
-                        <Edit className="w-4 h-4 mr-2" />
+                      <Button variant="outline" size="sm" onClick={() => openEditDialog(activity)} className="w-full justify-center gap-2 border-primary/30 text-primary hover:bg-transparent hover:text-black hover:border-primary/30 transition-all duration-300 hover:scale-105 active:scale-95">
+                        <Edit className="w-4 h-4" />
                         Edit
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10 w-full justify-center gap-2 transition-all duration-300 hover:scale-105 active:scale-95"
                         onClick={() => setPendingDelete(activity)}
                       >
-                        <Trash2 className="w-4 h-4 mr-2" />
+                        <Trash2 className="w-4 h-4" />
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Large Tablet & Desktop Layout (lg+) */}
+                  <div className="hidden lg:flex items-center gap-6">
+                    <div className="flex flex-col items-center justify-center w-24 h-24 bg-gradient-to-br from-primary/10 to-primary/5 rounded-3xl border border-primary/20 flex-shrink-0 shadow-sm transition-all duration-300 group-hover:from-primary/20 group-hover:to-primary/10 group-hover:shadow-md">
+                      <span className="text-sm font-semibold text-primary uppercase">
+                        {new Date(activity.date).toLocaleString('default', { month: 'short' })}
+                      </span>
+                      <span className="text-3xl font-bold text-foreground transition-all duration-300 group-hover:text-primary">
+                        {new Date(activity.date).getDate()}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Badge className="capitalize bg-primary/10 text-primary border-primary/20 transition-all duration-300 group-hover:bg-primary/20">{activity.category}</Badge>
+                        <span className="text-xs text-muted-foreground">• Created by {activity.coordinatorName}</span>
+                      </div>
+                      <h3 className="text-xl font-semibold mb-2 transition-all duration-300 group-hover:text-primary">{activity.title}</h3>
+                      <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                        <span className="flex items-center gap-2">
+                          <Clock className="w-4 h-4" />
+                          {activity.time}
+                        </span>
+                        <span className="flex items-center gap-2">
+                          <MapPin className="w-4 h-4" />
+                          {activity.location}
+                        </span>
+                        <span className="flex items-center gap-2">
+                          <Users className="w-4 h-4" />
+                          {activity.enrolled}/{activity.capacity}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 border-l border-muted/30 pl-6">
+                      <Button variant="ghost" size="sm" onClick={() => openDetails(activity)} className="gap-2 bg-muted/20 hover:bg-muted/40 transition-all duration-300 hover:scale-105 active:scale-95">
+                        <Eye className="w-4 h-4" />
+                        Quick View
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => navigate(`/admin/activities/${activity.id}`)}
+                        className="gap-2 bg-muted/20 hover:bg-muted/40 transition-all duration-300 hover:scale-105 active:scale-95"
+                      >
+                        <Eye className="w-4 h-4" />
+                        View Page
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => openEditDialog(activity)} className="gap-2 border-primary/30 text-primary hover:bg-transparent hover:text-black hover:border-primary/30 transition-all duration-300 hover:scale-105 active:scale-95">
+                        <Edit className="w-4 h-4" />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10 gap-2 transition-all duration-300 hover:scale-105 active:scale-95"
+                        onClick={() => setPendingDelete(activity)}
+                      >
+                        <Trash2 className="w-4 h-4" />
                         Delete
                       </Button>
                     </div>

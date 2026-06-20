@@ -1,5 +1,5 @@
-import { Activity, Application, Attendance } from "@/data/mockData";
-import { User } from "@/contexts/AuthContext";
+import { Activity, Application, Attendance } from "@/types/api";
+import { User } from "@/types/api";
 
 // Download CSV file
 export const downloadCSV = (data: string[][], filename: string) => {
@@ -283,7 +283,7 @@ export const generateSystemUsageReport = (
   
   const recentActivities = activities.filter(a => new Date(a.date) >= lastMonth);
   const recentApplications = applications.filter(app => 
-    new Date(app.appliedAt) >= lastMonth.toISOString().split('T')[0]
+    new Date(app.appliedAt) >= lastMonth
   );
   
   const statusBreakdown = activities.reduce((acc, activity) => {

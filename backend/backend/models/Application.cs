@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using backend.models.Enums;
+using backend.Models.Enums;
 
-namespace backend.models
+namespace backend.Models
 {
     public class Application
     {

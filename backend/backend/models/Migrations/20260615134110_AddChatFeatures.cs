@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace backend.models.Migrations
+namespace backend.Models.Migrations
 {
     /// <inheritdoc />
     public partial class AddChatFeatures : Migration

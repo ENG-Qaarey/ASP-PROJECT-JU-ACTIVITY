@@ -8,7 +8,7 @@ import { toast } from "@/hooks/use-toast";
 import { ChevronDown, MessageCircle } from "lucide-react";
 import { messagesApi } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
-import ChatRoomSkeleton from "@/pages/chat/ChatRoomSkeleton";
+import ChatRoomSkeleton from "@/components/chat/ChatRoomSkeleton";
 import ChatHeader from "@/components/chat/ChatHeader";
 import MessageBubble from "@/components/chat/MessageBubble";
 import ChatInput from "@/components/chat/ChatInput";
@@ -156,8 +156,29 @@ export default function ChatRoomView({ activityId, activityTitle }: ChatRoomView
         .withUrl("/hubs/notifications", {
           accessTokenFactory: () => localStorage.getItem("token") ?? "",
         })
-        .withAutomaticReconnect()
+        .withAutomaticReconnect({
+          nextRetryDelayInMilliseconds: (retryContext) => {
+            const delay = Math.min(1000 * Math.pow(2, retryContext.previousRetryCount), 10000);
+            return delay;
+          },
+        })
         .build();
+
+      connection.onreconnecting(() => {
+        console.log("Chat SignalR reconnecting...");
+      });
+
+      connection.onreconnected(async () => {
+        console.log("Chat SignalR reconnected, re-joining activity...");
+        try {
+          await connection.invoke("JoinActivity", activityId);
+          offsetRef.current = 0;
+          await loadMessages(false);
+          loadMembers();
+        } catch (err) {
+          console.error("Failed to re-join activity after reconnect", err);
+        }
+      });
 
       connection.on("ReceiveMessage", (message: ChatMessage) => {
         if (message.activityId === activityId) {

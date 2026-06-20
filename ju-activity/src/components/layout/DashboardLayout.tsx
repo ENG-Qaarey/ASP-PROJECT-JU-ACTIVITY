@@ -3,8 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useTheme } from "next-themes";
 import { useAuth } from "@/contexts/AuthContext";
 import { useActivity } from "@/contexts/ActivityContext";
-import { AppSidebar } from "@/components/app-sidebar";
-import CommunicationsHub from "@/components/chat/CommunicationsHub";
+import { AppSidebar } from "@/components/AppSidebar";
 import {
   SidebarInset,
   SidebarProvider,
@@ -38,7 +37,7 @@ import {
   Users,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import type { NavMainItem } from "@/components/nav-main";
+import type { NavMainItem } from "@/components/NavMain";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -57,7 +56,6 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const { getUnreadNotificationsCount } = useActivity();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const [isChatOpen, setIsChatOpen] = useState(false);
   const isDarkMode = mounted && theme === "dark";
   const unreadNotifications = getUnreadNotificationsCount();
   const unreadDisplay = unreadNotifications > 99 ? "99+" : unreadNotifications.toString();
@@ -216,20 +214,6 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           </div>
 
           <div className="flex items-center gap-1 shrink-0">
-            {user?.role && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="relative rounded-full hover:bg-accent h-9 w-9"
-                onClick={() => setIsChatOpen(true)}
-              >
-                <MessageCircle className="w-[18px] h-[18px]" />
-                {user?.role === "admin" && (
-                  <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-400 ring-2 ring-background" />
-                )}
-              </Button>
-            )}
-
             <Button
               variant="ghost"
               size="icon"
@@ -282,14 +266,6 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           </div>
         </header>
 
-        <CommunicationsHub
-          open={isChatOpen}
-          onOpenChange={setIsChatOpen}
-          isAdmin={user?.role === "admin" || false}
-          users={users ?? []}
-          currentUserId={user?.id}
-          isDarkMode={mounted && isDarkMode}
-        />
         {location.pathname.match(/\/chat/) ? (
           <main className="flex flex-col flex-1 min-h-0 overflow-hidden">
             {children}

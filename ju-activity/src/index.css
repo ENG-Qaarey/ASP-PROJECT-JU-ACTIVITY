@@ -137,6 +137,13 @@
     display: flex;
     flex-direction: column;
   }
+
+  /* Responsive media */
+  img, video, iframe {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
 }
 
 @layer components {
@@ -162,6 +169,15 @@
 
   .animate-pulse-soft {
     animation: pulse-soft 3s ease-in-out infinite;
+  }
+
+  /* Touch targets for interactive elements */
+  .touch-target {
+    min-width: 48px;
+    min-height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 }
 

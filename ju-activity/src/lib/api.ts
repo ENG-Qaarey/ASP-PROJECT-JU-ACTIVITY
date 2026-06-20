@@ -25,11 +25,29 @@ export class ApiError extends Error {
   }
 }
 
-let onApiError: ((error: ApiError) => void) | null = null;
+let onApiErrorHandlers: Array<(error: ApiError) => void> = [];
+let on401Handler: (() => void) | null = null;
 
 /** Register a global handler invoked on every ApiError before rejection. */
 export const setApiErrorHandler = (handler: ((error: ApiError) => void) | null) => {
-  onApiError = handler;
+  if (handler) {
+    onApiErrorHandlers.push(handler);
+  } else {
+    onApiErrorHandlers = [];
+  }
+};
+
+/** Add an error handler and return a cleanup function to remove it. */
+export const addApiErrorHandler = (handler: (error: ApiError) => void) => {
+  onApiErrorHandlers.push(handler);
+  return () => {
+    onApiErrorHandlers = onApiErrorHandlers.filter(h => h !== handler);
+  };
+};
+
+/** Set a handler that will be called when we get a 401 Unauthorized error. */
+export const set401Handler = (handler: (() => void) | null) => {
+  on401Handler = handler;
 };
 
 let getToken: (() => Promise<string | null>) | null = null;
@@ -75,14 +93,19 @@ async function fetchApi<T>(
     const hint = `Network error calling ${url}. Is the backend running and CORS configured?`;
     const message = error instanceof Error ? error.message : String(error);
     const apiError = new ApiError(0, `${hint}${message ? ` (${message})` : ''}`);
-    onApiError?.(apiError);
+    onApiErrorHandlers.forEach(handler => handler(apiError));
     throw apiError;
   }
 
   if (!response.ok) {
+    if (response.status === 401) {
+      if (on401Handler) {
+        on401Handler();
+      }
+    }
     const error = await response.json().catch(() => ({ message: response.statusText }));
     const apiError = new ApiError(response.status, error.message || 'Request failed');
-    onApiError?.(apiError);
+    onApiErrorHandlers.forEach(handler => handler(apiError));
     throw apiError;
   }
 
@@ -133,6 +156,13 @@ export const authApi = {
     fetchApi<ApiResponse>('/auth/reset-password', {
       method: 'POST',
       body: JSON.stringify(payload),
+    }),
+
+  /** Refresh the access token using a refresh token. */
+  refresh: (refreshToken: string) =>
+    fetchApi<AuthResponse>('/auth/refresh', {
+      method: 'POST',
+      body: JSON.stringify({ refreshToken }),
     }),
 };
 

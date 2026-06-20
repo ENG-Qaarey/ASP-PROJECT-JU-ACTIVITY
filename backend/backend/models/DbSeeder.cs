@@ -1,6 +1,6 @@
-using backend.models.Enums;
+using backend.Models.Enums;
 
-namespace backend.models
+namespace backend.Models
 {
     public static class DbSeeder
     {

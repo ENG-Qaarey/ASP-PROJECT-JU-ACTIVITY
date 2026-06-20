@@ -1,27 +1,14 @@
 import { HubConnectionBuilder, HubConnection } from "@microsoft/signalr";
-import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import {
   Activity,
   Application,
   Notification,
-  mockActivities as mockActivitiesSeed,
-  mockApplications as mockApplicationsSeed,
-  mockNotifications as mockNotificationsSeed,
-} from "@/data/mockData";
+  Attendance,
+} from "@/types/api";
 import { useAuth } from "./AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { activitiesApi, applicationsApi, notificationsApi, attendanceApi, categoriesApi } from "@/lib/api";
-
-type Attendance = {
-  id: string;
-  activityId: string;
-  studentId: string;
-  studentName: string;
-  applicationId: string;
-  status: "present" | "absent";
-  markedBy: string;
-  markedAt: string;
-};
 
 type CreateActivityInput = Pick<
   Activity,
@@ -67,7 +54,7 @@ const ActivityContext = createContext<ActivityContextType | undefined>(undefined
 /** Provides the central data store for activities, applications, notifications, and attendance.
  *  Fetches data from the backend on mount and subscribes to real-time updates via SignalR. */
 export const ActivityProvider = ({ children }: { children: ReactNode }) => {
-  const { user } = useAuth();
+  const { user, backendRestoreCount } = useAuth();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
@@ -75,12 +62,12 @@ export const ActivityProvider = ({ children }: { children: ReactNode }) => {
   const [attendance, setAttendance] = useState<Attendance[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  /** Fetch all data when the user changes. */
+  /** Fetch all data when the user changes or backend is restored. */
   useEffect(() => {
     if (user) {
       refreshData();
     }
-  }, [user]);
+  }, [user, backendRestoreCount]);
 
   /** Subscribe to real-time notifications and activity updates via SignalR. */
   useEffect(() => {
@@ -96,8 +83,22 @@ export const ActivityProvider = ({ children }: { children: ReactNode }) => {
         .withUrl("/hubs/notifications", {
           accessTokenFactory: () => localStorage.getItem("token") ?? "",
         })
-        .withAutomaticReconnect()
+        .withAutomaticReconnect({
+          nextRetryDelayInMilliseconds: (retryContext) => {
+            const delay = Math.min(1000 * Math.pow(2, retryContext.previousRetryCount), 10000);
+            return delay;
+          },
+        })
         .build();
+
+      connection.onreconnecting(() => {
+        console.log("SignalR reconnecting...");
+      });
+
+      connection.onreconnected(async () => {
+        console.log("SignalR reconnected, refreshing data...");
+        await refreshData();
+      });
 
       connection.on("NotificationReceived", (notification: Notification) => {
         setNotifications((prev) => [notification, ...prev]);
@@ -148,20 +149,9 @@ export const ActivityProvider = ({ children }: { children: ReactNode }) => {
         connection.stop();
       }
     };
-  }, [user?.id, user?.role]);
+  }, [user?.id, user?.role, backendRestoreCount]);
 
-  const useMockDataFallback = (currentUser: typeof user) => {
-    const recipientId = currentUser?.id ?? "mock-recipient";
-    const seededNotifications = mockNotificationsSeed.map((notif) => ({
-      ...notif,
-      recipientId,
-    }));
 
-    setActivities(mockActivitiesSeed);
-    setApplications(mockApplicationsSeed);
-    setNotifications(seededNotifications);
-    setAttendance([]);
-  };
 
   /** Fetch all data from the backend — activities, categories, applications, notifications, attendance. */
   const refreshData = async () => {
@@ -180,52 +170,54 @@ export const ActivityProvider = ({ children }: { children: ReactNode }) => {
 
     setIsLoading(true);
     try {
-      const applicationsParams = user.role === "student"
-        ? { studentId: user.id }
-        : undefined;
-
-      // Coordinators and admins can still manage only what they own (enforced by backend),
-      // but we load all activities so the UI can offer an "All Activities" view.
-      const activitiesParams = undefined;
-
-      // Kick off requests in parallel so we can hydrate activities ASAP
-      const activitiesPromise = activitiesApi.getAll(activitiesParams);
-      const categoriesPromise = categoriesApi.getAll();
-      const applicationsPromise = hasToken ? applicationsApi.getAll(applicationsParams) : Promise.resolve([]);
-      const notificationsPromise = hasToken
-        ? user.role === "admin"
-          ? notificationsApi.getAll()
-          : notificationsApi.getAll({ recipientId: user.id })
-        : Promise.resolve([]);
-      const attendancePromise = hasToken
-        ? user.role === "student"
-          ? attendanceApi.getAll({ studentId: user.id })
-          : Promise.resolve([])
-        : Promise.resolve([]);
-
-      // Activities are needed for most screens (including attendance dropdown), so set them first.
-      const activitiesData = await activitiesPromise;
-      setActivities(activitiesData);
+      // Kick off requests in parallel
+      const promises: Promise<any>[] = [];
       
-      const [applicationsData, notificationsData, attendanceData, categoriesData] = await Promise.all([
-        applicationsPromise,
-        notificationsPromise,
-        attendancePromise,
-        categoriesPromise
+      const activitiesPromise = activitiesApi.getAll(undefined);
+      const categoriesPromise = categoriesApi.getAll();
+      promises.push(activitiesPromise, categoriesPromise);
+
+      if (hasToken) {
+        const applicationsParams = user.role === "student"
+          ? { studentId: user.id }
+          : undefined;
+        const applicationsPromise = applicationsApi.getAll(applicationsParams);
+        
+        const notificationsPromise = user.role === "admin"
+          ? notificationsApi.getAll()
+          : notificationsApi.getAll({ recipientId: user.id });
+        
+        const attendancePromise = user.role === "student"
+          ? attendanceApi.getAll({ studentId: user.id })
+          : Promise.resolve([]);
+          
+        promises.push(applicationsPromise, notificationsPromise, attendancePromise);
+      }
+
+      // Wait for all promises
+      const [activitiesData, categoriesData, applicationsData, notificationsData, attendanceData] = await Promise.all([
+        activitiesPromise,
+        categoriesPromise,
+        hasToken ? applicationsApi.getAll(user.role === "student" ? { studentId: user.id } : undefined) : Promise.resolve([]),
+        hasToken ? (user.role === "admin" ? notificationsApi.getAll() : notificationsApi.getAll({ recipientId: user.id })) : Promise.resolve([]),
+        hasToken ? (user.role === "student" ? attendanceApi.getAll({ studentId: user.id }) : Promise.resolve([])) : Promise.resolve([])
       ]);
 
-      setApplications(applicationsData);
-      setNotifications(notificationsData);
-      setAttendance(attendanceData);
+      setActivities(activitiesData);
       setCategories(categoriesData);
+      if (hasToken) {
+        setApplications(applicationsData);
+        setNotifications(notificationsData);
+        setAttendance(attendanceData);
+      }
     } catch (error) {
-      toast({ title: "Failed to Load Data", description: "Could not fetch activities and notifications.", variant: "destructive" });
-      setActivities([]);
-      setCategories([]);
-      setApplications([]);
-      setNotifications([]);
-      setAttendance([]);
-
+      console.error("Failed to load data from backend:", error);
+      toast({ 
+        title: "Failed to Load Data", 
+        description: error instanceof Error ? error.message : "An unknown error occurred", 
+        variant: "destructive" 
+      });
+      // Don't reset data if there was an error—maybe user can still use cached data
     } finally {
       setIsLoading(false);
     }

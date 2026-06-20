@@ -132,3 +132,25 @@ export interface QRScanPayload {
   token: string;
   location?: { lat: number; lng: number };
 }
+
+export interface RoleDefinition {
+  id: string;
+  title: string;
+  description: string;
+  permissions: string[];
+}
+
+export interface ReportDefinition {
+  id: string;
+  title: string;
+  description: string;
+  type: "pdf" | "excel";
+}
+
+export interface SystemLog {
+  id: string;
+  action: string;
+  actor: string;
+  level: "info" | "warning" | "critical";
+  timestamp: string;
+}

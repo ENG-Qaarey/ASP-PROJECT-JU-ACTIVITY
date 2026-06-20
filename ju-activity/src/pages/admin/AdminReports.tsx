@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { mockReports } from "@/data/mockData";
+import type { ReportDefinition } from "@/types/api";
 import { Download, FileText, BarChart2, PieChart, TrendingUp, Users } from "lucide-react";
 import { useActivity } from "@/contexts/ActivityContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,6 +21,8 @@ import {
     generateAttendanceReportPDF,
     generateApplicationsSummaryReport,
 } from "@/lib/reportUtils";
+
+const mockReports: ReportDefinition[] = [];
 
 const AdminReports = () => {
     const { activities, applications, attendance } = useActivity();

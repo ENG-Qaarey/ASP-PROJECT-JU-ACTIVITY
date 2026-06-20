@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace backend.models.Migrations
+namespace backend.Models.Migrations
 {
     /// <inheritdoc />
     public partial class AddActivityIdToMessage : Migration

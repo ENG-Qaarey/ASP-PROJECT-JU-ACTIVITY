@@ -1,9 +1,11 @@
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { mockRoles } from "@/data/mockData";
+import type { RoleDefinition } from "@/types/api";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { ShieldCheck, Settings } from "lucide-react";
+
+const mockRoles: RoleDefinition[] = [];
 
 const ManageRoles = () => {
   return (

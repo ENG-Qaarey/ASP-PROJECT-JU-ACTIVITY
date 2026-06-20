@@ -2,8 +2,10 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { mockLogs } from "@/data/mockData";
+import type { SystemLog } from "@/types/api";
 import { AlertTriangle, ShieldCheck } from "lucide-react";
+
+const mockLogs: SystemLog[] = [];
 
 const SystemLogs = () => {
   const levelMap: Record<string, { color: string; label: string }> = {

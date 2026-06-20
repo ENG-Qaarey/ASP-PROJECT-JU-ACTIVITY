@@ -6,10 +6,10 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar"
-import { TeamSwitcher } from "@/components/team-switcher"
-import { NavMain, type NavMainItem } from "@/components/nav-main"
-import { NavSecondary } from "@/components/nav-secondary"
-import { NavUser } from "@/components/nav-user"
+import { TeamSwitcher } from "@/components/TeamSwitcher"
+import { NavMain, type NavMainItem } from "@/components/NavMain"
+import { NavSecondary } from "@/components/NavSecondary"
+import { NavUser } from "@/components/NavUser"
 
 interface NavSecondaryItem {
   name: string

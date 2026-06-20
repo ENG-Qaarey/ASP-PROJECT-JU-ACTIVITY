@@ -1,4 +1,4 @@
-namespace backend.models.Enums
+namespace backend.Models.Enums
 {
     public enum MessageType
     {

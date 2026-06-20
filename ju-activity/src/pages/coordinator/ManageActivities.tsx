@@ -38,7 +38,7 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import { QRCodeSVG } from "qrcode.react";
 import { attendanceApi } from "@/lib/api";
 import { Calendar, MapPin, Edit, Trash2, Eye, Users, Save, QrCode } from "lucide-react";
-import { Activity } from "@/data/mockData";
+import { Activity } from "@/types/api";
 
 const ManageActivities = () => {
   const navigate = useNavigate();
@@ -301,7 +301,7 @@ const ManageActivities = () => {
 
         <div className="space-y-4">
           {filteredActivities.length === 0 ? (
-            <Card className="rounded-2xl shadow-xl">
+            <Card className="rounded-3xl shadow-xl">
               <CardContent className="p-12 text-center">
                 <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="font-semibold text-lg mb-2">No activities found</h3>
@@ -312,75 +312,125 @@ const ManageActivities = () => {
             </Card>
           ) : (
             filteredActivities.map((activity) => (
-              <Card key={activity.id} className="rounded-2xl shadow-xl">
-                <CardContent className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3">
-                      <h3 className="text-lg font-semibold">{activity.title}</h3>
-                      <Badge className={statusMap[activity.status]}>{activity.status}</Badge>
+              <Card key={activity.id} className="rounded-3xl shadow-xl overflow-hidden">
+                <CardContent className="p-4 md:p-6">
+                  {/* Mobile Layout */}
+                  <div className="flex flex-col gap-4 md:hidden">
+                    <div className="flex items-start gap-4">
+                      <div className="flex flex-col items-center justify-center w-20 h-20 bg-primary/5 rounded-3xl border border-primary/10 flex-shrink-0">
+                        <span className="text-xs font-semibold text-primary uppercase">
+                          {new Date(activity.date).toLocaleDateString('default', { month: 'short' })}
+                        </span>
+                        <span className="text-2xl font-bold text-foreground">
+                          {new Date(activity.date).getDate()}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                          <Badge className={statusMap[activity.status]}>{activity.status}</Badge>
+                        </div>
+                        <h3 className="text-lg font-semibold mb-2 truncate">{activity.title}</h3>
+                        <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-4 h-4" />
+                            {toDateOnly(activity.date)} • {activity.time}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <MapPin className="w-4 h-4" />
+                            {activity.location}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Users className="w-4 h-4" />
+                            {activity.enrolled}/{activity.capacity}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <p className="text-sm text-muted-foreground">{activity.description}</p>
-                    <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                      <span className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4" />
-                        {toDateOnly(activity.date)} • {activity.time}
-                      </span>
-                      <span className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4" />
-                        {activity.location}
-                      </span>
-                      <span>
-                        Capacity {activity.enrolled}/{activity.capacity} enrolled
-                      </span>
-                    </div>
-                  </div>
-                    <div className="flex items-center gap-3">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleShowQR(activity.id)}
-                        disabled={isGeneratingQR && qrActivityId === activity.id}
-                      >
+                    <div className="grid grid-cols-2 gap-2 border-t pt-4">
+                      <Button variant="ghost" size="sm" onClick={() => handleShowQR(activity.id)} disabled={isGeneratingQR && qrActivityId === activity.id} className="w-full justify-center">
                         <QrCode className="w-4 h-4 mr-2" />
                         Show QR
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setViewStudentsId(activity.id)}
-                      >
+                      <Button variant="ghost" size="sm" onClick={() => setViewStudentsId(activity.id)} className="w-full justify-center">
                         <Users className="w-4 h-4 mr-2" />
                         View Students ({getApprovedApplicationsByActivity(activity.id).length})
                       </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => navigate(`/coordinator/activities/${activity.id}`)}
-                    >
-                      <Eye className="w-4 h-4 mr-2" />
-                      View Details
-                    </Button>
-                    {canManageActivity(activity) && (
-                      <>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleEditClick(activity)}
-                        >
-                          <Edit className="w-4 h-4 mr-2" />
-                          Edit
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-destructive border-destructive"
-                          onClick={() => setDeleteId(activity.id)}
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Delete
-                        </Button>
-                      </>
-                    )}
+                      <Button variant="ghost" size="sm" onClick={() => navigate(`/coordinator/activities/${activity.id}`)} className="w-full justify-center">
+                        <Eye className="w-4 h-4 mr-2" />
+                        View Details
+                      </Button>
+                      {canManageActivity(activity) && (
+                        <>
+                          <Button variant="outline" size="sm" onClick={() => handleEditClick(activity)} className="w-full justify-center">
+                            <Edit className="w-4 h-4 mr-2" />
+                            Edit
+                          </Button>
+                          <Button variant="outline" size="sm" className="text-destructive border-destructive w-full justify-center" onClick={() => setDeleteId(activity.id)}>
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Desktop Layout */}
+                  <div className="hidden md:flex items-center gap-6">
+                    <div className="flex flex-col items-center justify-center w-24 h-24 bg-primary/5 rounded-3xl border border-primary/10 flex-shrink-0">
+                      <span className="text-sm font-semibold text-primary uppercase">
+                        {new Date(activity.date).toLocaleDateString('default', { month: 'short' })}
+                      </span>
+                      <span className="text-3xl font-bold text-foreground">
+                        {new Date(activity.date).getDate()}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="text-xl font-semibold truncate">{activity.title}</h3>
+                        <Badge className={statusMap[activity.status]}>{activity.status}</Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-3">{activity.description}</p>
+                      <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                        <span className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4" />
+                          {toDateOnly(activity.date)} • {activity.time}
+                        </span>
+                        <span className="flex items-center gap-2">
+                          <MapPin className="w-4 h-4" />
+                          {activity.location}
+                        </span>
+                        <span className="flex items-center gap-2">
+                          <Users className="w-4 h-4" />
+                          {activity.enrolled}/{activity.capacity} enrolled
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 border-l pl-6">
+                      <Button variant="ghost" size="sm" onClick={() => handleShowQR(activity.id)} disabled={isGeneratingQR && qrActivityId === activity.id} className="gap-2">
+                        <QrCode className="w-4 h-4" />
+                        Show QR
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => setViewStudentsId(activity.id)} className="gap-2">
+                        <Users className="w-4 h-4" />
+                        View Students ({getApprovedApplicationsByActivity(activity.id).length})
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => navigate(`/coordinator/activities/${activity.id}`)} className="gap-2">
+                        <Eye className="w-4 h-4" />
+                        View Details
+                      </Button>
+                      {canManageActivity(activity) && (
+                        <>
+                          <Button variant="outline" size="sm" onClick={() => handleEditClick(activity)} className="gap-2">
+                            <Edit className="w-4 h-4" />
+                            Edit
+                          </Button>
+                          <Button variant="outline" size="sm" className="text-destructive border-destructive gap-2" onClick={() => setDeleteId(activity.id)}>
+                            <Trash2 className="w-4 h-4" />
+                            Delete
+                          </Button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>

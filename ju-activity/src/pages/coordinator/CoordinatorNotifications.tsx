@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useActivity } from "@/contexts/ActivityContext";
 import { toast } from "@/hooks/use-toast";
-import type { Notification } from "@/data/mockData";
+import type { Notification } from "@/types/api";
 import {
   Bell,
   CheckCircle2,

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { XCircle } from "lucide-react";
+import { XCircle, Loader2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,7 +10,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ApiError, setApiErrorHandler } from "@/lib/api";
+import { ApiError, addApiErrorHandler, authApi } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 
 type Info = {
   title: string;
@@ -23,7 +24,7 @@ function toInfo(error: ApiError): Info | null {
     return {
       title: "Network Error",
       description:
-        "Unable to connect to the server. Please check your internet connection and try again.",
+        "Unable to connect to the server. We're trying to reconnect...",
       canRetry: true,
     };
   }
@@ -34,22 +35,43 @@ function toInfo(error: ApiError): Info | null {
 export default function ConnectionError() {
   const [open, setOpen] = useState(false);
   const [lastError, setLastError] = useState<ApiError | null>(null);
+  const [retrying, setRetrying] = useState(false);
+  const { backendIsDown } = useAuth();
 
   const info = useMemo(() => {
     if (!lastError) return null;
     return toInfo(lastError);
   }, [lastError]);
 
+  // Close the dialog automatically when backend is back up
   useEffect(() => {
-    setApiErrorHandler((error) => {
+    if (!backendIsDown && open) {
+      setOpen(false);
+      setLastError(null);
+    }
+  }, [backendIsDown, open]);
+
+  useEffect(() => {
+    const removeHandler = addApiErrorHandler((error) => {
       const mapped = toInfo(error);
       if (!mapped) return;
       setLastError(error);
       setOpen(true);
     });
 
-    return () => setApiErrorHandler(null);
+    return () => removeHandler();
   }, []);
+
+  const handleRetry = async () => {
+    setRetrying(true);
+    try {
+      await authApi.me();
+    } catch {
+      // Still down — dialog stays open
+    } finally {
+      setRetrying(false);
+    }
+  };
 
   if (!info) return null;
 
@@ -61,19 +83,16 @@ export default function ConnectionError() {
             <XCircle className="h-5 w-5" />
             {info.title}
           </AlertDialogTitle>
-          <AlertDialogDescription>{info.description}</AlertDialogDescription>
+          <AlertDialogDescription className="flex items-center gap-2">
+            {retrying ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            {info.description}
+          </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Close</AlertDialogCancel>
           {info.canRetry ? (
-            <AlertDialogAction
-              onClick={() => {
-                setOpen(false);
-                // Retry is page-specific; user can click their button again.
-              }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              OK
+            <AlertDialogAction onClick={handleRetry} disabled={retrying}>
+              {retrying ? "Retrying..." : "Retry Now"}
             </AlertDialogAction>
           ) : null}
         </AlertDialogFooter>

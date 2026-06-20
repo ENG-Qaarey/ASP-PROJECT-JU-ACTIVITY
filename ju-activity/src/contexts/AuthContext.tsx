@@ -1,24 +1,8 @@
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
-import { authApi, setTokenProvider, usersApi } from "@/lib/api";
-
-export type UserRole = "student" | "coordinator" | "admin";
-
-
-
-
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: UserRole;
-  studentId?: string;
-  avatar?: string;
-  department?: string;
-  joinedAt?: string; // ISO date string
-  status?: "active" | "inactive";
-}
+import { authApi, setTokenProvider, usersApi, ApiError, addApiErrorHandler, set401Handler } from "@/lib/api";
+import { User } from "@/types/api";
 
 export type AuthState =
   | "anonymous"
@@ -64,6 +48,10 @@ export interface AuthContextType {
   isHydrated: boolean;
   /** Current authentication state machine value. */
   authState: AuthState;
+  /** True if backend is currently down/unreachable. */
+  backendIsDown: boolean;
+  /** Incremented each time backend comes back online, for triggering reconnection. */
+  backendRestoreCount: number;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -75,6 +63,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
   const [users, setUsers] = useState<User[]>([]); // simplified for now
   const [isHydrated, setIsHydrated] = useState(false);
   const [authState, setAuthState] = useState<AuthState>("anonymous");
+  const [backendIsDown, setBackendIsDown] = useState(false);
+  const [backendRestoreCount, setBackendRestoreCount] = useState(0);
 
   /** Hydrate the session from localStorage on mount. Verifies the stored token with the backend. */
   useEffect(() => {
@@ -100,6 +90,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
               } else {
                 localStorage.removeItem('user');
                 localStorage.removeItem('token');
+                localStorage.removeItem('refreshToken');
                 setUser(null);
                 setAuthState("anonymous");
               }
@@ -121,6 +112,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
         toast({ title: "Session Error", description: "Failed to restore your session. Please log in again.", variant: "destructive" });
         localStorage.removeItem('user');
         localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
         setUser(null);
         setAuthState("anonymous");
       } finally {
@@ -155,6 +147,91 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
     }
   }, [user]);
 
+  /** Detect backend outages via network errors and handle 401 Unauthorized. */
+  useEffect(() => {
+    const removeHandler = addApiErrorHandler((error) => {
+      if (error.status === 0) {
+        setBackendIsDown(true);
+      }
+    });
+    
+    set401Handler(() => {
+      // Log out user if we get a 401
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      setUser(null);
+      setAuthState('anonymous');
+      navigate('/');
+    });
+
+    return () => {
+      removeHandler();
+      set401Handler(null);
+    };
+  }, [navigate]);
+
+  /** Poll the backend every 3s while it's down; on recovery, increment backendRestoreCount. */
+  useEffect(() => {
+    if (!backendIsDown) return;
+
+    const checkBackend = async () => {
+      try {
+        const me = await authApi.me();
+        if (me?.success && me.user) {
+          setBackendIsDown(false);
+          setBackendRestoreCount(c => c + 1);
+          setUser(me.user);
+          localStorage.setItem('user', JSON.stringify(me.user));
+          toast({ title: "Connection Restored", description: "Backend is back online! Refreshing data..." });
+          if (me.user.role === 'admin') {
+            refreshUsers();
+          }
+        }
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 401) {
+          // Backend is running but token expired — try refresh
+          const storedRefreshToken = localStorage.getItem('refreshToken');
+          if (storedRefreshToken) {
+            try {
+              const refreshResult = await authApi.refresh(storedRefreshToken);
+              if (refreshResult.success && refreshResult.token) {
+                localStorage.setItem('token', refreshResult.token);
+                if (refreshResult.refreshToken) {
+                  localStorage.setItem('refreshToken', refreshResult.refreshToken);
+                }
+                const me = await authApi.me();
+                if (me?.success && me.user) {
+                  setBackendIsDown(false);
+                  setBackendRestoreCount(c => c + 1);
+                  setUser(me.user);
+                  localStorage.setItem('user', JSON.stringify(me.user));
+                  toast({ title: "Connection Restored", description: "Backend is back online! Session refreshed." });
+                  if (me.user.role === 'admin') {
+                    refreshUsers();
+                  }
+                }
+                return;
+              }
+            } catch {
+              // Refresh failed — fall through to session clear
+            }
+          }
+
+          setBackendIsDown(false);
+          setUser(null);
+          setAuthState("anonymous");
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          localStorage.removeItem('refreshToken');
+          toast({ title: "Session Expired", description: "Please log in again.", variant: "destructive" });
+        }
+      }
+    };
+
+    const id = window.setInterval(checkBackend, 3000);
+    return () => clearInterval(id);
+  }, [backendIsDown]);
+
   /** Login a user – updates context, stores token/user, and sets auth state. */
   const login = async (email: string, password: string) => {
     try {
@@ -163,6 +240,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
         localStorage.setItem('user', JSON.stringify(result.user));
         if (result.token) {
           localStorage.setItem('token', result.token);
+        }
+        if (result.refreshToken) {
+          localStorage.setItem('refreshToken', result.refreshToken);
         }
         setUser(result.user);
         setAuthState("authenticated");
@@ -189,6 +269,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
   const logout = async () => {
     localStorage.removeItem('user');
     localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
     setUser(null);
     setAuthState("anonymous");
     navigate('/');
@@ -281,6 +362,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
         updateProfile,
         toggleUserStatus,
         refreshUsers,
+        backendIsDown,
+        backendRestoreCount,
       }}
     >
       {children}

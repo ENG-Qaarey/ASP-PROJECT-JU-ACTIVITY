@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
-using backend.models.Enums;
+using backend.Models.Enums;
 
-namespace backend.models
+namespace backend.Models
 {
     public class User
     {

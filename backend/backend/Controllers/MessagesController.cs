@@ -4,9 +4,9 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using backend.DTOs;
 using backend.Hubs;
-using backend.models;
+using backend.Models;
 using backend.Services;
-using backend.models.Enums;
+using backend.Models.Enums;
 
 namespace backend.Controllers
 {
