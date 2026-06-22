@@ -14,6 +14,9 @@ import {
 import { ArrowLeft, Eye, EyeOff, User, CreditCard, Mail, Lock, ShieldCheck } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { authApi } from "@/lib/api";
+import { ROUTES, ROLE_PATHS } from "@/constants/routes";
+import { ROLES } from "@/constants/roles";
+import { STORAGE_KEYS } from "@/constants/api";
 
 const RegisterScreen = () => {
   const navigate = useNavigate();
@@ -117,18 +120,16 @@ const RegisterScreen = () => {
       });
 
       if (result.success && result.user && result.token) {
-        localStorage.setItem('user', JSON.stringify(result.user));
-        localStorage.setItem('token', result.token);
+        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(result.user));
+        localStorage.setItem(STORAGE_KEYS.TOKEN, result.token);
 
         toast({
           title: "Registration Success",
           description: "Welcome to JU Activity Hub! Your account has been created.",
         });
 
-        const role = result.user.role || 'student';
-        if (role === 'admin') navigate('/admin/dashboard');
-        else if (role === 'coordinator') navigate('/coordinator/dashboard');
-        else navigate('/student/dashboard');
+        const role = (result.user.role || ROLES.STUDENT) as keyof typeof ROLE_PATHS;
+        navigate(ROLE_PATHS[role]?.DASHBOARD || ROUTES.STUDENT.DASHBOARD);
       }
     } catch (error: any) {
       let errorMessage = "Unable to register. Please try again.";
@@ -241,7 +242,7 @@ const RegisterScreen = () => {
       >
         <Button
           variant="ghost"
-          onClick={() => navigate("/")}
+          onClick={() => navigate(ROUTES.HOME)}
           className="mb-6 w-fit text-slate-700 hover:text-slate-900"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -368,7 +369,7 @@ const RegisterScreen = () => {
                 variant="link"
                 type="button"
                 className="px-0 text-primary"
-                onClick={() => navigate("/login")}
+                onClick={() => navigate(ROUTES.LOGIN)}
               >
                 Sign in here
               </Button>

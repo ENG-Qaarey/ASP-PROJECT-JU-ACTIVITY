@@ -7,6 +7,7 @@ import type { ReportDefinition } from "@/types/api";
 import { Download, FileText, BarChart2, PieChart, TrendingUp, Users } from "lucide-react";
 import { useActivity } from "@/contexts/ActivityContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { ROLES } from "@/constants/roles";
 import { toast } from "@/hooks/use-toast";
 import {
     downloadCSV,
@@ -85,7 +86,7 @@ const AdminReports = () => {
     const participationTrend = last30Days - previous30Days;
 
     const calculateReportMetrics = (reportId: string) => {
-        const students = users.filter((u) => u.role === "student");
+        const students = users.filter((u) => u.role === ROLES.STUDENT);
         const pendingApps = applications.filter((app) => app.status === "pending");
         const totalApps = applications.length;
         const presentCount = attendance.filter((a) => a.status === "present").length;

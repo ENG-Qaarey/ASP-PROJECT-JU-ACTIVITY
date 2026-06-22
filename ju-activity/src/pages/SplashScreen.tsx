@@ -3,6 +3,7 @@ import { motion, Variants, useReducedMotion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/BrandLogo";
+import { ROUTES } from "@/constants/routes";
 import {
   ArrowRight,
   Calendar,
@@ -131,7 +132,7 @@ export default function SplashScreen() {
           <Button
             size="lg"
             className="group rounded-2xl bg-sky-600 px-8 py-6 font-semibold text-white shadow-lg hover:bg-sky-500"
-            onClick={() => navigate("/login")}
+            onClick={() => navigate(ROUTES.LOGIN)}
           >
             Get Started
             <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />

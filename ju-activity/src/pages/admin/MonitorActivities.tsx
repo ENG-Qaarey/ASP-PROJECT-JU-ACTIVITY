@@ -62,23 +62,25 @@ const MonitorActivities = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="gradient-hero rounded-2xl p-4 md:p-6 text-primary-foreground"
+          className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 rounded-[20px] border border-primary/10"
         >
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div className="space-y-1">
-              <h1 className="text-xl md:text-2xl font-bold">Monitor Activities</h1>
-              <p className="text-primary-foreground/75 text-sm md:text-base">
-                Keep oversight on every event across JU, track coordinators, and see activity statuses instantly.
-              </p>
-            </div>
-            <Button variant="ghost" className="bg-white/10 w-full md:w-auto" onClick={() => setCalendarOpen(true)}>
-              <Eye className="w-5 h-5 mr-2" />
+          <div className="space-y-1">
+            <h2 className="text-3xl font-bold tracking-tight bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
+              View Activities
+            </h2>
+            <p className="text-muted-foreground mt-1">
+              Browse all JU activities, track coordinators, and see real-time status updates.
+            </p>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button variant="outline" className="hidden sm:flex rounded-xl bg-background/50 backdrop-blur-sm" onClick={() => setCalendarOpen(true)}>
+              <Eye className="mr-2 h-4 w-4" />
               View calendar
             </Button>
           </div>
         </motion.div>
 
-        <Card className="rounded-2xl md:rounded-3xl border border-muted/40 shadow-xl">
+        <Card className="rounded-[20px] border border-muted/40 shadow-xl">
           <CardHeader className="space-y-2 p-4 md:p-6">
             <CardTitle className="text-lg font-semibold">All Activities</CardTitle>
             <p className="text-sm text-muted-foreground">Upcoming and ongoing sessions across faculties</p>

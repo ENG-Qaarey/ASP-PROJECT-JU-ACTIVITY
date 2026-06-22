@@ -9,6 +9,7 @@ import { ArrowLeft, Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 import { useAuth } from "@/contexts/AuthContext";
+import { ROUTES } from "@/constants/routes";
 
 const LoginScreen = () => {
   const navigate = useNavigate();
@@ -24,7 +25,8 @@ const LoginScreen = () => {
   useEffect(() => {
     if (isHydrated && isAuthenticated) {
       const role = user?.role || "student";
-      navigate(`/${role}/dashboard`, { replace: true });
+      const path = role === "admin" ? ROUTES.ADMIN.DASHBOARD : role === "coordinator" ? ROUTES.COORDINATOR.DASHBOARD : ROUTES.STUDENT.DASHBOARD;
+      navigate(path, { replace: true });
     }
   }, [isHydrated, isAuthenticated, navigate, user?.role]);
 
@@ -148,7 +150,7 @@ const LoginScreen = () => {
         {/* Back Button */}
         <Button
           variant="ghost"
-          onClick={() => navigate("/")}
+          onClick={() => navigate(ROUTES.HOME)}
           className="mb-6 w-fit text-slate-700 hover:text-slate-900"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -210,7 +212,7 @@ const LoginScreen = () => {
                   variant="link" 
                   type="button" 
                   className="px-0 text-primary"
-                  onClick={() => navigate("/forgot-password")}
+                  onClick={() => navigate(ROUTES.FORGOT_PASSWORD)}
                 >
                   Forgot Password?
                 </Button>
@@ -228,7 +230,7 @@ const LoginScreen = () => {
                   variant="link"
                   type="button"
                   className="px-0 text-primary"
-                  onClick={() => navigate("/register")}
+                  onClick={() => navigate(ROUTES.REGISTER)}
                 >
                   Register here
                 </Button>

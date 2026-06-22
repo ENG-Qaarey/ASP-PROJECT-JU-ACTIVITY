@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ActivityProvider } from "@/contexts/ActivityContext";
 import ConnectionError from "@/components/ConnectionError";
+import { ROLES } from "@/constants/roles";
+import { ROUTES } from "@/constants/routes";
 
 // Pages
 import ProtectedRoute from "./components/routes/ProtectedRoute";
@@ -37,7 +39,7 @@ import ManageUsers from "./pages/admin/ManageUsers";
 import ManageRoles from "./pages/admin/ManageRoles";
 import MonitorActivities from "./pages/admin/MonitorActivities";
 import AdminReports from "./pages/admin/AdminReports";
-import SystemLogs from "./pages/admin/SystemLogs";
+
 import AdminLogs from "./pages/admin/AdminLogs";
 import NotFound from "./pages/NotFound";
 import StudentCalendar from "./pages/student/StudentCalendar";
@@ -57,16 +59,16 @@ const App = () => (
             <ConnectionError />
           <Routes>
             {/* Public Routes */}
-            <Route path="/" element={<SplashScreen />} />
-            <Route path="/login" element={<LoginScreen />} />
-            <Route path="/register" element={<RegisterScreen />} />
-            <Route path="/forgot-password" element={<ForgotPasswordScreen />} />
+            <Route path={ROUTES.HOME} element={<SplashScreen />} />
+            <Route path={ROUTES.LOGIN} element={<LoginScreen />} />
+            <Route path={ROUTES.REGISTER} element={<RegisterScreen />} />
+            <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPasswordScreen />} />
 
             {/* Student Routes */}
             <Route
               path="/student/*"
               element={
-                <ProtectedRoute allowedRoles={["student"]}>
+                <ProtectedRoute allowedRoles={[ROLES.STUDENT]}>
                   <Routes>
                     <Route path="dashboard" element={<StudentDashboard />} />
                     <Route path="activities" element={<StudentActivities />} />
@@ -87,7 +89,7 @@ const App = () => (
             <Route
               path="/coordinator/*"
               element={
-                <ProtectedRoute allowedRoles={["coordinator"]}>
+                <ProtectedRoute allowedRoles={[ROLES.COORDINATOR]}>
                    <Routes>
                     <Route path="dashboard" element={<CoordinatorDashboard />} />
                     <Route path="activities" element={<ManageActivities />} />
@@ -110,7 +112,7 @@ const App = () => (
             <Route
               path="/admin/*"
               element={
-                <ProtectedRoute allowedRoles={["admin"]}>
+                <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
                    <Routes>
                     <Route path="dashboard" element={<AdminDashboard />} />
                     <Route path="create-activity" element={<AdminCreateActivity />} />
@@ -125,7 +127,7 @@ const App = () => (
                     <Route path="chat/:activityId" element={<UnifiedChatPage />} />
                     <Route path="notifications" element={<AdminNotifications />} />
                     <Route path="reports-advanced" element={<AdminReports />} />
-                    <Route path="system-logs" element={<SystemLogs />} />
+
                     <Route path="logs" element={<AdminLogs />} />
                     <Route path="calendar" element={<AllActivitiesCalendar />} />
                     <Route path="profile" element={<ProfileScreen />} />
@@ -136,7 +138,7 @@ const App = () => (
             />
 
             {/* Catch-all */}
-            <Route path="*" element={<NotFound />} />
+            <Route path={ROUTES.NOT_FOUND} element={<NotFound />} />
           </Routes>
         </TooltipProvider>
       </ActivityProvider>

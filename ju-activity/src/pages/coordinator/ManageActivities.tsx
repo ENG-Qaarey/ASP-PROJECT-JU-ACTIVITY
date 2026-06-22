@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useActivity } from "@/contexts/ActivityContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { ROLES } from "@/constants/roles";
 import { toast } from "@/hooks/use-toast";
 import {
   AlertDialog,
@@ -77,7 +78,7 @@ const ManageActivities = () => {
 
   const canManageActivity = (activity: Activity) => {
     if (!user) return false;
-    if (user.role === "admin") return true;
+    if (user.role === ROLES.ADMIN) return true;
     return activity.coordinatorId === user.id;
   };
 
@@ -283,7 +284,7 @@ const ManageActivities = () => {
             <div>
               <h1 className="text-2xl font-bold">Manage Activities</h1>
               <p className="text-primary-foreground/70 max-w-xl">
-                {user?.role === "admin" 
+                {user?.role === ROLES.ADMIN 
                   ? "Manage all system activities, edit details, and monitor participation across the university."
                   : "Organize the events you oversee, edit details, and monitor participation all from one place."}
               </p>

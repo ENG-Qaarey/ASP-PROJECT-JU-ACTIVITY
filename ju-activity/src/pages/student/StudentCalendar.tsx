@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ActivitiesCalendar from '@/components/shared/ActivitiesCalendar';
+import { ROUTES } from '@/constants/routes';
 
 export default function StudentCalendarPage() {
   const navigate = useNavigate();
@@ -14,7 +15,7 @@ export default function StudentCalendarPage() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate('/student/dashboard')}
+            onClick={() => navigate(ROUTES.STUDENT.DASHBOARD)}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>

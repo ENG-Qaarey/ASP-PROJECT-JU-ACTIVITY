@@ -1,0 +1,22 @@
+export const STORAGE_KEYS = {
+  TOKEN: "token",
+  USER: "user",
+  REFRESH_TOKEN: "refreshToken",
+} as const;
+
+export const API = {
+  BASE_URL: import.meta.env.VITE_API_URL || "/api",
+  HUB_URL: "/hubs/notifications",
+  PAGE_SIZE: 50,
+  RECONNECT_BASE_DELAY: 1000,
+  RECONNECT_MAX_DELAY: 10000,
+  TYPING_TIMEOUT: 2000,
+  COPIED_TIMEOUT: 2000,
+  MESSAGE_GROUP_GAP: 5 * 60 * 1000,
+  SCROLL_NEAR_BOTTOM: 150,
+  MAX_TEXTAREA_HEIGHT: 160,
+  ANALYSER_FFT_SIZE: 64,
+  WAVEFORM_BARS: 40,
+  TOP_ACTIVITIES_LIMIT: 10,
+  BACKEND_POLL_INTERVAL: 3000,
+} as const;

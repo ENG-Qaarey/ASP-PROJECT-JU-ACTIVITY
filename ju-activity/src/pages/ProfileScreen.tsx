@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTheme } from "next-themes";
+import { ROLES } from "@/constants/roles";
 import {
   AlertTriangle,
   BadgeCheck,
@@ -73,14 +74,14 @@ const ProfileScreen = () => {
   const isEmailVerified = Boolean((user as Partial<{ emailVerified: boolean }>)?.emailVerified);
   const completenessChecks = [
     Boolean(formData.department),
-    user?.role === "student" ? Boolean(formData.studentId) : true,
+    user?.role === ROLES.STUDENT ? Boolean(formData.studentId) : true,
     Boolean(avatarPreview),
     Boolean(formData.email),
   ];
   const completenessScore = Math.round((completenessChecks.filter(Boolean).length / completenessChecks.length) * 100);
   const missingFields = [
     !formData.department ? "Add a department" : null,
-    user?.role === "student" && !formData.studentId ? "Add your student ID" : null,
+    user?.role === ROLES.STUDENT && !formData.studentId ? "Add your student ID" : null,
     !avatarPreview ? "Upload a profile image" : null,
   ].filter(Boolean) as string[];
 
@@ -395,7 +396,7 @@ const ProfileScreen = () => {
                   <Label htmlFor="department">Department</Label>
                   <Input id="department" name="department" value={formData.department} onChange={handleChange} />
                 </div>
-                {user?.role === "student" ? (
+                {user?.role === ROLES.STUDENT ? (
                   <div className="space-y-2">
                     <Label htmlFor="studentId">Student ID</Label>
                     <Input id="studentId" name="studentId" value={formData.studentId} onChange={handleChange} />

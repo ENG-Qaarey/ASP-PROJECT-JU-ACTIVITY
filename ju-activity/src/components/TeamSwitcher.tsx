@@ -1,5 +1,6 @@
 import * as React from "react"
 import { ChevronsUpDown } from "lucide-react"
+import { UI } from "@/constants/ui"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -64,7 +65,7 @@ export function TeamSwitcher({ teams, defaultIndex = 0, onTeamChange }: TeamSwit
             sideOffset={4}
           >
             <DropdownMenuLabel className="text-xs text-muted-foreground">
-              JU Activity Hub
+              {UI.APP_LABEL}
             </DropdownMenuLabel>
             {teams.map((team) => (
               <DropdownMenuItem

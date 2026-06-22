@@ -140,9 +140,9 @@ export default function ChatInput({
                 <Undo2 className="h-4 w-4" />
               </Button>
               <Button size="icon"
-                className="rounded-full h-9 w-9 bg-destructive hover:bg-destructive/90 shadow-lg shadow-destructive/30 transition-all"
+                className="rounded-full h-9 w-9 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/30 transition-all"
                 onClick={onStopRecording} title="Send recording">
-                <Square className="h-3.5 w-3.5" />
+                <Send className="h-4 w-4" />
               </Button>
             </div>
           ) : (

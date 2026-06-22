@@ -1,21 +1,9 @@
-import type {
-  Activity,
-  ApiResponse,
-  Application,
-  Attendance,
-  AuditLog,
-  AuditLogsResponse,
-  AuthResponse,
-  Category,
-  LastMessagesRecord,
-  MessageResponse,
-  Notification,
-  UploadResult,
-  User,
+import type { Activity, ApiResponse, Application, Attendance, AuditLog, AuditLogsResponse, AuthResponse,Category,LastMessagesRecord,MessageResponse,Notification,UploadResult,User,
 } from "@/types/api";
 import type { ChatMessage, Member } from "@/types/chat";
+import { STORAGE_KEYS, API } from "@/constants/api";
 
-const API_BASE_URL = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '');
+const API_BASE_URL = API.BASE_URL;
 
 /** Error class for API responses with non-2xx status or network failures. */
 export class ApiError extends Error {
@@ -98,7 +86,7 @@ async function fetchApi<T>(
   }
 
   if (!response.ok) {
-    if (response.status === 401) {
+    if (response.status === 401 && token) {
       if (on401Handler) {
         on401Handler();
       }
@@ -419,7 +407,7 @@ export const attendanceApi = {
 /** Admin audit trail — searchable, filterable action log. */
 export const auditLogsApi = {
   /** List audit log entries with optional full-text search, date range, and pagination. */
-  getAll: (params?: { q?: string; action?: string; actorId?: string; targetId?: string; from?: string; to?: string; skip?: number; take?: number }) => {
+  getAll: (params?: { q?: string; action?: string; actorId?: string; status?: string; from?: string; to?: string; skip?: number; take?: number }) => {
     const query = new URLSearchParams(
       Object.entries(params || {}).reduce((acc, [key, value]) => {
         if (value !== undefined && value !== null && value !== '') {
@@ -429,6 +417,90 @@ export const auditLogsApi = {
       }, {} as Record<string, string>),
     ).toString();
     return fetchApi<AuditLogsResponse>('/audit-logs' + (query ? `?${query}` : ''));
+  },
+
+  /** Export audit logs as CSV. */
+  exportCsv: async (params?: { q?: string; action?: string; actorId?: string; status?: string; from?: string; to?: string }) => {
+    const query = new URLSearchParams(
+      Object.entries(params || {}).reduce((acc, [key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          acc[key] = String(value);
+        }
+        return acc;
+      }, {} as Record<string, string>),
+    ).toString();
+    const url = `${API_BASE_URL}/audit-logs/export/csv${query ? `?${query}` : ''}`;
+    
+    let token: string | null = null;
+    if (getToken) {
+      try {
+        token = await getToken();
+      } catch (e) {
+        console.warn("Failed to get token", e);
+      }
+    }
+
+    const response = await fetch(url, {
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to export CSV');
+    }
+
+    const blob = await response.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    a.download = `audit-logs-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(downloadUrl);
+  },
+
+  /** Export audit logs as JSON. */
+  exportJson: async (params?: { q?: string; action?: string; actorId?: string; status?: string; from?: string; to?: string }) => {
+    const query = new URLSearchParams(
+      Object.entries(params || {}).reduce((acc, [key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          acc[key] = String(value);
+        }
+        return acc;
+      }, {} as Record<string, string>),
+    ).toString();
+    const url = `${API_BASE_URL}/audit-logs/export/json${query ? `?${query}` : ''}`;
+    
+    let token: string | null = null;
+    if (getToken) {
+      try {
+        token = await getToken();
+      } catch (e) {
+        console.warn("Failed to get token", e);
+      }
+    }
+
+    const response = await fetch(url, {
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to export JSON');
+    }
+
+    const blob = await response.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    a.download = `audit-logs-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(downloadUrl);
   },
 };
 

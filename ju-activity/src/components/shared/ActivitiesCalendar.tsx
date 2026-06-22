@@ -23,6 +23,10 @@ import {
 import { Calendar as CalendarIcon, Download, Filter, MapPin, Users, Clock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { API, STORAGE_KEYS } from '@/constants/api';
+import { ACTIVITY_STATUS } from '@/constants/status';
+import { UI } from '@/constants/ui';
+import { ROUTES } from '@/constants/routes';
 
 import { enUS } from 'date-fns/locale';
 
@@ -79,7 +83,7 @@ export default function ActivitiesCalendar({ userOnly = false }: ActivitiesCalen
   const fetchActivities = useCallback(async () => {
     setLoading(true);
     try {
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+      const API_URL = API.BASE_URL;
       
       // Calculate date range based on current view
       const startDate = new Date(date);
@@ -116,7 +120,7 @@ export default function ActivitiesCalendar({ userOnly = false }: ActivitiesCalen
       };
 
       if (userOnly && user) {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
         if (token) {
           headers['Authorization'] = `Bearer ${token}`;
         }
@@ -167,7 +171,7 @@ export default function ActivitiesCalendar({ userOnly = false }: ActivitiesCalen
 
   const exportToCalendar = async () => {
     try {
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+      const API_URL = API.BASE_URL;
       const params = new URLSearchParams();
       
       if (userOnly && user) {
@@ -201,12 +205,12 @@ export default function ActivitiesCalendar({ userOnly = false }: ActivitiesCalen
     let backgroundColor = '#3b82f6'; // default blue
 
     // Color by status
-    if (event.status === 'upcoming') {
-      backgroundColor = '#10b981'; // green
-    } else if (event.status === 'ongoing') {
-      backgroundColor = '#f59e0b'; // orange
-    } else if (event.status === 'completed') {
-      backgroundColor = '#6b7280'; // gray
+    if (event.status === ACTIVITY_STATUS.UPCOMING) {
+      backgroundColor = '#10b981';
+    } else if (event.status === ACTIVITY_STATUS.ONGOING) {
+      backgroundColor = '#f59e0b';
+    } else if (event.status === ACTIVITY_STATUS.COMPLETED) {
+      backgroundColor = '#6b7280';
     }
 
     return {
@@ -311,9 +315,9 @@ export default function ActivitiesCalendar({ userOnly = false }: ActivitiesCalen
                 <div>
                   <Badge
                     variant={
-                      selectedEvent?.status === 'upcoming'
+                      selectedEvent?.status === ACTIVITY_STATUS.UPCOMING
                         ? 'default'
-                        : selectedEvent?.status === 'ongoing'
+                        : selectedEvent?.status === ACTIVITY_STATUS.ONGOING
                         ? 'secondary'
                         : 'outline'
                     }
@@ -398,8 +402,8 @@ export default function ActivitiesCalendar({ userOnly = false }: ActivitiesCalen
                 {/* Action Button */}
                 <Button
                   className="w-full"
-                  onClick={() => {
-                    navigate(`/student/activities/${selectedEvent?.id}`);
+                    onClick={() => {
+                    selectedEvent?.id && navigate(ROUTES.STUDENT.ACTIVITY_DETAILS(selectedEvent.id));
                   }}
                 >
                   View Details

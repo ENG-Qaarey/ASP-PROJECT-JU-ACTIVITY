@@ -2,6 +2,7 @@ import { ArrowLeft, Phone, Video, Search, Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Member } from "@/types/chat";
+import { UI } from "@/constants/ui";
 
 interface ChatHeaderProps {
   title: string;
@@ -31,9 +32,9 @@ export default function ChatHeader({
           <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-400 ring-2 ring-background" />
         </div>
         <div className="min-w-0">
-          <h2 className="font-semibold text-sm truncate leading-tight text-foreground/90">{title || "Activity Chat"}</h2>
+          <h2 className="font-semibold text-sm truncate leading-tight text-foreground/90">{title || UI.CHAT.TITLE}</h2>
           <div className="flex items-center gap-1.5 mt-px">
-            <span className="text-[11px] text-emerald-400/80 font-medium">Online</span>
+            <span className="text-[11px] text-emerald-400/80 font-medium">{UI.CHAT.ONLINE}</span>
             <span className="text-[11px] text-muted-foreground/30">·</span>
             {members.length > 0 && (
               <div className="hidden sm:flex -space-x-1.5 items-center mr-0.5">

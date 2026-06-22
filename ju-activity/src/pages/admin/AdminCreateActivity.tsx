@@ -27,6 +27,9 @@ import {
 import { useActivity } from "@/contexts/ActivityContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { categoriesApi } from "@/lib/api";
+import { ROUTES } from "@/constants/routes";
+import { ROLES } from "@/constants/roles";
+import { USER_STATUS } from "@/constants/status";
 
 const AdminCreateActivity = () => {
   const navigate = useNavigate();
@@ -63,7 +66,7 @@ const AdminCreateActivity = () => {
   };
 
   const coordinators = useMemo(() => {
-    return (users ?? []).filter((u) => u.role === "coordinator" && (u.status ?? "active") === "active");
+    return (users ?? []).filter((u) => u.role === ROLES.COORDINATOR && (u.status ?? USER_STATUS.ACTIVE) === USER_STATUS.ACTIVE);
   }, [users]);
 
   const handleChange = (
@@ -120,7 +123,7 @@ const AdminCreateActivity = () => {
         description: "Your activity is now visible to students and coordinators.",
       });
 
-      navigate("/admin/activities");
+      navigate(ROUTES.ADMIN.ACTIVITIES);
     } catch (err: any) {
       toast({
         title: "Publish Failed",
@@ -345,7 +348,7 @@ const AdminCreateActivity = () => {
                     type="button"
                     variant="outline"
                     className="sm:flex-1"
-                    onClick={() => navigate("/admin/activities")}
+                    onClick={() => navigate(ROUTES.ADMIN.ACTIVITIES)}
                   >
                     Cancel
                   </Button>

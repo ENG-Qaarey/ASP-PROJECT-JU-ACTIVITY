@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { ROLES } from "@/constants/roles";
+import { UI } from "@/constants/ui";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -56,17 +58,17 @@ export function ChatTemplate() {
     messagesApi.getLastMessages().then(setPreviews).catch(() => {});
   }, []);
 
-  const rolePrefix = user?.role === "admin" ? "admin" : user?.role === "coordinator" ? "coordinator" : "student";
+  const rolePrefix = user?.role === ROLES.ADMIN ? ROLES.ADMIN : user?.role === ROLES.COORDINATOR ? ROLES.COORDINATOR : ROLES.STUDENT;
 
   const chatRooms = useMemo(() => {
     if (!user) return [];
     let available = activities;
-    if (user.role === "student") {
+    if (user.role === ROLES.STUDENT) {
       const myActivityIds = applications
         .filter((a) => a.studentId === user.id && (a.status === "approved" || a.status === "pending"))
         .map((a) => a.activityId);
       available = activities.filter((a) => myActivityIds.includes(a.id));
-    } else if (user.role === "coordinator") {
+    } else if (user.role === ROLES.COORDINATOR) {
       available = activities.filter((a) =>
         String(a.coordinatorId).toLowerCase() === String(user.id).toLowerCase()
       );
@@ -98,7 +100,7 @@ export function ChatTemplate() {
       <ResizablePanel defaultSize={28} minSize={20} maxSize={42} className={`bg-background ${activityId ? 'max-md:hidden' : ''}`}>
         <div className="flex flex-col h-full">
           <div className="flex items-center px-4 py-3 border-b border-border/40 shrink-0">
-            <h1 className="text-lg font-semibold">Chats</h1>
+            <h1 className="text-lg font-semibold">{UI.NAV.NOTIFICATIONS}</h1>
             <div className="flex items-center gap-0.5 ml-auto">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -108,10 +110,10 @@ export function ChatTemplate() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem>
-                    <User className="h-4 w-4" /> New Contact
+                    <User className="h-4 w-4" /> {UI.CHAT.NEW_CONTACT}
                   </DropdownMenuItem>
                   <DropdownMenuItem>
-                    <Users className="h-4 w-4" /> New Group
+                    <Users className="h-4 w-4" /> {UI.CHAT.NEW_GROUP}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -122,18 +124,18 @@ export function ChatTemplate() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>Filter Chats By</DropdownMenuLabel>
+                  <DropdownMenuLabel>{UI.CHAT.FILTER_CHATS}</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuGroup>
-                    <DropdownMenuItem><MessageSquareDot className="h-4 w-4" /> Unread</DropdownMenuItem>
-                    <DropdownMenuItem><Star className="h-4 w-4" /> Favorites</DropdownMenuItem>
-                    <DropdownMenuItem><CircleUserRound className="h-4 w-4" /> Contacts</DropdownMenuItem>
-                    <DropdownMenuItem><CircleOff className="h-4 w-4" /> Non Contacts</DropdownMenuItem>
+                    <DropdownMenuItem><MessageSquareDot className="h-4 w-4" /> {UI.FILTER.UNREAD}</DropdownMenuItem>
+                    <DropdownMenuItem><Star className="h-4 w-4" /> {UI.FILTER.FAVORITES}</DropdownMenuItem>
+                    <DropdownMenuItem><CircleUserRound className="h-4 w-4" /> {UI.FILTER.CONTACTS}</DropdownMenuItem>
+                    <DropdownMenuItem><CircleOff className="h-4 w-4" /> {UI.FILTER.NON_CONTACTS}</DropdownMenuItem>
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator />
                   <DropdownMenuGroup>
-                    <DropdownMenuItem><Users className="h-4 w-4" /> Groups</DropdownMenuItem>
-                    <DropdownMenuItem><MessageSquareDashed className="h-4 w-4" /> Drafts</DropdownMenuItem>
+                    <DropdownMenuItem><Users className="h-4 w-4" /> {UI.FILTER.GROUPS}</DropdownMenuItem>
+                    <DropdownMenuItem><MessageSquareDashed className="h-4 w-4" /> {UI.FILTER.DRAFTS}</DropdownMenuItem>
                   </DropdownMenuGroup>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -144,7 +146,7 @@ export function ChatTemplate() {
             <Search className="absolute left-7 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50 pointer-events-none" />
             <Input
               type="text"
-              placeholder="Search or start new chat"
+              placeholder={UI.CHAT.SEARCH_CHATS}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full h-9 rounded-xl border border-input/80 bg-background/80 pl-9 pr-3 py-1 text-sm shadow-sm transition-all placeholder:text-muted-foreground/50"
@@ -157,9 +159,9 @@ export function ChatTemplate() {
                 <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center mb-3">
                   <MessageCircle className="w-6 h-6 text-primary/60" />
                 </div>
-                <p className="text-sm font-medium text-foreground/70">No chats yet</p>
+                <p className="text-sm font-medium text-foreground/70">{UI.CHAT.NO_CHATS}</p>
                 <p className="text-xs text-muted-foreground/60 mt-1">
-                  {user?.role === "student"
+                  {user?.role === ROLES.STUDENT
                     ? "Apply to an activity to start chatting"
                     : "Create an activity to get started"}
                 </p>
@@ -226,9 +228,9 @@ export function ChatTemplate() {
               <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center mx-auto mb-5">
                 <MessageCircle className="w-8 h-8 text-primary/60" />
               </div>
-              <h2 className="text-xl font-semibold text-foreground/80 mb-1.5">JU Activity Hub Chat</h2>
+              <h2 className="text-xl font-semibold text-foreground/80 mb-1.5">{UI.APP_LABEL} Chat</h2>
               <p className="text-sm text-muted-foreground/60 max-w-sm mx-auto leading-relaxed">
-                Select an activity from the left to start chatting with coordinators and participants.
+                {UI.CHAT.SELECT_ACTIVITY}
               </p>
               <div className="mt-6 flex items-center justify-center gap-1.5 text-xs text-muted-foreground/40">
                 <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />

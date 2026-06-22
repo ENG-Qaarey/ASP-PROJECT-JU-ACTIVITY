@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ArrowLeft, Mail, ShieldCheck, Lock } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { authApi } from "@/lib/api";
+import { ROUTES } from "@/constants/routes";
 
 const ForgotPasswordScreen = () => {
     const navigate = useNavigate();
@@ -81,7 +82,7 @@ const ForgotPasswordScreen = () => {
             >
                 <Button
                     variant="ghost"
-                    onClick={() => navigate("/login")}
+                    onClick={() => navigate(ROUTES.LOGIN)}
                     className="mb-6 w-fit text-slate-700 hover:text-slate-900"
                 >
                     <ArrowLeft className="mr-2 h-4 w-4" />
@@ -107,7 +108,7 @@ const ForgotPasswordScreen = () => {
                                     <ShieldCheck className="h-8 w-8 text-green-600" />
                                 </div>
                                 <Button
-                                    onClick={() => navigate("/login")}
+                                    onClick={() => navigate(ROUTES.LOGIN)}
                                     className="w-full bg-green-600 hover:bg-green-700 text-white"
                                 >
                                     Proceed to Login

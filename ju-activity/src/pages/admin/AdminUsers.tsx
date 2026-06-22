@@ -38,6 +38,8 @@ import {
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
+import { ROLES } from "@/constants/roles";
+import { USER_STATUS } from "@/constants/status";
 
 const AdminUsers = () => {
   const { user, users, refreshUsers, toggleUserStatus, deleteUser } = useAuth();
@@ -47,7 +49,7 @@ const AdminUsers = () => {
   const [isMutatingId, setIsMutatingId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (user?.role === "admin") {
+    if (user?.role === ROLES.ADMIN) {
       refreshUsers();
     }
   }, [user?.role]);
@@ -128,9 +130,9 @@ const AdminUsers = () => {
                    <Select>
                     <SelectTrigger><SelectValue placeholder="Select role" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="student">Student</SelectItem>
-                      <SelectItem value="coordinator">Coordinator</SelectItem>
-                      <SelectItem value="admin">Administrator</SelectItem>
+                      <SelectItem value={ROLES.STUDENT}>Student</SelectItem>
+                      <SelectItem value={ROLES.COORDINATOR}>Coordinator</SelectItem>
+                      <SelectItem value={ROLES.ADMIN}>Administrator</SelectItem>
                     </SelectContent>
                    </Select>
                 </div>
@@ -164,9 +166,9 @@ const AdminUsers = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Roles</SelectItem>
-                  <SelectItem value="student">Students</SelectItem>
-                  <SelectItem value="coordinator">Coordinators</SelectItem>
-                  <SelectItem value="admin">Admins</SelectItem>
+                  <SelectItem value={ROLES.STUDENT}>Students</SelectItem>
+                  <SelectItem value={ROLES.COORDINATOR}>Coordinators</SelectItem>
+                  <SelectItem value={ROLES.ADMIN}>Admins</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -193,18 +195,18 @@ const AdminUsers = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          {user.role === 'student' && <GraduationCap className="w-4 h-4 text-blue-500" />}
-                          {user.role === 'coordinator' && <User className="w-4 h-4 text-green-500" />}
-                          {user.role === 'admin' && <Shield className="w-4 h-4 text-red-500" />}
+                          {user.role === ROLES.STUDENT && <GraduationCap className="w-4 h-4 text-blue-500" />}
+                          {user.role === ROLES.COORDINATOR && <User className="w-4 h-4 text-green-500" />}
+                          {user.role === ROLES.ADMIN && <Shield className="w-4 h-4 text-red-500" />}
                           <span className="capitalize">{user.role}</span>
                         </div>
                       </TableCell>
                       <TableCell>{user.department}</TableCell>
                       <TableCell>
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          (user.status ?? 'active') === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                          (user.status ?? USER_STATUS.ACTIVE) === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                         }`}>
-                          {user.status ?? 'active'}
+                          {user.status ?? USER_STATUS.ACTIVE}
                         </span>
                       </TableCell>
                       <TableCell className="text-right">
@@ -216,7 +218,7 @@ const AdminUsers = () => {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => handleToggleStatus(user.id)}>
-                              {(user.status ?? 'active') === 'active' ? 'Disable Account' : 'Activate Account'}
+                              {(user.status ?? USER_STATUS.ACTIVE) === 'active' ? 'Disable Account' : 'Activate Account'}
                             </DropdownMenuItem>
                             <DropdownMenuItem>Edit Details</DropdownMenuItem>
                             <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(user.id)}>

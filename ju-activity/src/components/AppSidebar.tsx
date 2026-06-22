@@ -10,6 +10,7 @@ import { TeamSwitcher } from "@/components/TeamSwitcher"
 import { NavMain, type NavMainItem } from "@/components/NavMain"
 import { NavSecondary } from "@/components/NavSecondary"
 import { NavUser } from "@/components/NavUser"
+import { UI } from "@/constants/ui"
 
 interface NavSecondaryItem {
   name: string
@@ -31,13 +32,13 @@ export function AppSidebar({ navMain, navSecondary, user, onNavigate, onLogout }
       <SidebarHeader>
         <TeamSwitcher
           teams={[
-            { name: "JU-AMS", label: "Activity Hub", icon: GalleryVerticalEnd },
+            { name: UI.APP_NAME, label: UI.APP_LABEL, icon: GalleryVerticalEnd },
           ]}
         />
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={navMain} onNavigate={onNavigate} />
-        <NavSecondary items={navSecondary} label="More" onNavigate={onNavigate} />
+        <NavSecondary items={navSecondary} label={UI.NAV.MORE} onNavigate={onNavigate} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser

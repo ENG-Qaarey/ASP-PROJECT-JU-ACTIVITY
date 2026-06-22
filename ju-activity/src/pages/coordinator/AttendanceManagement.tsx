@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useActivity } from "@/contexts/ActivityContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { ROLES } from "@/constants/roles";
 import { toast } from "@/hooks/use-toast";
 import { applicationsApi, attendanceApi } from "@/lib/api";
 import {
@@ -210,7 +211,7 @@ const AttendanceManagement = () => {
           <div className="flex flex-col gap-2">
             <h1 className="text-2xl font-bold">Attendance Management</h1>
             <p className="text-white/90">
-              {user?.role === "admin"
+              {user?.role === ROLES.ADMIN
                 ? "Track attendance for all approved students across all activities and mark no-shows easily."
                 : "Track attendance for students who are approved for your activities and mark no-shows easily."}
             </p>
@@ -237,7 +238,7 @@ const AttendanceManagement = () => {
                     No activities available
                   </p>
                   <p className="text-sm text-muted-foreground/70 mt-2">
-                    {user?.role === "admin"
+                    {user?.role === ROLES.ADMIN
                       ? "Create activities to start tracking attendance."
                       : "No activities exist yet."}
                   </p>
@@ -252,17 +253,17 @@ const AttendanceManagement = () => {
                       <SelectItem
                         key={activity.id}
                         value={activity.id}
-                        disabled={user?.role === "coordinator" ? activity.coordinatorId !== user.id : false}
+                        disabled={user?.role === ROLES.COORDINATOR ? activity.coordinatorId !== user.id : false}
                       >
                         {activity.title} - {formatDate(activity.date)}{activity.time ? ` ${activity.time}` : ""}
-                        {user?.role === "coordinator" && activity.coordinatorId !== user.id ? " (Not assigned)" : ""}
+                        {user?.role === ROLES.COORDINATOR && activity.coordinatorId !== user.id ? " (Not assigned)" : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               )}
 
-              {user?.role === "coordinator" && coordinatorActivities.length > 0 && manageableActivities.length === 0 && (
+              {user?.role === ROLES.COORDINATOR && coordinatorActivities.length > 0 && manageableActivities.length === 0 && (
                 <p className="text-xs text-muted-foreground mt-3">
                   Activities exist, but none are assigned to you yet.
                 </p>

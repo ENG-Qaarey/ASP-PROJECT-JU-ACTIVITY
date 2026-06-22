@@ -3,6 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { authApi, setTokenProvider, usersApi, ApiError, addApiErrorHandler, set401Handler } from "@/lib/api";
 import { User } from "@/types/api";
+import { ROLES } from "@/constants/roles";
+import { STORAGE_KEYS } from "@/constants/api";
+import { ROUTES, ROLE_PATHS } from "@/constants/routes";
 
 export type AuthState =
   | "anonymous"
@@ -66,53 +69,26 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
   const [backendIsDown, setBackendIsDown] = useState(false);
   const [backendRestoreCount, setBackendRestoreCount] = useState(0);
 
-  /** Hydrate the session from localStorage on mount. Verifies the stored token with the backend. */
   useEffect(() => {
     setTokenProvider(async () => {
-      return localStorage.getItem('token');
+      return localStorage.getItem(STORAGE_KEYS.TOKEN);
     });
 
     const loadUserFromStorage = async () => {
       try {
-        const storedUser = localStorage.getItem('user');
-        const storedToken = localStorage.getItem('token');
+        const storedUser = localStorage.getItem(STORAGE_KEYS.USER);
         if (storedUser) {
           const parsedUser = JSON.parse(storedUser) as User;
-          
-          // Prefer server-verified session when token exists
-          if (storedToken) {
-            try {
-              const me = await authApi.me();
-              if (me?.success && me.user) {
-                setUser(me.user);
-                localStorage.setItem('user', JSON.stringify(me.user));
-                setAuthState("authenticated");
-              } else {
-                localStorage.removeItem('user');
-                localStorage.removeItem('token');
-                localStorage.removeItem('refreshToken');
-                setUser(null);
-                setAuthState("anonymous");
-              }
-            } catch (e) {
-              console.warn("Failed to verify token with backend:", e);
-              setUser(parsedUser);
-              setAuthState("authenticated");
-            }
-          } else {
-            // No token yet (legacy). Keep the stored user, but treat as authenticated.
-            setUser(parsedUser);
-            setAuthState("authenticated");
-          }
+          setUser(parsedUser);
+          setAuthState("authenticated");
         } else {
           setUser(null);
           setAuthState("anonymous");
         }
-      } catch (e) {
-        toast({ title: "Session Error", description: "Failed to restore your session. Please log in again.", variant: "destructive" });
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
-        localStorage.removeItem('refreshToken');
+      } catch {
+        localStorage.removeItem(STORAGE_KEYS.USER);
+        localStorage.removeItem(STORAGE_KEYS.TOKEN);
+        localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
         setUser(null);
         setAuthState("anonymous");
       } finally {
@@ -123,15 +99,33 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
     loadUserFromStorage();
   }, []);
 
-  /** Re-fetch the full user list from the backend (admin-only). */
+  useEffect(() => {
+    const handleVisibility = async () => {
+      if (document.visibilityState !== "visible") return;
+      const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+      if (!refreshToken) return;
+      try {
+        const result = await authApi.refresh(refreshToken);
+        if (result?.token) {
+          localStorage.setItem(STORAGE_KEYS.TOKEN, result.token);
+        }
+        if (result?.refreshToken) {
+          localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, result.refreshToken);
+        }
+      } catch {
+        /* token expired — next real API call will handle 401 */
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, []);
+
   const refreshUsers = async () => {
-     // Only attempt fetch when we actually have an auth token to send
-     const token = localStorage.getItem('token');
+     const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
      if (!token) {
        console.warn("Skipping admin user sync: missing auth token");
        return;
      }
- 
      try {
        const all = await usersApi.getAll(undefined, token);
        setUsers(all);
@@ -139,10 +133,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
        console.warn("Could not fetch users from backend", e);
      }
   };
-
-  /** Auto-fetch users for admin on mount. */
+ 
   useEffect(() => {
-    if (user?.role === 'admin') {
+    if (user?.role === ROLES.ADMIN) {
         refreshUsers();
     }
   }, [user]);
@@ -156,12 +149,11 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
     });
     
     set401Handler(() => {
-      // Log out user if we get a 401
-      localStorage.removeItem('user');
-      localStorage.removeItem('token');
+      localStorage.removeItem(STORAGE_KEYS.USER);
+      localStorage.removeItem(STORAGE_KEYS.TOKEN);
       setUser(null);
       setAuthState('anonymous');
-      navigate('/');
+      navigate(ROUTES.HOME);
     });
 
     return () => {
@@ -181,48 +173,46 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
           setBackendIsDown(false);
           setBackendRestoreCount(c => c + 1);
           setUser(me.user);
-          localStorage.setItem('user', JSON.stringify(me.user));
+          localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(me.user));
           toast({ title: "Connection Restored", description: "Backend is back online! Refreshing data..." });
-          if (me.user.role === 'admin') {
+          if (me.user.role === ROLES.ADMIN) {
             refreshUsers();
           }
         }
       } catch (error) {
         if (error instanceof ApiError && error.status === 401) {
-          // Backend is running but token expired — try refresh
-          const storedRefreshToken = localStorage.getItem('refreshToken');
+          const storedRefreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
           if (storedRefreshToken) {
             try {
               const refreshResult = await authApi.refresh(storedRefreshToken);
               if (refreshResult.success && refreshResult.token) {
-                localStorage.setItem('token', refreshResult.token);
+                localStorage.setItem(STORAGE_KEYS.TOKEN, refreshResult.token);
                 if (refreshResult.refreshToken) {
-                  localStorage.setItem('refreshToken', refreshResult.refreshToken);
+                  localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshResult.refreshToken);
                 }
                 const me = await authApi.me();
                 if (me?.success && me.user) {
                   setBackendIsDown(false);
                   setBackendRestoreCount(c => c + 1);
                   setUser(me.user);
-                  localStorage.setItem('user', JSON.stringify(me.user));
+                  localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(me.user));
                   toast({ title: "Connection Restored", description: "Backend is back online! Session refreshed." });
-                  if (me.user.role === 'admin') {
+                  if (me.user.role === ROLES.ADMIN) {
                     refreshUsers();
                   }
                 }
                 return;
               }
             } catch {
-              // Refresh failed — fall through to session clear
             }
           }
 
           setBackendIsDown(false);
           setUser(null);
           setAuthState("anonymous");
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          localStorage.removeItem('refreshToken');
+          localStorage.removeItem(STORAGE_KEYS.TOKEN);
+          localStorage.removeItem(STORAGE_KEYS.USER);
+          localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
           toast({ title: "Session Expired", description: "Please log in again.", variant: "destructive" });
         }
       }
@@ -232,29 +222,26 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
     return () => clearInterval(id);
   }, [backendIsDown]);
 
-  /** Login a user – updates context, stores token/user, and sets auth state. */
   const login = async (email: string, password: string) => {
     try {
       const result = await authApi.login(email.trim().toLowerCase(), password);
       if (result.success && result.user) {
-        localStorage.setItem('user', JSON.stringify(result.user));
+        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(result.user));
         if (result.token) {
-          localStorage.setItem('token', result.token);
+          localStorage.setItem(STORAGE_KEYS.TOKEN, result.token);
         }
         if (result.refreshToken) {
-          localStorage.setItem('refreshToken', result.refreshToken);
+          localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, result.refreshToken);
         }
         setUser(result.user);
         setAuthState("authenticated");
-        // Navigate to appropriate dashboard based on role
-        const role = result.user.role || "student";
-        if (role === "admin") {
-          navigate('/admin/dashboard');
-        } else if (role === "coordinator") {
-          navigate('/coordinator/dashboard');
-        } else {
-          navigate('/student/dashboard');
-        }
+        const role = result.user.role || ROLES.STUDENT;
+        const routeMap: Record<string, string> = {
+          [ROLES.ADMIN]: ROUTES.ADMIN.DASHBOARD,
+          [ROLES.COORDINATOR]: ROUTES.COORDINATOR.DASHBOARD,
+          [ROLES.STUDENT]: ROUTES.STUDENT.DASHBOARD,
+        };
+        navigate(routeMap[role] || ROUTES.STUDENT.DASHBOARD);
       } else {
         toast({ title: "Login Failed", description: "Invalid credentials", variant: "destructive" });
         throw new Error("Login failed");
@@ -265,14 +252,13 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
     }
   };
 
-  /** Clear the session from state and localStorage, then redirect to landing. */
   const logout = async () => {
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
+    localStorage.removeItem(STORAGE_KEYS.USER);
+    localStorage.removeItem(STORAGE_KEYS.TOKEN);
+    localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
     setUser(null);
     setAuthState("anonymous");
-    navigate('/');
+    navigate(ROUTES.HOME);
   };
 
   /** Permanently delete a user account by ID (admin only). */
@@ -281,7 +267,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
       await refreshUsers();
   };
 
-  /** Create a new coordinator account (admin only). */
   const createCoordinator = async (data: {
     fullName: string;
     email: string;
@@ -292,7 +277,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
       name: data.fullName,
       email: data.email,
       password: data.password,
-      role: 'coordinator',
+      role: ROLES.COORDINATOR,
       department: data.department,
     });
     await refreshUsers();
@@ -306,7 +291,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
       await usersApi.updateMyPassword(oldPassword, newPassword);
   };
 
-  /** Update the current user's profile (name, email, avatar, etc.). */
   const updateProfile = async (updates: {
     name: string;
     email: string;
@@ -317,23 +301,19 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
       if (!user) {
         throw new Error("You must be logged in to update your profile.");
       }
-
       try {
          const { avatar, ...backendUpdates } = updates;
-
          const updatedUser = await usersApi.updateMe(backendUpdates);
-
          let updatedAfterAvatar = updatedUser;
          if (avatar instanceof File) {
            updatedAfterAvatar = await usersApi.uploadMyAvatar(avatar);
          }
-
          const newUser: User = {
            ...user,
            ...updatedAfterAvatar,
          };
          setUser(newUser);
-         localStorage.setItem('user', JSON.stringify(newUser));
+         localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(newUser));
       } catch(e) {
           toast({ title: "Update Failed", description: "Could not update your profile. Please try again.", variant: "destructive" });
           throw e;

@@ -1,14 +1,35 @@
-import { motion } from "framer-motion";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   CheckCheck, Copy, Edit3, Trash2, Send, X, Reply,
-  FileIcon, Play, MessageCircle,
+  FileIcon, Play, MessageCircle, Smile,
 } from "lucide-react";
 import WaveformVisualizer from "./WaveformVisualizer";
 import { ChatMessage, Member, ReplyTo } from "@/types/chat";
-import { QUICK_REACTIONS } from "@/constants/emojis";
+import { QUICK_REACTIONS, EMOJI_PICKER } from "@/constants/emojis";
 import { formatTime } from "@/lib/format";
+import { ROLES } from "@/constants/roles";
+
+const URL_REGEX = /(https?:\/\/[^\s]+)/g;
+
+const parseTextWithLinks = (text: string) => {
+  const parts = [];
+  let lastIndex = 0;
+  let match;
+  while ((match = URL_REGEX.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+    parts.push({ type: "link", url: match[0], text: match[0] });
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+  return parts;
+};
 
 interface MessageBubbleProps {
   msg: ChatMessage;
@@ -42,8 +63,8 @@ export default function MessageBubble({
   try { if (msg.metadata) metadata = JSON.parse(msg.metadata); } catch { /* ignore */ }
 
   const senderMember = members.find((m) => m.id === msg.senderId);
-  const isCoordinator = senderMember?.role === "coordinator";
-  const isAdminUser = senderMember?.role === "admin";
+  const isCoordinator = senderMember?.role === ROLES.COORDINATOR;
+  const isAdminUser = senderMember?.role === ROLES.ADMIN;
 
   const parseReactions = (raw: string | null | undefined): { emoji: string; users: string[] }[] => {
     if (!raw) return [];
@@ -58,6 +79,7 @@ export default function MessageBubble({
   };
 
   const reactions = parseReactions(msg.reactions);
+  const [showReactionPicker, setShowReactionPicker] = useState(false);
 
   const avatar = (
     <Avatar className="h-8 w-8 shrink-0 ring-2 ring-background shadow-md">
@@ -68,6 +90,15 @@ export default function MessageBubble({
     </Avatar>
   );
 
+  let messageContentClass = "flex items-end ";
+  if (msg.type === "image" || msg.type === "video") {
+    messageContentClass += "flex-col";
+  } else if (msg.type === "audio") {
+    messageContentClass += "gap-0";
+  } else {
+    messageContentClass += "gap-2";
+  }
+
   return (
     <motion.div
       key={msg.id}
@@ -76,7 +107,7 @@ export default function MessageBubble({
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.15 } }}
       transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-      className={`flex items-end gap-2 px-1 group ${isMine ? "flex-row-reverse" : ""}`}
+      className={`flex items-end gap-2 px-1 group ${isMine ? "flex-row-reverse" : ""} relative z-0 mb-3`}
     >
       {!isMine && showAvatar && avatar}
       {!isMine && !showAvatar && <div className="w-8 shrink-0" />}
@@ -106,11 +137,19 @@ export default function MessageBubble({
               isMine ? "left-0" : "right-0"
             }`}>
               <div className="flex items-center gap-0.5 rounded-full bg-background/90 backdrop-blur-md border border-border/40 shadow-lg px-1 py-0.5">
+                <button onClick={() => { setShowReactionPicker(!showReactionPicker); }}
+                  className="h-6 w-6 rounded-full flex items-center justify-center hover:bg-accent transition-colors" title="React">
+                  <Smile className="h-3 w-3" />
+                </button>
                 <button onClick={() => onCopy(msg.id, msg.content)}
                   className="h-6 w-6 rounded-full flex items-center justify-center hover:bg-accent transition-colors" title="Copy">
                   {copiedId === msg.id ? <CheckCheck className="h-3 w-3 text-primary" /> : <Copy className="h-3 w-3" />}
                 </button>
-                {isMine && (
+                <button onClick={() => onReply({ id: msg.id, content: msg.content, senderName: msg.senderName })}
+                  className="h-6 w-6 rounded-full flex items-center justify-center hover:bg-accent transition-colors" title="Reply">
+                  <Reply className="h-3 w-3" />
+                </button>
+                {isMine && msg.type === "text" && (
                   <button onClick={() => onStartEdit(msg.id, msg.content)}
                     className="h-6 w-6 rounded-full flex items-center justify-center hover:bg-accent transition-colors" title="Edit">
                     <Edit3 className="h-3 w-3" />
@@ -126,13 +165,43 @@ export default function MessageBubble({
             </div>
           )}
 
-          <div className={`px-4 py-2.5 text-sm break-words overflow-hidden ${
+          <AnimatePresence>
+            {showReactionPicker && (
+              <motion.div
+                initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 10, scale: 0.9 }}
+                className="absolute -top-14 z-20"
+              >
+                <div className={`flex items-center gap-0.5 rounded-full bg-background/95 backdrop-blur-md border border-border/50 shadow-xl px-1 py-1 ${
+                  isMine ? "left-0" : "right-0"
+                }`}>
+                  {QUICK_REACTIONS.slice(0, 5).map((emoji) => (
+                    <button
+                      key={emoji}
+                      onClick={() => {
+                        onReact(msg.id, emoji);
+                        setShowReactionPicker(false);
+                      }}
+                      className="h-7 w-7 rounded-full flex items-center justify-center text-lg hover:bg-accent hover:scale-110 transition-all active:scale-95"
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <div className={`relative ${
+            (msg.type === "image" || msg.type === "video") ? "px-0.5 py-0.5" : "px-3 py-1.5"
+          } ${reactions.length > 0 ? "pb-4" : ""} text-sm break-words overflow-hidden ${
             isMine
-              ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground rounded-2xl rounded-br-sm shadow-lg shadow-primary/20"
-              : "bg-card border border-border/60 rounded-2xl rounded-bl-sm shadow-sm"
+              ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground rounded-[10px] shadow-lg shadow-primary/20"
+              : "bg-card border border-border/60 rounded-[10px] shadow-sm"
           }`}>
             {editingId === msg.id ? (
-              <div className="flex gap-2">
+              <div className="px-3 py-1.5 flex gap-2">
                 <input
                   value={editInput}
                   onChange={(e) => onSetEditInput(e.target.value)}
@@ -148,80 +217,99 @@ export default function MessageBubble({
                 </Button>
               </div>
             ) : (
-              <>
-                {msg.type === "image" && metadata?.url && (
-                  <div className="-mx-1 -mt-1 mb-1.5">
-                    <img src={metadata.url as string} alt={msg.content}
-                      className="max-w-full rounded-xl cursor-pointer hover:opacity-90 max-h-64 object-cover transition-opacity"
-                      onClick={() => onExpandImage(metadata.url as string)} />
-                  </div>
-                )}
-                {msg.type === "video" && metadata?.url && (
-                  <div className="-mx-1 -mt-1 mb-1.5">
-                    <video src={metadata.url as string} controls className="max-w-full rounded-xl max-h-64" preload="metadata" />
-                  </div>
-                )}
-                {msg.type === "audio" && metadata?.url && (
-                  <div className="-mx-1">
-                    <WaveformVisualizer audioUrl={metadata.url as string} isMine={isMine} />
-                  </div>
-                )}
-                {msg.type === "file" && metadata?.url && (
-                  <a href={metadata.url as string} target="_blank" rel="noopener noreferrer"
-                    className={`flex items-center gap-2.5 text-sm rounded-lg p-2 ${
-                      isMine ? "bg-primary-foreground/10 hover:bg-primary-foreground/20" : "bg-muted/50 hover:bg-muted"
-                    } transition-colors`}>
-                    <div className={`rounded-lg p-1.5 ${isMine ? "bg-primary-foreground/20" : "bg-primary/10"}`}>
-                      <FileIcon className={`h-4 w-4 ${isMine ? "text-primary-foreground" : "text-primary"}`} />
+              <div className={messageContentClass}>
+                <div className="flex-1">
+                  {msg.type === "image" && metadata?.url && (
+                    <div className="relative">
+                      <img src={metadata.url as string} alt={msg.content}
+                        className="w-full rounded-[10px] cursor-pointer hover:opacity-90 max-h-[300px] object-cover transition-opacity"
+                        onClick={() => onExpandImage(metadata.url as string)} />
                     </div>
-                    <span className="underline-offset-2 underline truncate flex-1 min-w-0">{(metadata.fileName as string) || msg.content}</span>
-                  </a>
-                )}
-                {msg.type === "text" && <span className="leading-relaxed whitespace-pre-wrap break-words">{msg.content}</span>}
-              </>
-            )}
+                  )}
+                  {msg.type === "video" && metadata?.url && (
+                    <div className="relative">
+                      <video src={metadata.url as string} controls className="w-full rounded-[10px] max-h-[300px] object-cover" preload="metadata" />
+                    </div>
+                  )}
+                  {msg.type === "audio" && metadata?.url && (
+                    <div className="relative">
+                      <WaveformVisualizer audioUrl={metadata.url as string} isMine={isMine} />
+                    </div>
+                  )}
+                  {msg.type === "file" && metadata?.url && (
+                    <a href={metadata.url as string} target="_blank" rel="noopener noreferrer"
+                      className={`flex items-center gap-2.5 text-sm rounded-lg p-2 ${
+                        isMine ? "bg-primary-foreground/10 hover:bg-primary-foreground/20" : "bg-muted/50 hover:bg-muted"
+                      } transition-colors`}>
+                      <div className={`rounded-lg p-1.5 ${isMine ? "bg-primary-foreground/20" : "bg-primary/10"}`}>
+                        <FileIcon className={`h-4 w-4 ${isMine ? "text-primary-foreground" : "text-primary"}`} />
+                      </div>
+                      <span className="underline-offset-2 underline truncate flex-1 min-w-0">{(metadata.fileName as string) || msg.content}</span>
+                    </a>
+                  )}
+                  {msg.type === "text" && (
+                    <span className="leading-relaxed whitespace-pre-wrap break-all overflow-wrap-anywhere">
+                      {parseTextWithLinks(msg.content).map((part, idx) => {
+                        if (typeof part === "string") {
+                          return <span key={idx}>{part}</span>;
+                        } else {
+                          return (
+                            <a
+                              key={idx}
+                              href={part.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={`underline hover:opacity-80 transition-opacity break-all overflow-wrap-anywhere ${
+                                isMine ? "text-primary-foreground" : "text-primary"
+                              }`}
+                            >
+                              {part.text}
+                            </a>
+                          );
+                        }
+                      })}
+                    </span>
+                  )}
+                </div>
 
-            {editingId !== msg.id && reactions.length > 0 && (
-              <div className={`flex flex-wrap gap-1 mt-1.5 ${isMine ? "justify-end" : "justify-start"}`}>
-                {reactions.map((r) => (
-                  <button key={r.emoji}
-                    onClick={() => onReact(msg.id, r.emoji)}
-                    className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-xs border transition-colors ${
-                      r.users.includes(currentUserId)
-                        ? "bg-primary/20 border-primary/40 text-primary-foreground"
-                        : "bg-background/50 border-border/40 text-muted-foreground"
-                    }`}>
-                    {r.emoji}<span className="text-[10px]">{r.users.length}</span>
-                  </button>
-                ))}
+                  <div className="flex flex-col items-end gap-1">
+                  {editingId !== msg.id && (
+                    <div className={`flex items-center gap-1 ${(msg.type === "image" || msg.type === "video") ? "absolute bottom-2 right-2" : ""}`}>
+                      <div className={`flex items-center gap-0.5 ${(msg.type === "image" || msg.type === "video") ? "rounded-full bg-black/40 backdrop-blur-sm px-1 py-0" : ""}`}>
+                        <span className={`text-[10px] inline-flex items-center font-medium ${
+                          isMine ? "text-primary-foreground/85" : "text-black/80 dark:text-white/80"
+                        } ${(msg.type === "image" || msg.type === "video") ? "text-white" : ""}`}>
+                          {formatTime(msg.createdAt)}
+                        </span>
+                        {msg.editedAt && (
+                          <span className={`text-[9px] italic ${
+                            isMine ? "text-primary-foreground/60" : "text-black/60 dark:text-white/60"
+                          } ${(msg.type === "image" || msg.type === "video") ? "text-white/80" : ""}`}>
+                            edited
+                          </span>
+                        )}
+                        {isMine && <CheckCheck className={`h-3 w-3 ${(msg.type === "image" || msg.type === "video") ? "text-white" : "text-blue-300"}`} />}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
 
-          {editingId !== msg.id && (
-            <div className={`flex items-center gap-1 mt-0.5 ${isMine ? "flex-row-reverse" : ""}`}>
-              <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-all duration-200">
-                <div className="flex items-center gap-0.5 rounded-full bg-background/80 backdrop-blur-sm border border-border/30 shadow-sm px-1 py-0.5">
-                  {QUICK_REACTIONS.slice(0, 4).map((emoji) => (
-                    <button key={emoji} onClick={() => onReact(msg.id, emoji)}
-                      className="h-5 w-5 rounded-full flex items-center justify-center text-xs hover:bg-accent hover:scale-110 transition-all">
-                      {emoji}
-                    </button>
-                  ))}
-                  <div className="w-px h-3 bg-border/40 mx-0.5" />
-                  <button onClick={() => onReply({ id: msg.id, content: msg.content, senderName: msg.senderName })}
-                    className="h-5 w-5 rounded-full flex items-center justify-center hover:bg-accent transition-colors">
-                    <Reply className="h-2.5 w-2.5 text-muted-foreground/70" />
-                  </button>
-                </div>
-              </div>
-              <span className="text-[10px] text-muted-foreground/60 inline-flex items-center gap-1 ml-auto">
-                {formatTime(msg.createdAt)}
-                {msg.editedAt && <span className="italic font-medium text-muted-foreground/40">edited</span>}
-              </span>
-              {isMine && (
-                <CheckCheck className="h-3 w-3 text-blue-400 drop-shadow-sm" />
-              )}
+          {editingId !== msg.id && reactions.length > 0 && (
+            <div className={`absolute ${isMine ? "bottom-0 right-1 translate-y-1/2" : "bottom-0 left-1 translate-y-1/2"} z-[100]`}>
+              <button
+                onClick={() => onReact(msg.id, reactions[0].emoji)}
+                className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-xs border bg-background/95 border-border/50 shadow-md hover:border-border/80 transition-colors"
+              >
+                {reactions.map((r, i) => (
+                  <span key={i} className="text-base -mr-1 last:mr-0">{r.emoji}</span>
+                ))}
+                <span className="text-[10px] text-muted-foreground font-medium ml-1">
+                  {reactions.reduce((sum, r) => sum + r.users.length, 0)}
+                </span>
+              </button>
             </div>
           )}
         </div>

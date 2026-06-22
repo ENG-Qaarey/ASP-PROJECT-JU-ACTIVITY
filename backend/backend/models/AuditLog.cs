@@ -16,6 +16,15 @@ namespace backend.Models
         [ForeignKey(nameof(ActorId))]
         public User? Actor { get; set; }
 
+        [MaxLength(255)]
+        public string? ActorName { get; set; }
+
+        [MaxLength(255)]
+        public string? ActorEmail { get; set; }
+
+        [MaxLength(50)]
+        public string? ActorRole { get; set; }
+
         public Guid? TargetId { get; set; }
 
         [MaxLength(50)]
@@ -27,7 +36,20 @@ namespace backend.Models
         [MaxLength(1000)]
         public string? Message { get; set; }
 
-        public string? Metadata { get; set; }
+        public string? BeforeData { get; set; }
+        public string? AfterData { get; set; }
+
+        [MaxLength(500)]
+        public string? IpAddress { get; set; }
+
+        [MaxLength(500)]
+        public string? UserAgent { get; set; }
+
+        [MaxLength(50)]
+        public string? Status { get; set; } = "success";
+
+        [MaxLength(1000)]
+        public string? ErrorDetails { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }

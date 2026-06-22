@@ -1,4 +1,5 @@
 import { ChevronRight, type LucideIcon } from "lucide-react"
+import { UI } from "@/constants/ui"
 import {
   Collapsible,
   CollapsibleContent,
@@ -32,7 +33,7 @@ export function NavMain({
 }) {
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+      <SidebarGroupLabel>{UI.NAV.MAIN}</SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => {
           const hasSubItems = item.items && item.items.length > 0

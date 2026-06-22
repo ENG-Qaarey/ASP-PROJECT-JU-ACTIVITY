@@ -205,26 +205,34 @@ const AdminActivities = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">Monitor Activities</h1>
-          <p className="text-muted-foreground text-sm md:text-base mt-1">
-            Oversee all scheduled events across the university
-          </p>
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 rounded-[20px] border border-primary/10"
+        >
+          <div className="space-y-1">
+            <h2 className="text-3xl font-bold tracking-tight bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
+              Monitor Activities
+            </h2>
+            <p className="text-muted-foreground mt-1">
+              Keep oversight on every event across JU, track coordinators, and see activity statuses instantly.
+            </p>
+          </div>
+        </motion.div>
 
         {/* Filters */}
-        <Card className="rounded-3xl border border-muted/40 shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:border-primary/30">
+        <Card className="rounded-[20px] border border-muted/40">
            <CardContent className="p-4 md:p-6 flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by title or coordinator..."
-                className="pl-9 h-12 rounded-2xl border-muted/40 focus-visible:border-primary/50 focus-visible:ring-primary/30 transition-all duration-300"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <Button variant="outline" className="w-full sm:w-auto justify-center gap-2 h-12 rounded-2xl border-primary/30 text-primary hover:bg-primary/10 hover:border-primary/50 transition-all duration-300 hover:scale-105 active:scale-95">
+             <div className="relative flex-1">
+               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+               <Input
+                 placeholder="Search by title or coordinator..."
+                 className="pl-9 h-12 rounded-[20px] border-muted/40 focus-visible:border-primary/50 focus-visible:ring-primary/30"
+                 value={searchTerm}
+                 onChange={(e) => setSearchTerm(e.target.value)}
+               />
+             </div>
+             <Button variant="outline" className="w-full sm:w-auto justify-center gap-2 h-12 rounded-[20px] border-primary/30 text-primary hover:bg-primary/10">
                <Filter className="w-4 h-4" />
                Filters
             </Button>
@@ -239,27 +247,26 @@ const AdminActivities = () => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
-              whileHover={{ y: -4 }}
             >
-              <Card className="rounded-3xl shadow-lg border border-muted/40 overflow-hidden transition-all duration-300 hover:shadow-2xl hover:border-primary/30 group">
+               <Card className="rounded-[20px] border border-muted/40 overflow-hidden group">
                 <CardContent className="p-4 md:p-6">
                   {/* Mobile & Small Tablet Layout (xs-md) */}
                   <div className="flex flex-col gap-4 lg:hidden">
                     <div className="flex gap-4 items-start">
-                      <div className="flex flex-col items-center justify-center w-20 h-20 md:w-24 md:h-24 bg-gradient-to-br from-primary/10 to-primary/5 rounded-3xl border border-primary/20 flex-shrink-0 shadow-sm transition-all duration-300 group-hover:from-primary/20 group-hover:to-primary/10 group-hover:shadow-md">
+                      <div className="flex flex-col items-center justify-center w-20 h-20 md:w-24 md:h-24 bg-gradient-to-br from-primary/10 to-primary/5 rounded-[20px] border border-primary/20 flex-shrink-0">
                         <span className="text-xs md:text-sm font-semibold text-primary uppercase">
                           {new Date(activity.date).toLocaleString('default', { month: 'short' })}
                         </span>
-                        <span className="text-2xl md:text-3xl font-bold text-foreground transition-all duration-300 group-hover:text-primary">
+                        <span className="text-2xl md:text-3xl font-bold text-foreground">
                           {new Date(activity.date).getDate()}
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-2 flex-wrap">
-                          <Badge className="capitalize bg-primary/10 text-primary border-primary/20 transition-all duration-300 group-hover:bg-primary/20">{activity.category}</Badge>
+                          <Badge className="capitalize bg-primary/10 text-primary border-primary/20">{activity.category}</Badge>
                           <span className="text-xs text-muted-foreground">• Created by {activity.coordinatorName}</span>
                         </div>
-                        <h3 className="text-lg md:text-xl font-semibold mb-2 truncate transition-all duration-300 group-hover:text-primary">{activity.title}</h3>
+                        <h3 className="text-lg md:text-xl font-semibold mb-2 truncate">{activity.title}</h3>
                         <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Clock className="w-4 h-4" />
@@ -277,7 +284,7 @@ const AdminActivities = () => {
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-2 border-t border-muted/30 pt-4 mt-2">
-                      <Button variant="ghost" size="sm" onClick={() => openDetails(activity)} className="w-full justify-center gap-2 bg-muted/20 hover:bg-muted/40 transition-all duration-300 hover:scale-105 active:scale-95">
+                      <Button variant="ghost" size="sm" onClick={() => openDetails(activity)} className="w-full justify-center gap-2 bg-muted/20 hover:bg-muted/40">
                         <Eye className="w-4 h-4" />
                         Quick View
                       </Button>
@@ -285,19 +292,19 @@ const AdminActivities = () => {
                         variant="ghost"
                         size="sm"
                         onClick={() => navigate(`/admin/activities/${activity.id}`)}
-                        className="w-full justify-center gap-2 bg-muted/20 hover:bg-muted/40 transition-all duration-300 hover:scale-105 active:scale-95"
+                        className="w-full justify-center gap-2 bg-muted/20 hover:bg-muted/40"
                       >
                         <Eye className="w-4 h-4" />
                         View Page
                       </Button>
-                      <Button variant="outline" size="sm" onClick={() => openEditDialog(activity)} className="w-full justify-center gap-2 border-primary/30 text-primary hover:bg-transparent hover:text-black hover:border-primary/30 transition-all duration-300 hover:scale-105 active:scale-95">
+                      <Button variant="outline" size="sm" onClick={() => openEditDialog(activity)} className="w-full justify-center gap-2 border-primary/30 text-primary hover:bg-transparent hover:text-black hover:border-primary/30">
                         <Edit className="w-4 h-4" />
                         Edit
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10 w-full justify-center gap-2 transition-all duration-300 hover:scale-105 active:scale-95"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10 w-full justify-center gap-2"
                         onClick={() => setPendingDelete(activity)}
                       >
                         <Trash2 className="w-4 h-4" />
@@ -308,20 +315,20 @@ const AdminActivities = () => {
 
                   {/* Large Tablet & Desktop Layout (lg+) */}
                   <div className="hidden lg:flex items-center gap-6">
-                    <div className="flex flex-col items-center justify-center w-24 h-24 bg-gradient-to-br from-primary/10 to-primary/5 rounded-3xl border border-primary/20 flex-shrink-0 shadow-sm transition-all duration-300 group-hover:from-primary/20 group-hover:to-primary/10 group-hover:shadow-md">
+                    <div className="flex flex-col items-center justify-center w-24 h-24 bg-gradient-to-br from-primary/10 to-primary/5 rounded-[20px] border border-primary/20 flex-shrink-0">
                       <span className="text-sm font-semibold text-primary uppercase">
                         {new Date(activity.date).toLocaleString('default', { month: 'short' })}
                       </span>
-                      <span className="text-3xl font-bold text-foreground transition-all duration-300 group-hover:text-primary">
+                      <span className="text-3xl font-bold text-foreground">
                         {new Date(activity.date).getDate()}
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-3">
-                        <Badge className="capitalize bg-primary/10 text-primary border-primary/20 transition-all duration-300 group-hover:bg-primary/20">{activity.category}</Badge>
+                        <Badge className="capitalize bg-primary/10 text-primary border-primary/20">{activity.category}</Badge>
                         <span className="text-xs text-muted-foreground">• Created by {activity.coordinatorName}</span>
                       </div>
-                      <h3 className="text-xl font-semibold mb-2 transition-all duration-300 group-hover:text-primary">{activity.title}</h3>
+                      <h3 className="text-xl font-semibold mb-2">{activity.title}</h3>
                       <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                         <span className="flex items-center gap-2">
                           <Clock className="w-4 h-4" />
@@ -338,7 +345,7 @@ const AdminActivities = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-3 border-l border-muted/30 pl-6">
-                      <Button variant="ghost" size="sm" onClick={() => openDetails(activity)} className="gap-2 bg-muted/20 hover:bg-muted/40 transition-all duration-300 hover:scale-105 active:scale-95">
+                      <Button variant="ghost" size="sm" onClick={() => openDetails(activity)} className="gap-2 bg-muted/20 hover:bg-muted/40">
                         <Eye className="w-4 h-4" />
                         Quick View
                       </Button>
@@ -346,19 +353,19 @@ const AdminActivities = () => {
                         variant="ghost"
                         size="sm"
                         onClick={() => navigate(`/admin/activities/${activity.id}`)}
-                        className="gap-2 bg-muted/20 hover:bg-muted/40 transition-all duration-300 hover:scale-105 active:scale-95"
+                        className="gap-2 bg-muted/20 hover:bg-muted/40"
                       >
                         <Eye className="w-4 h-4" />
                         View Page
                       </Button>
-                      <Button variant="outline" size="sm" onClick={() => openEditDialog(activity)} className="gap-2 border-primary/30 text-primary hover:bg-transparent hover:text-black hover:border-primary/30 transition-all duration-300 hover:scale-105 active:scale-95">
+                      <Button variant="outline" size="sm" onClick={() => openEditDialog(activity)} className="gap-2 border-primary/30 text-primary hover:bg-transparent hover:text-black hover:border-primary/30">
                         <Edit className="w-4 h-4" />
                         Edit
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10 gap-2 transition-all duration-300 hover:scale-105 active:scale-95"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10 gap-2"
                         onClick={() => setPendingDelete(activity)}
                       >
                         <Trash2 className="w-4 h-4" />
@@ -395,7 +402,7 @@ const AdminActivities = () => {
       </AlertDialog>
 
       <Dialog open={detailsOpen} onOpenChange={closeDetails}>
-        <DialogContent className="w-[90vw] max-w-2xl overflow-hidden rounded-3xl border border-muted/40 p-0 sm:max-h-[85vh]">
+        <DialogContent className="w-[90vw] max-w-2xl overflow-hidden rounded-[20px] border border-muted/40 p-0 sm:max-h-[85vh]">
           {selectedActivity ? (
             <div className="flex max-h-[85vh] flex-col overflow-hidden">
               <div className="border-b border-muted/40 bg-card/70 p-5">
@@ -420,14 +427,14 @@ const AdminActivities = () => {
 
               <div className="space-y-4 overflow-y-auto px-5 pb-5">
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-xl border border-muted/40 p-4">
+                  <div className="rounded-[20px] border border-muted/40 p-4">
                     <p className="text-xs uppercase text-muted-foreground">Location</p>
                     <div className="mt-1 flex items-center gap-2 text-sm font-medium text-foreground">
                       <MapPin className="h-4 w-4 text-primary" />
                       {selectedActivity.location}
                     </div>
                   </div>
-                  <div className="rounded-xl border border-muted/40 p-4">
+                  <div className="rounded-[20px] border border-muted/40 p-4">
                     <p className="text-xs uppercase text-muted-foreground">Capacity</p>
                     <div className="mt-1 flex items-center justify-between text-sm font-medium text-foreground">
                       <span>
@@ -447,14 +454,14 @@ const AdminActivities = () => {
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-muted/40 bg-muted/20 p-4">
+                <div className="rounded-[20px] border border-muted/40 bg-muted/20 p-4">
                   <p className="text-xs uppercase text-muted-foreground">Overview</p>
                   <p className="mt-2 text-sm leading-relaxed text-muted-foreground/90">
                     {selectedActivity.description || "No description provided."}
                   </p>
                 </div>
 
-                <div className="rounded-xl border border-muted/40 p-4">
+                <div className="rounded-[20px] border border-muted/40 p-4">
                   <p className="text-xs uppercase text-muted-foreground">Quick facts</p>
                   <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
                     <li className="flex items-center gap-2">

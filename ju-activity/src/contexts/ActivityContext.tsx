@@ -9,6 +9,8 @@ import {
 import { useAuth } from "./AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { activitiesApi, applicationsApi, notificationsApi, attendanceApi, categoriesApi } from "@/lib/api";
+import { ROLES } from "@/constants/roles";
+import { STORAGE_KEYS, API } from "@/constants/api";
 
 type CreateActivityInput = Pick<
   Activity,
@@ -73,15 +75,15 @@ export const ActivityProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (!user) return;
 
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
     if (!token) return;
 
     let connection: HubConnection;
 
     const startConnection = async () => {
       connection = new HubConnectionBuilder()
-        .withUrl("/hubs/notifications", {
-          accessTokenFactory: () => localStorage.getItem("token") ?? "",
+        .withUrl(API.HUB_URL, {
+          accessTokenFactory: () => localStorage.getItem(STORAGE_KEYS.TOKEN) ?? "",
         })
         .withAutomaticReconnect({
           nextRetryDelayInMilliseconds: (retryContext) => {
@@ -165,7 +167,7 @@ export const ActivityProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
     const hasToken = Boolean(token);
 
     setIsLoading(true);
@@ -178,16 +180,16 @@ export const ActivityProvider = ({ children }: { children: ReactNode }) => {
       promises.push(activitiesPromise, categoriesPromise);
 
       if (hasToken) {
-        const applicationsParams = user.role === "student"
+        const applicationsParams = user.role === ROLES.STUDENT
           ? { studentId: user.id }
           : undefined;
         const applicationsPromise = applicationsApi.getAll(applicationsParams);
         
-        const notificationsPromise = user.role === "admin"
+        const notificationsPromise = user.role === ROLES.ADMIN
           ? notificationsApi.getAll()
           : notificationsApi.getAll({ recipientId: user.id });
         
-        const attendancePromise = user.role === "student"
+        const attendancePromise = user.role === ROLES.STUDENT
           ? attendanceApi.getAll({ studentId: user.id })
           : Promise.resolve([]);
           
@@ -198,9 +200,9 @@ export const ActivityProvider = ({ children }: { children: ReactNode }) => {
       const [activitiesData, categoriesData, applicationsData, notificationsData, attendanceData] = await Promise.all([
         activitiesPromise,
         categoriesPromise,
-        hasToken ? applicationsApi.getAll(user.role === "student" ? { studentId: user.id } : undefined) : Promise.resolve([]),
-        hasToken ? (user.role === "admin" ? notificationsApi.getAll() : notificationsApi.getAll({ recipientId: user.id })) : Promise.resolve([]),
-        hasToken ? (user.role === "student" ? attendanceApi.getAll({ studentId: user.id }) : Promise.resolve([])) : Promise.resolve([])
+        hasToken ? applicationsApi.getAll(user.role === ROLES.STUDENT ? { studentId: user.id } : undefined) : Promise.resolve([]),
+        hasToken ? (user.role === ROLES.ADMIN ? notificationsApi.getAll() : notificationsApi.getAll({ recipientId: user.id })) : Promise.resolve([]),
+        hasToken ? (user.role === ROLES.STUDENT ? attendanceApi.getAll({ studentId: user.id }) : Promise.resolve([])) : Promise.resolve([])
       ]);
 
       setActivities(activitiesData);
@@ -223,48 +225,34 @@ export const ActivityProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  /** Filter notifications visible to the current user based on their role. */
   const userNotifications = useMemo(() => {
     if (!user) return [];
     return notifications.filter((notif) => {
-      // Students and Coordinators only see notifications addressed to them.
-      if (user.role !== "admin") {
+      if (user.role !== ROLES.ADMIN) {
         return notif.recipientId === user.id;
       }
-
-      // Admins see all notifications in the system EXCEPT student announcements.
-      // This allows them to monitor application activities, approvals, etc.
       return notif.type !== "announcement";
     });
   }, [notifications, user]);
 
-  /** Create a new activity (admin only). Returns the created activity. */
   const createActivity = async (
     activityData: CreateActivityInput
   ): Promise<Activity> => {
     if (!user) {
       throw new Error("You must be logged in to create an activity");
     }
-
-    if (user.role !== "admin") {
+    if (user.role !== ROLES.ADMIN) {
       throw new Error("Only administrators can create activities");
     }
-    
     try {
       const payload = {
         ...activityData,
-        ...(user.role === "admin" && activityData.coordinatorId
+        ...(user.role === ROLES.ADMIN && activityData.coordinatorId
           ? { coordinatorId: activityData.coordinatorId }
           : {}),
       };
       const newActivity = await activitiesApi.create(payload);
-
-    setActivities((prev) => [...prev, newActivity]);
-
-      // Create notifications for all students about the new activity
-      // This would require fetching all students from the backend
-      // For now, we'll skip automatic notifications or implement it separately
-
+      setActivities((prev) => [...prev, newActivity]);
       return newActivity;
     } catch (error: any) {
       throw new Error(error.message || "Failed to create activity");
@@ -373,7 +361,7 @@ export const ActivityProvider = ({ children }: { children: ReactNode }) => {
         prev.map((notif) => {
           if (notif.id === id) {
             // Admins can mark any notification read; others only their own.
-            if (user.role === "admin" || notif.recipientId === user.id) {
+            if (user.role === ROLES.ADMIN || notif.recipientId === user.id) {
               return { ...notif, read: true };
             }
           }

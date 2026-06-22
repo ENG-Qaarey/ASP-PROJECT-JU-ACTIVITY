@@ -9,6 +9,8 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { usersApi } from "@/lib/api";
+import { ROLES } from "@/constants/roles";
+import { USER_STATUS } from "@/constants/status";
 import {
   Dialog,
   DialogContent,
@@ -54,7 +56,7 @@ const ManageUsers = () => {
   });
 
   const loadUsers = useCallback(async () => {
-    if (user?.role !== "admin") return;
+    if (user?.role !== ROLES.ADMIN) return;
 
     setIsLoadingUsers(true);
     setUsersLoadError(null);
@@ -76,7 +78,7 @@ const ManageUsers = () => {
   }, [user?.role]);
 
   useEffect(() => {
-    if (user?.role === "admin") {
+    if (user?.role === ROLES.ADMIN) {
       // Keep legacy context in sync (used elsewhere), but render from backend fetch here.
       refreshUsers();
       loadUsers();
@@ -97,7 +99,7 @@ const ManageUsers = () => {
 
   const handleStatusChange = async (userId: string, currentStatus?: string) => {
     const isSelf = user?.id === userId;
-    const isAdminSelfActive = isSelf && user?.role === 'admin' && (currentStatus ?? 'active') === 'active';
+    const isAdminSelfActive = isSelf && user?.role === ROLES.ADMIN && (currentStatus ?? USER_STATUS.ACTIVE) === 'active';
     if (isAdminSelfActive) {
       toast({
         title: "Not Allowed",
@@ -202,19 +204,21 @@ const ManageUsers = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="gradient-hero rounded-2xl p-6 text-primary-foreground"
+          className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 rounded-[20px] border border-primary/10"
         >
-          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h1 className="text-2xl font-bold">Manage Users</h1>
-              <p className="text-primary-foreground/75">
-                View account details, adjust statuses, and keep the campus directory in sync with JU policies.
-              </p>
-            </div>
+          <div className="space-y-1">
+            <h2 className="text-3xl font-bold tracking-tight bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
+              Manage Users
+            </h2>
+            <p className="text-muted-foreground mt-1">
+              View account details, adjust statuses, and keep the campus directory in sync with JU policies.
+            </p>
+          </div>
+          <div className="flex items-center space-x-2">
             <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
               <DialogTrigger asChild>
-                <Button variant="ghost" className="bg-white/10">
-                  <UserPlus className="w-5 h-5 mr-2" />
+                <Button variant="outline" className="hidden sm:flex rounded-xl bg-background/50 backdrop-blur-sm">
+                  <UserPlus className="mr-2 h-4 w-4" />
                   Create Coordinator
                 </Button>
               </DialogTrigger>
@@ -290,7 +294,7 @@ const ManageUsers = () => {
 
         <div className="space-y-4">
           {usersLoadError && (
-            <Card className="rounded-2xl border-destructive/40">
+            <Card className="rounded-[20px] border-destructive/40">
               <CardContent className="py-6">
                 <p className="font-semibold">Failed to load users from backend</p>
                 <p className="text-sm text-muted-foreground mt-1">{usersLoadError}</p>
@@ -304,7 +308,7 @@ const ManageUsers = () => {
           )}
 
           {isLoadingUsers && accounts.length === 0 && (
-            <Card className="rounded-2xl">
+            <Card className="rounded-[20px]">
               <CardContent className="py-10 text-center text-muted-foreground">
                 Loading users...
               </CardContent>
@@ -312,7 +316,7 @@ const ManageUsers = () => {
           )}
 
           {!isLoadingUsers && !usersLoadError && accounts.length === 0 && (
-            <Card className="rounded-2xl">
+            <Card className="rounded-[20px]">
               <CardContent className="py-10 text-center text-muted-foreground">
                 No users found.
               </CardContent>
@@ -320,7 +324,7 @@ const ManageUsers = () => {
           )}
 
           {accounts.map((account) => (
-            <Card key={account.id} className="rounded-2xl shadow-xl">
+            <Card key={account.id} className="rounded-[20px] shadow-xl">
               <CardContent className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
                   <div className="flex items-center gap-3">
@@ -340,8 +344,8 @@ const ManageUsers = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Badge className={statusStyles[account.status ?? "active"]}>
-                    {account.status ?? "active"}
+                  <Badge className={statusStyles[account.status ?? USER_STATUS.ACTIVE]}>
+                    {account.status ?? USER_STATUS.ACTIVE}
                   </Badge>
                   <Button
                     variant="outline"
@@ -350,7 +354,7 @@ const ManageUsers = () => {
                     onClick={() => handleStatusChange(account.id, account.status)}
                     disabled={
                       isUpdatingUserId === account.id ||
-                      (account.id === user?.id && account.role === 'admin' && (account.status ?? 'active') === 'active')
+                      (account.id === user?.id && account.role === ROLES.ADMIN && (account.status ?? USER_STATUS.ACTIVE) === 'active')
                     }
                   >
                     <CheckCircle className="w-4 h-4 text-success" />
@@ -360,7 +364,7 @@ const ManageUsers = () => {
                       ? "Deactivate"
                       : "Activate"}
                   </Button>
-                  {account.role === "coordinator" && account.id !== user?.id && (
+                  {account.role === ROLES.COORDINATOR && account.id !== user?.id && (
                     <Button
                       variant="outline"
                       size="sm"

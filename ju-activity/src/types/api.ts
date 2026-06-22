@@ -8,6 +8,7 @@ export interface ApiResponse {
 export interface AuthResponse extends ApiResponse {
   user: User;
   token?: string | null;
+  refreshToken?: string | null;
 }
 
 export interface User {

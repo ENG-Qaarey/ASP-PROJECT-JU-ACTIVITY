@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { ChevronDown, MessageCircle } from "lucide-react";
 import { messagesApi } from "@/lib/api";
+import { validateMedia } from "@/lib/media-validation";
 import { useAuth } from "@/contexts/AuthContext";
 import ChatRoomSkeleton from "@/components/chat/ChatRoomSkeleton";
 import ChatHeader from "@/components/chat/ChatHeader";
@@ -15,8 +16,8 @@ import ChatInput from "@/components/chat/ChatInput";
 import MembersPanel from "@/components/chat/MembersPanel";
 import { ChatMessage, Member, ReplyTo } from "@/types/chat";
 import { groupByDate, formatTime } from "@/lib/format";
-
-const PAGE_SIZE = 50;
+import { ROLES } from "@/constants/roles";
+import { API, STORAGE_KEYS } from "@/constants/api";
 
 interface ChatRoomViewProps {
   activityId: string;
@@ -26,7 +27,7 @@ interface ChatRoomViewProps {
 export default function ChatRoomView({ activityId, activityTitle }: ChatRoomViewProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const rolePrefix = user?.role === "admin" ? "admin" : user?.role === "coordinator" ? "coordinator" : "student";
+  const rolePrefix = user?.role === ROLES.ADMIN ? ROLES.ADMIN : user?.role === ROLES.COORDINATOR ? ROLES.COORDINATOR : ROLES.STUDENT;
   const currentUserId = user?.id || "";
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -100,13 +101,13 @@ export default function ChatRoomView({ activityId, activityTitle }: ChatRoomView
   const loadMessages = async (append = false) => {
     if (!activityId) return;
     try {
-      const data = await messagesApi.getByActivity(activityId, offsetRef.current, PAGE_SIZE);
+      const data = await messagesApi.getByActivity(activityId, offsetRef.current, API.PAGE_SIZE);
       if (append) {
         const prevHeight = viewportRef.current?.scrollHeight || 0;
         setMessages((prev) => [...data.messages, ...prev]);
         setTotal(data.total);
-        setHasMore(offsetRef.current + PAGE_SIZE < data.total);
-        offsetRef.current += PAGE_SIZE;
+        setHasMore(offsetRef.current + API.PAGE_SIZE < data.total);
+        offsetRef.current += API.PAGE_SIZE;
         requestAnimationFrame(() => {
           if (viewportRef.current) viewportRef.current.scrollTop = viewportRef.current.scrollHeight - prevHeight;
         });
@@ -149,12 +150,12 @@ export default function ChatRoomView({ activityId, activityTitle }: ChatRoomView
       loadMembers();
       messagesApi.markAsRead(activityId).catch(() => {});
 
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
       if (!token) return;
 
       const connection = new HubConnectionBuilder()
         .withUrl("/hubs/notifications", {
-          accessTokenFactory: () => localStorage.getItem("token") ?? "",
+          accessTokenFactory: () => localStorage.getItem(STORAGE_KEYS.TOKEN) ?? "",
         })
         .withAutomaticReconnect({
           nextRetryDelayInMilliseconds: (retryContext) => {
@@ -312,6 +313,11 @@ export default function ChatRoomView({ activityId, activityTitle }: ChatRoomView
     if (!file || !activityId) return;
     setUploading(true);
     try {
+      const validation = await validateMedia(file);
+      if (!validation.valid) {
+        toast({ title: "Invalid File", description: validation.message, variant: "destructive" });
+        return;
+      }
       const result = await messagesApi.upload(activityId, file);
       const isImage = result.contentType.startsWith("image/");
       const isVideo = result.contentType.startsWith("video/");

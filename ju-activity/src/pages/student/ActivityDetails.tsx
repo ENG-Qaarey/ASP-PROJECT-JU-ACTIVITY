@@ -6,6 +6,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useActivity } from "@/contexts/ActivityContext";
 import { toast } from "@/hooks/use-toast";
 import { activitiesApi, applicationsApi } from "@/lib/api";
+import { ROUTES } from "@/constants/routes";
+import { ROLES } from "@/constants/roles";
+import { ACTIVITY_STATUS } from "@/constants/status";
 import {
   Calendar,
   Clock,
@@ -90,7 +93,7 @@ const ActivityDetails = () => {
           <Button
             variant="ghost"
             className="mt-4"
-            onClick={() => navigate("/student/activities")}
+            onClick={() => navigate(ROUTES.STUDENT.ACTIVITIES)}
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Activities
@@ -129,7 +132,7 @@ const ActivityDetails = () => {
       return;
     }
 
-    if (activity?.status === "completed") {
+    if (activity?.status === ACTIVITY_STATUS.COMPLETED) {
       toast({
         title: "Activity completed",
         description: "This activity is completed. You can no longer apply.",
@@ -155,7 +158,7 @@ const ActivityDetails = () => {
         description: "Your application has been submitted successfully.",
       });
 
-      navigate("/student/applications");
+      navigate(ROUTES.STUDENT.APPLICATIONS);
     } catch (error: any) {
       const message = error?.message || "Failed to submit application";
       toast({
@@ -171,7 +174,7 @@ const ActivityDetails = () => {
   const spotsRemaining = activity.capacity - activity.enrolled;
   const isFull = spotsRemaining <= 0;
   const hasApplied = Boolean(user && activity?.id && getApplicationsByStudent(user.id).some((a) => a.activityId === activity.id));
-  const isCompleted = activity?.status === "completed";
+  const isCompleted = activity?.status === ACTIVITY_STATUS.COMPLETED;
 
   return (
     <DashboardLayout>
@@ -180,9 +183,9 @@ const ActivityDetails = () => {
         <Button
           variant="ghost"
           onClick={() => {
-            if (user?.role === "admin") navigate("/admin/activities");
-            else if (user?.role === "coordinator") navigate("/coordinator/activities");
-            else navigate("/student/activities");
+            if (user?.role === ROLES.ADMIN) navigate(ROUTES.ADMIN.ACTIVITIES);
+            else if (user?.role === ROLES.COORDINATOR) navigate(ROUTES.COORDINATOR.ACTIVITIES);
+            else navigate(ROUTES.STUDENT.ACTIVITIES);
           }}
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -293,7 +296,7 @@ const ActivityDetails = () => {
               </div>
 
               {/* Apply Button - Only for students */}
-              {user?.role === "student" && (
+              {user?.role === ROLES.STUDENT && (
                 <Button
                   size="lg"
                   className="w-full md:w-auto"

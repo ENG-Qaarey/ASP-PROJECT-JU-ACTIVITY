@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Play, Pause } from "lucide-react";
+import { Play, Pause, Mic } from "lucide-react";
 
 interface WaveformVisualizerProps {
   audioUrl: string;
@@ -123,26 +123,31 @@ export default function WaveformVisualizer({
   const progress = duration > 0 ? currentTime / duration : 0;
 
   return (
-    <div className={`flex items-center gap-2 py-1 ${isMine ? "flex-row" : ""}`}>
+    <div className="flex items-center gap-2">
       <button onClick={togglePlay}
         className={`rounded-full p-1.5 shrink-0 transition-all hover:scale-110 ${
           isMine ? "bg-white/20 hover:bg-white/30" : "bg-primary/10 hover:bg-primary/20"
         }`}>
         {actualPlaying
-          ? <Pause className={`h-3.5 w-3.5 ${isMine ? "text-white" : "text-primary"}`} />
-          : <Play className={`h-3.5 w-3.5 ${isMine ? "text-white" : "text-primary"}`} />
+          ? <Pause className={`h-4 w-4 ${isMine ? "text-white" : "text-primary"}`} />
+          : <Play className={`h-4 w-4 ${isMine ? "text-white" : "text-primary"}`} />
         }
       </button>
-      <div className="relative flex-1 h-8">
-        <canvas ref={canvasRef} width={120} height={32} className="w-full h-full rounded" />
+      <span className={`text-xs font-medium tabular-nums ${
+        isMine ? "text-white/80" : "text-black dark:text-white"
+      }`}>
+        {formatDur(actualPlaying ? currentTime : duration)}
+      </span>
+      <div className="relative flex-1 h-8 mx-1">
+        <canvas ref={canvasRef} width={140} height={32} className="w-full h-full rounded" />
         {progress > 0 && (
-          <div className="absolute bottom-0 left-0 h-0.5 bg-primary/40 rounded-full"
+          <div className="absolute bottom-0 left-0 h-0.5 bg-primary/50 rounded-full"
             style={{ width: `${progress * 100}%` }} />
         )}
       </div>
-      <span className={`text-[11px] font-medium tabular-nums ${isMine ? "text-white/80" : "text-muted-foreground"}`}>
-        {formatDur(actualPlaying ? currentTime : duration)}
-      </span>
+      <Mic className={`h-4 w-4 ${
+        isMine ? "text-white/60" : "text-black/60 dark:text-white/60"
+      }`} />
     </div>
   );
 }

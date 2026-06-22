@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Home, ArrowLeft } from "lucide-react";
+import { ROUTES } from "@/constants/routes";
 
 const NotFound = () => {
   const navigate = useNavigate();
@@ -18,7 +19,7 @@ const NotFound = () => {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Go Back
           </Button>
-          <Button onClick={() => navigate("/")}>
+          <Button onClick={() => navigate(ROUTES.HOME)}>
             <Home className="w-4 h-4 mr-2" />
             Home
           </Button>

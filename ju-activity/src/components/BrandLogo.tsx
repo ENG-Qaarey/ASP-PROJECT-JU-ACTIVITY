@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { UI } from "@/constants/ui";
 
 type BrandLogoProps = {
   subtitle?: string;
@@ -32,7 +33,7 @@ export const BrandLogo = ({
   >
     <img
       src="/ju-icon.svg"
-      alt="JU-AMS logo"
+      alt={`${UI.APP_NAME} logo`}
       width={size}
       height={size}
       style={{ width: size, height: size }}
@@ -50,7 +51,7 @@ export const BrandLogo = ({
           orientation === "vertical" && "items-center text-center",
         )}
       >
-        <span className={cn("font-bold tracking-tight", titleClassName)}>JU-AMS</span>
+        <span className={cn("font-bold tracking-tight", titleClassName)}>{UI.APP_NAME}</span>
         {subtitle && (
           <span className={cn("text-xs", subtitleClassName)}>{subtitle}</span>
         )}

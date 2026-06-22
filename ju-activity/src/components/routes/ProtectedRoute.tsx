@@ -2,6 +2,8 @@ import { ReactElement } from "react";
 import { useLocation, Navigate } from "react-router-dom";
 import { useAuth, UserRole } from "@/contexts/AuthContext";
 import { Loading } from "@/components/ui/loading";
+import { ROLES } from "@/constants/roles";
+import { ROUTES } from "@/constants/routes";
 
 interface ProtectedRouteProps {
   children: ReactElement;
@@ -18,7 +20,7 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
 
   // If not authenticated, redirect to login
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to={ROUTES.LOGIN} state={{ from: location }} replace />;
   }
 
   // If user is not loaded yet, show loading spinner
@@ -30,13 +32,11 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
   // BUT: Admins should have access to everything, so we check if user is admin first
   if (allowedRoles && allowedRoles.length > 0) {
     // Admins have access to all routes
-    if (user.role === "admin") {
+    if (user.role === ROLES.ADMIN) {
       return children;
     }
-    
-    // For non-admins, check if their role is in allowedRoles
     if (!allowedRoles.includes(user.role)) {
-      return <Navigate to="/access-denied" replace />;
+      return <Navigate to={ROUTES.HOME} replace />;
     }
   }
 

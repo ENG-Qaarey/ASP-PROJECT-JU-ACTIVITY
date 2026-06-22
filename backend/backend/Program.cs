@@ -65,6 +65,8 @@ builder.Services.AddAuthorization();
 builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<EmailService>();
 builder.Services.AddSingleton<ReadStatusTracker>();
+builder.Services.AddScoped<AuditLogService>();
+builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddCors(options =>
 {

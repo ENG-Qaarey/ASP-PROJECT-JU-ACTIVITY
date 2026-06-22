@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useNavigate } from "react-router-dom";
+import { ROUTES } from "@/constants/routes";
 import { toast } from "@/hooks/use-toast";
 import {
   Calendar,
@@ -82,7 +83,7 @@ const CreateActivity = () => {
         description: "Your activity has been published successfully.",
       });
 
-      navigate("/coordinator/activities");
+      navigate(ROUTES.COORDINATOR.ACTIVITIES);
     } catch (err: any) {
       toast({
         title: "Create Failed",
@@ -232,7 +233,7 @@ const CreateActivity = () => {
                     type="button"
                     variant="outline"
                     className="flex-1"
-                    onClick={() => navigate("/coordinator/activities")}
+                    onClick={() => navigate(ROUTES.COORDINATOR.ACTIVITIES)}
                   >
                     Cancel
                   </Button>

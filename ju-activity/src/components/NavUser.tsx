@@ -25,6 +25,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { UI } from "@/constants/ui"
 
 interface NavUserProps {
   user: {
@@ -81,21 +82,21 @@ export function NavUser({ user, onLogout, onNavigate }: NavUserProps) {
             <DropdownMenuGroup>
               <DropdownMenuItem onClick={() => onNavigate?.("/profile")}>
                 <BadgeCheck />
-                Account
+                {UI.NAV.ACCOUNT}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onNavigate?.("/profile")}>
                 <CreditCard />
-                Settings
+                {UI.NAV.SETTINGS}
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <Bell />
-                Notifications
+                {UI.NAV.NOTIFICATIONS}
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={onLogout}>
               <LogOut />
-              Log out
+              Logout
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

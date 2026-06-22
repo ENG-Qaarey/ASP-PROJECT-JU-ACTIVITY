@@ -38,6 +38,9 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { NavMainItem } from "@/components/NavMain";
+import { ROLES } from "@/constants/roles";
+import { ROUTES } from "@/constants/routes";
+import { UI } from "@/constants/ui";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -62,83 +65,83 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
   const handleLogout = () => {
     logout();
-    navigate("/");
+    navigate(ROUTES.HOME);
   };
 
   useEffect(() => setMounted(true), []);
 
   const getNavMain = (role: string): NavMainItem[] => {
-    if (role === "admin") {
+    if (role === ROLES.ADMIN) {
       return [
         {
           title: "Dashboard",
-          url: "/admin/dashboard",
+          url: ROUTES.ADMIN.DASHBOARD,
           icon: LayoutDashboard,
-          isActive: location.pathname === "/admin/dashboard",
+          isActive: location.pathname === ROUTES.ADMIN.DASHBOARD,
         },
         {
           title: "Activities",
-          url: "/admin/activities",
+          url: ROUTES.ADMIN.ACTIVITIES,
           icon: Activity,
           isActive: location.pathname.startsWith("/admin/activities") || location.pathname.startsWith("/admin/create-activity") || location.pathname.startsWith("/admin/monitor"),
           items: [
-            { title: "Create Activity", url: "/admin/create-activity" },
-            { title: "View All", url: "/admin/activities" },
-            { title: "Monitor", url: "/admin/monitor-activities" },
+            { title: "Create Activity", url: ROUTES.ADMIN.CREATE_ACTIVITY },
+            { title: "View All", url: ROUTES.ADMIN.ACTIVITIES },
+            { title: "View Activities", url: ROUTES.ADMIN.MONITOR_ACTIVITIES },
           ],
         },
         {
           title: "Users",
-          url: "/admin/users",
+          url: ROUTES.ADMIN.USERS,
           icon: Users,
           isActive: location.pathname.startsWith("/admin/users") || location.pathname.startsWith("/admin/manage-users") || location.pathname.startsWith("/admin/manage-roles"),
           items: [
-            { title: "Directory", url: "/admin/users" },
-            { title: "Manage Users", url: "/admin/manage-users" },
-            { title: "Roles", url: "/admin/manage-roles" },
+            { title: "Directory", url: ROUTES.ADMIN.USERS },
+            { title: "Manage Users", url: ROUTES.ADMIN.MANAGE_USERS },
+            { title: "Roles", url: ROUTES.ADMIN.MANAGE_ROLES },
           ],
         },
         {
           title: "Admin",
-          url: "/admin/applications",
+          url: ROUTES.ADMIN.APPLICATIONS,
           icon: Settings2,
           items: [
-            { title: "Applications", url: "/admin/applications" },
-            { title: "Reports", url: "/admin/reports-advanced" },
-            { title: "Audit Logs", url: "/admin/logs" },
-            { title: "System Logs", url: "/admin/system-logs" },
+            { title: "Applications", url: ROUTES.ADMIN.APPLICATIONS },
+            { title: "Reports", url: ROUTES.ADMIN.REPORTS },
+            { title: "Audit Logs", url: ROUTES.ADMIN.LOGS },
+
           ],
         },
       ];
     }
 
-    if (role === "coordinator") {
+    if (role === ROLES.COORDINATOR) {
       return [
         {
           title: "Dashboard",
-          url: "/coordinator/dashboard",
+          url: ROUTES.COORDINATOR.DASHBOARD,
           icon: LayoutDashboard,
-          isActive: location.pathname === "/coordinator/dashboard",
+          isActive: location.pathname === ROUTES.COORDINATOR.DASHBOARD,
         },
         {
           title: "Activities",
-          url: "/coordinator/activities",
+          url: ROUTES.COORDINATOR.ACTIVITIES,
           icon: ClipboardList,
           isActive: location.pathname.startsWith("/coordinator/activities"),
           items: [
-            { title: "Manage", url: "/coordinator/activities" },
-            { title: "Create", url: "/coordinator/activities/new" },
+            { title: "Manage", url: ROUTES.COORDINATOR.ACTIVITIES },
+            { title: "Create", url: ROUTES.COORDINATOR.ACTIVITIES + "/new" },
           ],
         },
         {
           title: "Applications",
-          url: "/coordinator/applications",
+          url: ROUTES.COORDINATOR.APPLICATIONS,
           icon: FileText,
           isActive: location.pathname.startsWith("/coordinator/applications"),
         },
         {
           title: "Attendance",
-          url: "/coordinator/attendance",
+          url: ROUTES.COORDINATOR.ATTENDANCE,
           icon: CheckSquare,
           isActive: location.pathname.startsWith("/coordinator/attendance"),
         },
@@ -148,32 +151,35 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     return [
       {
         title: "Dashboard",
-        url: "/student/dashboard",
+        url: ROUTES.STUDENT.DASHBOARD,
         icon: LayoutDashboard,
-        isActive: location.pathname === "/student/dashboard",
+        isActive: location.pathname === ROUTES.STUDENT.DASHBOARD,
       },
       {
         title: "Activities",
-        url: "/student/activities",
+        url: ROUTES.STUDENT.ACTIVITIES,
         icon: Calendar,
         isActive: location.pathname.startsWith("/student/activities"),
       },
       {
         title: "My Applications",
-        url: "/student/applications",
+        url: ROUTES.STUDENT.APPLICATIONS,
         icon: FileText,
         isActive: location.pathname.startsWith("/student/applications"),
       },
     ];
   };
 
-  const getNavSecondary = (role: string): SecondaryNavItem[] => [
-    { name: "Chat", url: `/${role}/chat`, icon: MessageCircle },
-    { name: "Notifications", url: `/${role}/notifications`, icon: Bell },
-    { name: "Calendar", url: `/${role}/calendar`, icon: Calendar },
-  ];
+  const getNavSecondary = (role: string): SecondaryNavItem[] => {
+    const paths = role === ROLES.ADMIN ? ROUTES.ADMIN : role === ROLES.COORDINATOR ? ROUTES.COORDINATOR : ROUTES.STUDENT;
+    return [
+      { name: "Chat", url: paths.CHAT, icon: MessageCircle },
+      { name: "Notifications", url: paths.NOTIFICATIONS, icon: Bell },
+      { name: "Calendar", url: paths.CALENDAR, icon: Calendar },
+    ];
+  };
 
-  const role = user?.role ?? "student";
+  const role = user?.role ?? ROLES.STUDENT;
   const navMain = getNavMain(role);
   const navSecondary = getNavSecondary(role);
 
@@ -208,7 +214,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               <span className="text-sm font-semibold text-foreground truncate">{user?.name || "User"}</span>
               <span className="flex items-center gap-1 text-[11px] font-medium text-emerald-500">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                <span className="truncate">Online</span>
+                <span className="truncate">{UI.CHAT.ONLINE}</span>
               </span>
             </div>
           </div>
@@ -217,7 +223,10 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => onNavigate(`/${user?.role}/notifications`)}
+              onClick={() => {
+                const path = role === ROLES.ADMIN ? ROUTES.ADMIN.NOTIFICATIONS : role === ROLES.COORDINATOR ? ROUTES.COORDINATOR.NOTIFICATIONS : ROUTES.STUDENT.NOTIFICATIONS;
+                onNavigate(path);
+              }}
               className="relative rounded-full hover:bg-accent h-9 w-9"
             >
               <Bell className="w-[18px] h-[18px]" />
@@ -240,11 +249,17 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem onClick={() => onNavigate(`/${user?.role}/profile`)}>
+                <DropdownMenuItem onClick={() => {
+                  const p = role === ROLES.ADMIN ? ROUTES.ADMIN.PROFILE : role === ROLES.COORDINATOR ? ROUTES.COORDINATOR.PROFILE : ROUTES.STUDENT.PROFILE;
+                  onNavigate(p);
+                }}>
                   <User className="w-4 h-4 mr-2" />
                   Profile
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onNavigate(`/${user?.role}/change-password`)}>
+                <DropdownMenuItem onClick={() => {
+                  const p = role === ROLES.ADMIN ? ROUTES.ADMIN.CHANGE_PASSWORD : role === ROLES.COORDINATOR ? ROUTES.COORDINATOR.CHANGE_PASSWORD : ROUTES.STUDENT.CHANGE_PASSWORD;
+                  onNavigate(p);
+                }}>
                   <Settings className="w-4 h-4 mr-2" />
                   Change Password
                 </DropdownMenuItem>
