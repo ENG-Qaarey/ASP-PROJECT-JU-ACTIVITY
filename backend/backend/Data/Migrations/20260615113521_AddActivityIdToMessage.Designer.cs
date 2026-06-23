@@ -5,15 +5,15 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using backend.Models;
+using backend.Data;
 
 #nullable disable
 
-namespace backend.Models.Migrations
+namespace backend.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260615092309_Initial")]
-    partial class Initial
+    [Migration("20260615113521_AddActivityIdToMessage")]
+    partial class AddActivityIdToMessage
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -514,16 +514,6 @@ namespace backend.Models.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
-                    b.Property<DateTime?>("EmailVerificationCodeExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("EmailVerificationCodeHash")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<bool>("EmailVerified")
-                        .HasColumnType("boolean");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -666,9 +656,10 @@ namespace backend.Models.Migrations
 
             modelBuilder.Entity("backend.Models.Message", b =>
                 {
-                    b.HasOne("backend.Models.Activity", null)
+                    b.HasOne("backend.Models.Activity", "Activity")
                         .WithMany("Messages")
-                        .HasForeignKey("ActivityId");
+                        .HasForeignKey("ActivityId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("backend.Models.User", "Receiver")
                         .WithMany("ReceivedMessages")
@@ -680,6 +671,8 @@ namespace backend.Models.Migrations
                         .HasForeignKey("SenderId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Activity");
 
                     b.Navigation("Receiver");
 

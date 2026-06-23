@@ -12,7 +12,7 @@ namespace backend.Models
         [Required, MaxLength(200)]
         public string Title { get; set; } = string.Empty;
 
-        [MaxLength(2000)]
+        [MaxLength(10000)]
         public string? Description { get; set; }
 
         public DateOnly Date { get; set; }

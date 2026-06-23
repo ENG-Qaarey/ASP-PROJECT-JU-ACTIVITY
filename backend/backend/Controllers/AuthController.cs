@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using backend.DTOs;
 using backend.Models;
+using backend.Data;
 using backend.Models.Enums;
 using backend.Services;
 

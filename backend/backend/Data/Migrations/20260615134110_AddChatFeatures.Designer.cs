@@ -5,11 +5,11 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using backend.Models;
+using backend.Data;
 
 #nullable disable
 
-namespace backend.Models.Migrations
+namespace backend.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
     [Migration("20260615134110_AddChatFeatures")]

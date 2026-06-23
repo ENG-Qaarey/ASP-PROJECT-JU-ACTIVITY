@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using backend.DTOs;
 using backend.Hubs;
 using backend.Models;
+using backend.Data;
 using backend.Services;
 using backend.Models.Enums;
 

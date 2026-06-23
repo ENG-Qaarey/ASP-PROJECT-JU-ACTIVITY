@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Text;
 using System.Text.Json;
 using backend.Models;
+using backend.Data;
 
 namespace backend.Controllers
 {

@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Text.Json;
 using backend.Models;
+using backend.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace backend.Services

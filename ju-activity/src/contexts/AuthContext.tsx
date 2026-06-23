@@ -1,7 +1,7 @@
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
-import { authApi, setTokenProvider, usersApi, ApiError, addApiErrorHandler, set401Handler } from "@/lib/api";
+import { authApi, usersApi } from "@/lib/api";
 import { User } from "@/types/api";
 import { ROLES } from "@/constants/roles";
 import { STORAGE_KEYS } from "@/constants/api";
@@ -70,10 +70,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
   const [backendRestoreCount, setBackendRestoreCount] = useState(0);
 
   useEffect(() => {
-    setTokenProvider(async () => {
-      return localStorage.getItem(STORAGE_KEYS.TOKEN);
-    });
-
     const loadUserFromStorage = async () => {
       try {
         const storedUser = localStorage.getItem(STORAGE_KEYS.USER);
@@ -140,27 +136,19 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
     }
   }, [user]);
 
-  /** Detect backend outages via network errors and handle 401 Unauthorized. */
+  /** Detect when the backend is down (network errors) */
   useEffect(() => {
-    const removeHandler = addApiErrorHandler((error) => {
-      if (error.status === 0) {
+    // Listen for network errors on the window
+    const handleError = () => {
+      // If we were authenticated and requests start failing, mark backend as down
+      if (authState === "authenticated") {
         setBackendIsDown(true);
       }
-    });
-    
-    set401Handler(() => {
-      localStorage.removeItem(STORAGE_KEYS.USER);
-      localStorage.removeItem(STORAGE_KEYS.TOKEN);
-      setUser(null);
-      setAuthState('anonymous');
-      navigate(ROUTES.HOME);
-    });
-
-    return () => {
-      removeHandler();
-      set401Handler(null);
     };
-  }, [navigate]);
+
+    window.addEventListener("offline", handleError);
+    return () => window.removeEventListener("offline", handleError);
+  }, [authState]);
 
   /** Poll the backend every 3s while it's down; on recovery, increment backendRestoreCount. */
   useEffect(() => {
@@ -180,7 +168,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
           }
         }
       } catch (error) {
-        if (error instanceof ApiError && error.status === 401) {
+        const errorMessage = error instanceof Error ? error.message : "";
+        // If session expired (401), try refreshing the token
+        if (errorMessage.includes("Session expired")) {
           const storedRefreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
           if (storedRefreshToken) {
             try {
@@ -204,9 +194,11 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
                 return;
               }
             } catch {
+              // Refresh failed too
             }
           }
 
+          // Could not refresh - clear session
           setBackendIsDown(false);
           setUser(null);
           setAuthState("anonymous");

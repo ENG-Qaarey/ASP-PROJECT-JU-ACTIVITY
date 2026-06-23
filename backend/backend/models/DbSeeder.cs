@@ -1,3 +1,4 @@
+using backend.Data;
 using backend.Models.Enums;
 
 namespace backend.Models

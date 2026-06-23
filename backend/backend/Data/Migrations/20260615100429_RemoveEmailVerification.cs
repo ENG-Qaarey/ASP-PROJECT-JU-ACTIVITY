@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace backend.Models.Migrations
+namespace backend.Data.Migrations
 {
     /// <inheritdoc />
     public partial class RemoveEmailVerification : Migration

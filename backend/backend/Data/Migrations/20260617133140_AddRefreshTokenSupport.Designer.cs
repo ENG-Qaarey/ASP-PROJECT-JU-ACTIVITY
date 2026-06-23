@@ -5,15 +5,15 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using backend.Models;
+using backend.Data;
 
 #nullable disable
 
-namespace backend.Models.Migrations
+namespace backend.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260621074315_AddMissingAuditLogColumns")]
-    partial class AddMissingAuditLogColumns
+    [Migration("20260617133140_AddRefreshTokenSupport")]
+    partial class AddRefreshTokenSupport
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -102,6 +102,31 @@ namespace backend.Models.Migrations
                     b.HasIndex("CoordinatorId");
 
                     b.ToTable("Activities");
+                });
+
+            modelBuilder.Entity("backend.Models.ActivityReadStatus", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ActivityId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("LastReadAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActivityId");
+
+                    b.HasIndex("UserId", "ActivityId")
+                        .IsUnique();
+
+                    b.ToTable("ActivityReadStatuses");
                 });
 
             modelBuilder.Entity("backend.Models.AdminProfile", b =>
@@ -232,26 +257,8 @@ namespace backend.Models.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<string>("ActorEmail")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
                     b.Property<Guid?>("ActorId")
                         .HasColumnType("uuid");
-
-                    b.Property<string>("ActorName")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<string>("ActorRole")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<string>("AfterData")
-                        .HasColumnType("text");
-
-                    b.Property<string>("BeforeData")
-                        .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -264,28 +271,15 @@ namespace backend.Models.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<string>("ErrorDetails")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<string>("IpAddress")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
                     b.Property<string>("Message")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
-                    b.Property<string>("Status")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                    b.Property<string>("Metadata")
+                        .HasColumnType("text");
 
                     b.Property<Guid?>("TargetId")
                         .HasColumnType("uuid");
-
-                    b.Property<string>("UserAgent")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
 
                     b.HasKey("Id");
 
@@ -510,6 +504,30 @@ namespace backend.Models.Migrations
                     b.ToTable("PendingUsers");
                 });
 
+            modelBuilder.Entity("backend.Models.PushToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Token")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("PushTokens");
+                });
+
             modelBuilder.Entity("backend.Models.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
@@ -617,6 +635,25 @@ namespace backend.Models.Migrations
                         .IsRequired();
 
                     b.Navigation("Coordinator");
+                });
+
+            modelBuilder.Entity("backend.Models.ActivityReadStatus", b =>
+                {
+                    b.HasOne("backend.Models.Activity", "Activity")
+                        .WithMany()
+                        .HasForeignKey("ActivityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("backend.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Activity");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("backend.Models.AdminProfile", b =>
@@ -748,6 +785,17 @@ namespace backend.Models.Migrations
                     b.Navigation("Recipient");
                 });
 
+            modelBuilder.Entity("backend.Models.PushToken", b =>
+                {
+                    b.HasOne("backend.Models.User", "User")
+                        .WithMany("PushTokens")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("backend.Models.RefreshToken", b =>
                 {
                     b.HasOne("backend.Models.User", "User")
@@ -785,6 +833,8 @@ namespace backend.Models.Migrations
                     b.Navigation("MarkedAttendances");
 
                     b.Navigation("Notifications");
+
+                    b.Navigation("PushTokens");
 
                     b.Navigation("ReceivedMessages");
 

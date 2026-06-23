@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace backend.Models.Migrations
+namespace backend.Data.Migrations
 {
     /// <inheritdoc />
     public partial class AddMissingAuditLogColumns : Migration

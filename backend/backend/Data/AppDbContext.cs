@@ -1,7 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using backend.Models.Enums;
+using backend.Models;
 
-namespace backend.Models
+namespace backend.Data
 {
     public class AppDbContext : DbContext
     {

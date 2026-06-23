@@ -5,15 +5,15 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using backend.Models;
+using backend.Data;
 
 #nullable disable
 
-namespace backend.Models.Migrations
+namespace backend.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260617133140_AddRefreshTokenSupport")]
-    partial class AddRefreshTokenSupport
+    [Migration("20260615100429_RemoveEmailVerification")]
+    partial class RemoveEmailVerification
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -102,31 +102,6 @@ namespace backend.Models.Migrations
                     b.HasIndex("CoordinatorId");
 
                     b.ToTable("Activities");
-                });
-
-            modelBuilder.Entity("backend.Models.ActivityReadStatus", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ActivityId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("LastReadAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ActivityId");
-
-                    b.HasIndex("UserId", "ActivityId")
-                        .IsUnique();
-
-                    b.ToTable("ActivityReadStatuses");
                 });
 
             modelBuilder.Entity("backend.Models.AdminProfile", b =>
@@ -356,9 +331,6 @@ namespace backend.Models.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime?>("EditedAt")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<Guid?>("GroupId")
                         .HasColumnType("uuid");
 
@@ -372,12 +344,6 @@ namespace backend.Models.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("Metadata")
-                        .HasColumnType("text");
-
-                    b.Property<Guid?>("ParentId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Reactions")
                         .HasColumnType("text");
 
                     b.Property<Guid?>("ReceiverId")
@@ -397,8 +363,6 @@ namespace backend.Models.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ActivityId");
-
-                    b.HasIndex("ParentId");
 
                     b.HasIndex("ReceiverId");
 
@@ -528,39 +492,6 @@ namespace backend.Models.Migrations
                     b.ToTable("PushTokens");
                 });
 
-            modelBuilder.Entity("backend.Models.RefreshToken", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("RevokedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Token")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Token")
-                        .IsUnique();
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("RefreshTokens");
-                });
-
             modelBuilder.Entity("backend.Models.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -635,25 +566,6 @@ namespace backend.Models.Migrations
                         .IsRequired();
 
                     b.Navigation("Coordinator");
-                });
-
-            modelBuilder.Entity("backend.Models.ActivityReadStatus", b =>
-                {
-                    b.HasOne("backend.Models.Activity", "Activity")
-                        .WithMany()
-                        .HasForeignKey("ActivityId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("backend.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Activity");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("backend.Models.AdminProfile", b =>
@@ -744,15 +656,9 @@ namespace backend.Models.Migrations
 
             modelBuilder.Entity("backend.Models.Message", b =>
                 {
-                    b.HasOne("backend.Models.Activity", "Activity")
+                    b.HasOne("backend.Models.Activity", null)
                         .WithMany("Messages")
-                        .HasForeignKey("ActivityId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                    b.HasOne("backend.Models.Message", "Parent")
-                        .WithMany()
-                        .HasForeignKey("ParentId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .HasForeignKey("ActivityId");
 
                     b.HasOne("backend.Models.User", "Receiver")
                         .WithMany("ReceivedMessages")
@@ -764,10 +670,6 @@ namespace backend.Models.Migrations
                         .HasForeignKey("SenderId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.Navigation("Activity");
-
-                    b.Navigation("Parent");
 
                     b.Navigation("Receiver");
 
@@ -789,17 +691,6 @@ namespace backend.Models.Migrations
                 {
                     b.HasOne("backend.Models.User", "User")
                         .WithMany("PushTokens")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("backend.Models.RefreshToken", b =>
-                {
-                    b.HasOne("backend.Models.User", "User")
-                        .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();

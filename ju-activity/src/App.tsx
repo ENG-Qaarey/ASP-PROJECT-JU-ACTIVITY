@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ActivityProvider } from "@/contexts/ActivityContext";
 import ConnectionError from "@/components/ConnectionError";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import { ROLES } from "@/constants/roles";
 import { ROUTES } from "@/constants/routes";
 
@@ -57,6 +58,7 @@ const App = () => (
             <Toaster />
             <Sonner />
             <ConnectionError />
+          <ErrorBoundary>
           <Routes>
             {/* Public Routes */}
             <Route path={ROUTES.HOME} element={<SplashScreen />} />
@@ -140,6 +142,7 @@ const App = () => (
             {/* Catch-all */}
             <Route path={ROUTES.NOT_FOUND} element={<NotFound />} />
           </Routes>
+          </ErrorBoundary>
         </TooltipProvider>
       </ActivityProvider>
     </AuthProvider>

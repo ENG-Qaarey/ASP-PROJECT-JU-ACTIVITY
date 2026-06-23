@@ -1,9 +1,12 @@
 using System.Text;
+using System.Text.Json;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using backend.Hubs;
+using backend.Data;
 using backend.Models;
+using backend.Hubs;
 using backend.Services;
 using Scalar.AspNetCore;
 
@@ -81,11 +84,52 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// Global exception handler middleware (replaces developer exception page in prod, catches unhandled errors)
+app.UseExceptionHandler(appError =>
+{
+    appError.Run(async context =>
+    {
+        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+        context.Response.ContentType = "application/json";
+        var contextFeature = context.Features.Get<IExceptionHandlerFeature>();
+        if (contextFeature != null)
+        {
+            Console.WriteLine($"Unhandled error: {contextFeature.Error}");
+            await context.Response.WriteAsync(JsonSerializer.Serialize(new
+            {
+                Success = false,
+                Message = "An unexpected error occurred. Please try again later."
+            }));
+        }
+    });
+});
+// Return proper JSON for 404s instead of blank page
+app.UseStatusCodePages(async context =>
+{
+    if (context.HttpContext.Response.StatusCode == 404)
+    {
+        context.HttpContext.Response.ContentType = "application/json";
+        await context.HttpContext.Response.WriteAsync(JsonSerializer.Serialize(new
+        {
+            Success = false,
+            Message = "The requested endpoint was not found."
+        }));
+    }
+});
+
 app.MapOpenApi();
 app.MapScalarApiReference();
 
 app.MapGet("/", () => Results.Redirect("/swagger"));
 app.MapGet("/swagger", () => Results.Content(SwaggerUiHtml, "text/html"));
+
+// Health-check / API info endpoint
+app.MapGet("/api", () => Results.Ok(new
+{
+    Success = true,
+    Message = "JU Activity Hub API is running",
+    Docs = "/swagger"
+}));
 
 app.UseCors();
 // app.UseHttpsRedirection(); // handled by reverse proxy in prod
@@ -115,3 +159,14 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.Run();
+
+/// <summary>
+/// CSRF Protection Note:
+/// This API uses JWT Bearer token authentication (Authorization header), not cookies.
+/// CSRF attacks exploit browsers auto-attaching cookies to requests. Since tokens are
+/// sent explicitly via JavaScript in the Authorization header (not auto-attached by the
+/// browser), CSRF is not a viable attack vector here.
+/// For SPA + JWT architectures, anti-forgery tokens (Html.AntiForgeryToken) are not
+/// required. See security requirements in the project spec.
+/// </summary>
+public partial class Program { }
