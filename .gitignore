@@ -1,8 +1,10 @@
 # Visual Studio
 .vs/
+**/.vs/
 *.sln.docstates
 *.user
 *.suo
+*.vsidx
 
 # Build results
 **/bin/
@@ -12,7 +14,7 @@
 node_modules/
 
 # Environment
-.env
+*.env
 *.log
 
 # OS

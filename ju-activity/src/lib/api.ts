@@ -1,539 +1,300 @@
+import axios from "axios";
 import { STORAGE_KEYS, API } from "@/constants/api";
 
-// The base URL for all API requests (e.g. "http://localhost:5281/api")
-const API_BASE_URL = API.BASE_URL;
+const api = axios.create({
+  baseURL: API.BASE_URL,
+  headers: { "Content-Type": "application/json" },
+});
 
-// ============================================================
-// 1. HELPERS - Simple tools used by the API functions below
-// ============================================================
-
-// Get the saved token from the browser's localStorage
-function getSavedToken() {
-  return localStorage.getItem(STORAGE_KEYS.TOKEN);
-}
-
-// Build a full URL: base + endpoint + optional query string
-function buildUrl(endpoint, queryParams = "") {
-  let url = `${API_BASE_URL}${endpoint}`;
-  if (queryParams) {
-    url += "?" + queryParams;
-  }
-  return url;
-}
-
-// Turn an object like { status: "upcoming" } into "status=upcoming"
-function toQueryString(params) {
-  const parts = [];
-  for (const key in params) {
-    const value = params[key];
-    if (value !== undefined && value !== null && value !== "") {
-      parts.push(`${key}=${encodeURIComponent(value)}`);
-    }
-  }
-  return parts.join("&");
-}
-
-// ============================================================
-// 2. MAIN REQUEST FUNCTION - Every API call goes through here
-// ============================================================
-
-// This function sends a request to the backend, adds the auth token
-// automatically, and returns the JSON response.
-async function apiRequest(url, options?) {
-  // Default to empty object if no options were provided
-  if (!options) options = {};
-
-  // Get the saved auth token
-  const token = getSavedToken();
-
-  // Start with the JSON content type header
-  const headers = { "Content-Type": "application/json" };
-
-  // Add the auth token if we have one
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
   if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
+    config.headers.Authorization = `Bearer ${token}`;
   }
-
-  // For file uploads, don't set Content-Type (browser sets it automatically)
-  if (options.body instanceof FormData) {
-    delete headers["Content-Type"];
+  if (config.data instanceof FormData) {
+    delete config.headers["Content-Type"];
   }
+  return config;
+});
 
-  // Make the request
-  let response;
-  try {
-    response = await fetch(url, {
-      method: options.method,
-      body: options.body,
-      headers: {
-        ...headers,
-        ...options.headers,
-      },
-    });
-  } catch (error) {
-    // Network error (backend is down, no internet, etc.)
-    throw new Error(
-      `Network error: Unable to reach the server at ${url}. Is the backend running?`
-    );
-  }
-
-  // If the response is not OK (like 401, 404, 500, etc.)
-  if (!response.ok) {
-    // Try to get the error message from the response body
-    let errorMessage = `Request failed with status ${response.status}`;
-    try {
-      const errorData = await response.json();
-      if (errorData.message) {
-        errorMessage = errorData.message;
-      }
-    } catch (e) {
-      // couldn't parse error body, use default message
+api.interceptors.response.use(
+  (response) => response.data,
+  (error) => {
+    if (!error.response) {
+      throw new Error(
+        `Network error: Unable to reach the server at ${error.config?.baseURL}${error.config?.url}. Is the backend running?`
+      );
     }
-
-    throw new Error(errorMessage);
+    const message =
+      error.response.data?.message ||
+      `Request failed with status ${error.response.status}`;
+    throw new Error(message);
   }
-
-  // Success - return the JSON data
-  return response.json();
-}
+);
 
 // ============================================================
-// 3. AUTHENTICATION - Login, Register, Password Reset
+// 1. AUTHENTICATION
 // ============================================================
 
 export const authApi = {
-  // Login with email and password
-  login: (email, password) =>
-    apiRequest(buildUrl("/auth/login"), {
-      method: "POST",
-      body: JSON.stringify({ email, password }),
-    }),
+  login: (email: string, password: string) =>
+    api.post("/auth/login", { email, password }),
 
-  // Create a new account
-  register: (data) =>
-    apiRequest(buildUrl("/auth/register"), {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
+  register: (data: any) => api.post("/auth/register", data),
 
-  // Get the currently logged-in user's info
-  me: () => apiRequest(buildUrl("/auth/me")),
+  me: () => api.get("/auth/me"),
 
-  // Sign in with Google
-  googleSignIn: (credential) =>
-    apiRequest(buildUrl("/auth/google"), {
-      method: "POST",
-      body: JSON.stringify({ credential }),
-    }),
+  googleSignIn: (credential: string) =>
+    api.post("/auth/google", { credential }),
 
-  // Request a password reset email
-  forgotPassword: (email) =>
-    apiRequest(buildUrl("/auth/forgot-password"), {
-      method: "POST",
-      body: JSON.stringify({ email }),
-    }),
+  forgotPassword: (email: string) =>
+    api.post("/auth/forgot-password", { email }),
 
-  // Reset password with the code from the email
-  resetPassword: (payload) =>
-    apiRequest(buildUrl("/auth/reset-password"), {
-      method: "POST",
-      body: JSON.stringify(payload),
-    }),
+  resetPassword: (payload: any) =>
+    api.post("/auth/reset-password", payload),
 
-  // Get a new access token using a refresh token
-  refresh: (refreshToken) =>
-    apiRequest(buildUrl("/auth/refresh"), {
-      method: "POST",
-      body: JSON.stringify({ refreshToken }),
-    }),
+  refresh: (refreshToken: string) =>
+    api.post("/auth/refresh", { refreshToken }),
 };
 
 // ============================================================
-// 4. USERS - View, Create, Update, Delete Users
+// 2. USERS
 // ============================================================
 
 export const usersApi = {
-  // Get all users (optional filters: role, email)
-  getAll: (role, token, email) => {
-    let query = "";
-    if (role) query += `role=${role}`;
-    if (email) query += (query ? "&" : "") + `email=${email}`;
-    const headers = token ? { Authorization: `Bearer ${token}` } : {};
-    return apiRequest(buildUrl("/users", query), { headers });
+  getAll: (role?: string, token?: string, email?: string) => {
+    const params: Record<string, string> = {};
+    if (role) params.role = role;
+    if (email) params.email = email;
+    const headers: Record<string, string> = token
+      ? { Authorization: `Bearer ${token}` }
+      : {};
+    return api.get("/users", { params, headers });
   },
 
-  // Get a single user by ID
-  getById: (id) => apiRequest(buildUrl(`/users/${id}`)),
+  getById: (id: number | string) => api.get(`/users/${id}`),
 
-  // Create a new user (admin only)
-  create: (data) =>
-    apiRequest(buildUrl("/users"), {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
+  create: (data: any) => api.post("/users", data),
 
-  // Update a user's info (admin only)
-  update: (id, data) =>
-    apiRequest(buildUrl(`/users/${id}`), {
-      method: "PUT",
-      body: JSON.stringify(data),
-    }),
+  update: (id: number | string, data: any) => api.put(`/users/${id}`, data),
 
-  // Get the current user's profile
-  getMe: () => apiRequest(buildUrl("/users/me")),
+  getMe: () => api.get("/users/me"),
 
-  // Update the current user's profile
-  updateMe: (data) =>
-    apiRequest(buildUrl("/users/me"), {
-      method: "PATCH",
-      body: JSON.stringify(data),
-    }),
+  updateMe: (data: any) => api.patch("/users/me", data),
 
-  // Upload a profile picture
-  uploadMyAvatar: (file) => {
+  uploadMyAvatar: (file: File) => {
     const formData = new FormData();
     formData.append("file", file);
-    return apiRequest(buildUrl("/users/me/avatar"), {
-      method: "POST",
-      body: formData,
-    });
+    return api.post("/users/me/avatar", formData);
   },
 
-  // Change a user's password (admin only)
-  updatePassword: (id, oldPassword, newPassword) =>
-    apiRequest(buildUrl(`/users/${id}/password`), {
-      method: "PATCH",
-      body: JSON.stringify({ oldPassword, newPassword }),
-    }),
+  updatePassword: (id: number | string, oldPassword: string, newPassword: string) =>
+    api.patch(`/users/${id}/password`, { oldPassword, newPassword }),
 
-  // Change the current user's password
-  updateMyPassword: (oldPassword, newPassword) =>
-    apiRequest(buildUrl("/users/me/password"), {
-      method: "PATCH",
-      body: JSON.stringify({ oldPassword, newPassword }),
-    }),
+  updateMyPassword: (oldPassword: string, newPassword: string) =>
+    api.patch("/users/me/password", { oldPassword, newPassword }),
 
-  // Activate or deactivate a user (admin only)
-  toggleStatus: (id) =>
-    apiRequest(buildUrl(`/users/${id}/status`), {
-      method: "PATCH",
-    }),
+  toggleStatus: (id: number | string) =>
+    api.patch(`/users/${id}/status`),
 
-  // Delete a user (admin only)
-  delete: (id) =>
-    apiRequest(buildUrl(`/users/${id}`), {
-      method: "DELETE",
-    }),
+  delete: (id: number | string) => api.delete(`/users/${id}`),
 };
 
 // ============================================================
-// 5. ACTIVITIES - Browse, Create, Update, Delete Activities
+// 3. ACTIVITIES
 // ============================================================
 
 export const activitiesApi = {
-  // Get all activities (optional filters: status, category, coordinator)
-  getAll: (params) =>
-    apiRequest(buildUrl("/activities", toQueryString(params))),
+  getAll: (params?: Record<string, any>) =>
+    api.get("/activities", { params }),
 
-  // Get a single activity by ID
-  getById: (id) => apiRequest(buildUrl(`/activities/${id}`)),
+  getById: (id: number | string) => api.get(`/activities/${id}`),
 
-  // Create a new activity
-  create: (data) =>
-    apiRequest(buildUrl("/activities"), {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
+  create: (data: any) => api.post("/activities", data),
 
-  // Update an activity
-  update: (id, data) =>
-    apiRequest(buildUrl(`/activities/${id}`), {
-      method: "PUT",
-      body: JSON.stringify(data),
-    }),
+  update: (id: number | string, data: any) =>
+    api.put(`/activities/${id}`, data),
 
-  // Delete an activity
-  delete: (id) =>
-    apiRequest(buildUrl(`/activities/${id}`), {
-      method: "DELETE",
-    }),
+  delete: (id: number | string) => api.delete(`/activities/${id}`),
 };
 
 // ============================================================
-// 6. APPLICATIONS - Students Applying for Activities
+// 4. APPLICATIONS
 // ============================================================
 
 export const applicationsApi = {
-  // Get all applications (optional filters: status, student, activity)
-  getAll: (params) =>
-    apiRequest(buildUrl("/applications", toQueryString(params))),
+  getAll: (params?: Record<string, any>) =>
+    api.get("/applications", { params }),
 
-  // Get approved applications for attendance marking
-  getApprovedForAttendance: (activityId) =>
-    apiRequest(
-      buildUrl(
-        `/applications/attendance/approved`,
-        toQueryString({ activityId })
-      )
-    ),
-
-  // Get a single application by ID
-  getById: (id) => apiRequest(buildUrl(`/applications/${id}`)),
-
-  // Get application statistics for an activity
-  getStats: (activityId) =>
-    apiRequest(buildUrl(`/applications/stats/${activityId}`)),
-
-  // Submit a new application
-  create: (data) =>
-    apiRequest(buildUrl("/applications"), {
-      method: "POST",
-      body: JSON.stringify(data),
+  getApprovedForAttendance: (activityId: number | string) =>
+    api.get("/applications/attendance/approved", {
+      params: { activityId },
     }),
 
-  // Approve, reject, or waitlist an application
-  updateStatus: (id, status, notes) =>
-    apiRequest(buildUrl(`/applications/${id}/status`), {
-      method: "PUT",
-      body: JSON.stringify({ status, notes }),
-    }),
+  getById: (id: number | string) => api.get(`/applications/${id}`),
 
-  // Delete an application
-  delete: (id) =>
-    apiRequest(buildUrl(`/applications/${id}`), {
-      method: "DELETE",
-    }),
+  getStats: (activityId: number | string) =>
+    api.get(`/applications/stats/${activityId}`),
+
+  create: (data: any) => api.post("/applications", data),
+
+  updateStatus: (id: number | string, status: string, notes?: string) =>
+    api.put(`/applications/${id}/status`, { status, notes }),
+
+  delete: (id: number | string) => api.delete(`/applications/${id}`),
 };
 
 // ============================================================
-// 7. NOTIFICATIONS - In-App Alerts
+// 5. NOTIFICATIONS
 // ============================================================
 
 export const notificationsApi = {
-  // Get all notifications (optional filters)
-  getAll: (params) =>
-    apiRequest(buildUrl("/notifications", toQueryString(params))),
+  getAll: (params?: Record<string, any>) =>
+    api.get("/notifications", { params }),
 
-  // Get a single notification by ID
-  getById: (id) => apiRequest(buildUrl(`/notifications/${id}`)),
+  getById: (id: number | string) => api.get(`/notifications/${id}`),
 
-  // Get the count of unread notifications
-  getUnreadCount: (recipientId) =>
-    apiRequest(
-      buildUrl("/notifications/unread/count", toQueryString({ recipientId }))
-    ),
-
-  // Create a new notification
-  create: (data) =>
-    apiRequest(buildUrl("/notifications"), {
-      method: "POST",
-      body: JSON.stringify(data),
+  getUnreadCount: (recipientId: number | string) =>
+    api.get("/notifications/unread/count", {
+      params: { recipientId },
     }),
 
-  // Mark a notification as read
-  markAsRead: (id) =>
-    apiRequest(buildUrl(`/notifications/${id}/read`), {
-      method: "PUT",
+  create: (data: any) => api.post("/notifications", data),
+
+  markAsRead: (id: number | string) =>
+    api.put(`/notifications/${id}/read`),
+
+  markAllAsRead: (recipientId: number | string) =>
+    api.put("/notifications/read/all", null, {
+      params: { recipientId },
     }),
 
-  // Mark all notifications as read
-  markAllAsRead: (recipientId) =>
-    apiRequest(
-      buildUrl("/notifications/read/all", toQueryString({ recipientId })),
-      { method: "PUT" }
-    ),
-
-  // Delete a notification
-  delete: (id) =>
-    apiRequest(buildUrl(`/notifications/${id}`), {
-      method: "DELETE",
-    }),
+  delete: (id: number | string) => api.delete(`/notifications/${id}`),
 };
 
 // ============================================================
-// 8. ATTENDANCE - Marking Student Attendance
+// 6. ATTENDANCE
 // ============================================================
 
 export const attendanceApi = {
-  // Get attendance records (optional filters)
-  getAll: (params) =>
-    apiRequest(buildUrl("/attendance", toQueryString(params))),
+  getAll: (params?: Record<string, any>) =>
+    api.get("/attendance", { params }),
 
-  // Get a single attendance record
-  getById: (id) => apiRequest(buildUrl(`/attendance/${id}`)),
+  getById: (id: number | string) => api.get(`/attendance/${id}`),
 
-  // Get attendance statistics for an activity
-  getStats: (activityId) =>
-    apiRequest(buildUrl(`/attendance/stats/${activityId}`)),
+  getStats: (activityId: number | string) =>
+    api.get(`/attendance/stats/${activityId}`),
 
-  // Mark a single student as present/absent
-  markAttendance: (data) =>
-    apiRequest(buildUrl("/attendance"), {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
+  markAttendance: (data: any) => api.post("/attendance", data),
 
-  // Mark attendance for multiple students at once
-  batchMarkAttendance: (data) =>
-    apiRequest(buildUrl("/attendance/batch"), {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
+  batchMarkAttendance: (data: any) => api.post("/attendance/batch", data),
 
-  // Generate a QR code for attendance
-  generateQR: (activityId) =>
-    apiRequest(buildUrl(`/attendance/qr/generate/${activityId}`)),
+  generateQR: (activityId: number | string) =>
+    api.get(`/attendance/qr/generate/${activityId}`),
 
-  // Scan a QR code to mark attendance
-  scanQR: (data) =>
-    apiRequest(buildUrl("/attendance/qr/scan"), {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
+  scanQR: (data: any) => api.post("/attendance/qr/scan", data),
 };
 
 // ============================================================
-// 9. AUDIT LOGS - Track Who Did What (Admin Only)
+// 7. AUDIT LOGS
 // ============================================================
+
+async function downloadFile(url: string, filename: string) {
+  const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
+  const response = await axios.get(url, {
+    responseType: "blob",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+
+  const downloadUrl = window.URL.createObjectURL(response.data);
+  const link = document.createElement("a");
+  link.href = downloadUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(downloadUrl);
+}
 
 export const auditLogsApi = {
-  // Get audit log entries (with search and filters)
-  getAll: (params) =>
-    apiRequest(buildUrl("/audit-logs", toQueryString(params))),
+  getAll: (params?: Record<string, any>) =>
+    api.get("/audit-logs", { params }),
 
-  // Download audit logs as a CSV file
-  exportCsv: async (params) => {
-    const url = buildUrl("/audit-logs/export/csv", toQueryString(params));
-    const token = getSavedToken();
+  exportCsv: (params?: Record<string, any>) =>
+    downloadFile(
+      `${API.BASE_URL}/audit-logs/export/csv?${new URLSearchParams(params || {}).toString()}`,
+      "audit-logs.csv"
+    ),
 
-    const response = await fetch(url, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to export CSV");
-    }
-
-    // Create a download link and click it
-    const blob = await response.blob();
-    const downloadUrl = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = downloadUrl;
-    link.download = `audit-logs.csv`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(downloadUrl);
-  },
-
-  // Download audit logs as a JSON file
-  exportJson: async (params) => {
-    const url = buildUrl("/audit-logs/export/json", toQueryString(params));
-    const token = getSavedToken();
-
-    const response = await fetch(url, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to export JSON");
-    }
-
-    const blob = await response.blob();
-    const downloadUrl = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = downloadUrl;
-    link.download = `audit-logs.json`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(downloadUrl);
-  },
+  exportJson: (params?: Record<string, any>) =>
+    downloadFile(
+      `${API.BASE_URL}/audit-logs/export/json?${new URLSearchParams(params || {}).toString()}`,
+      "audit-logs.json"
+    ),
 };
 
 // ============================================================
-// 10. MESSAGES - Activity Chat
+// 8. MESSAGES
 // ============================================================
 
 export const messagesApi = {
-  // Get messages for an activity (with pagination)
-  getByActivity: (activityId, offset = 0, limit = 50) =>
-    apiRequest(
-      buildUrl(
-        "/messages",
-        toQueryString({ activityId, offset, limit })
-      )
-    ),
-
-  // Send a message
-  send: (activityId, content, type, metadata, parentId) =>
-    apiRequest(buildUrl("/messages"), {
-      method: "POST",
-      body: JSON.stringify({ activityId, content, type, metadata, parentId }),
+  getByActivity: (
+    activityId: number | string,
+    offset = 0,
+    limit = 50
+  ) =>
+    api.get("/messages", {
+      params: { activityId, offset, limit },
     }),
 
-  // Edit a message
-  edit: (id, content) =>
-    apiRequest(buildUrl(`/messages/${id}`), {
-      method: "PUT",
-      body: JSON.stringify({ content }),
+  send: (
+    activityId: number | string,
+    content: string,
+    type?: string,
+    metadata?: any,
+    parentId?: number | string
+  ) =>
+    api.post("/messages", {
+      activityId,
+      content,
+      type,
+      metadata,
+      parentId,
     }),
 
-  // Delete a message
-  delete: (id) =>
-    apiRequest(buildUrl(`/messages/${id}`), {
-      method: "DELETE",
-    }),
+  edit: (id: number | string, content: string) =>
+    api.put(`/messages/${id}`, { content }),
 
-  // Add or remove an emoji reaction on a message
-  toggleReaction: (id, emoji) =>
-    apiRequest(buildUrl(`/messages/${id}/react`), {
-      method: "POST",
-      body: JSON.stringify({ emoji }),
-    }),
+  delete: (id: number | string) => api.delete(`/messages/${id}`),
 
-  // Get the list of members in an activity chat
-  getMembers: (activityId) =>
-    apiRequest(
-      buildUrl("/messages/members", toQueryString({ activityId }))
-    ),
+  toggleReaction: (id: number | string, emoji: string) =>
+    api.post(`/messages/${id}/react`, { emoji }),
 
-  // Mark all messages in an activity as read
-  markAsRead: (activityId) =>
-    apiRequest(buildUrl("/messages/read"), {
-      method: "POST",
-      body: JSON.stringify({ activityId }),
-    }),
+  getMembers: (activityId: number | string) =>
+    api.get("/messages/members", { params: { activityId } }),
 
-  // Get unread message counts for all activities
-  getUnreadCounts: () => apiRequest(buildUrl("/messages/unread")),
+  markAsRead: (activityId: number | string) =>
+    api.post("/messages/read", { activityId }),
 
-  // Get the last message preview for each activity
-  getLastMessages: () => apiRequest(buildUrl("/messages/preview")),
+  getUnreadCounts: () => api.get("/messages/unread"),
 
-  // Upload a file to an activity chat
-  upload: (activityId, file) => {
+  getLastMessages: () => api.get("/messages/preview"),
+
+  upload: (activityId: number | string, file: File) => {
     const formData = new FormData();
     formData.append("file", file);
-    return apiRequest(
-      buildUrl("/messages/upload", toQueryString({ activityId })),
-      { method: "POST", body: formData }
-    );
+    return api.post("/messages/upload", formData, {
+      params: { activityId },
+    });
   },
 };
 
 // ============================================================
-// 11. CATEGORIES - Activity Categories
+// 9. CATEGORIES
 // ============================================================
 
 export const categoriesApi = {
-  // Get all categories
-  getAll: () => apiRequest(buildUrl("/categories")),
+  getAll: () => api.get("/categories"),
 
-  // Create a new category
-  create: (name) =>
-    apiRequest(buildUrl("/categories"), {
-      method: "POST",
-      body: JSON.stringify({ name }),
-    }),
+  create: (name: string) => api.post("/categories", { name }),
 };
