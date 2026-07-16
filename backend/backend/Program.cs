@@ -99,7 +99,7 @@ app.UseExceptionHandler(appError =>
             {
                 Success = false,
                 Message = "An unexpected error occurred. Please try again later."
-            }));
+            }, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
         }
     });
 });
@@ -113,7 +113,7 @@ app.UseStatusCodePages(async context =>
         {
             Success = false,
             Message = "The requested endpoint was not found."
-        }));
+        }, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
     }
 });
 

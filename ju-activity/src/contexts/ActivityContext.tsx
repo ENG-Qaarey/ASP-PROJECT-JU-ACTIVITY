@@ -32,6 +32,7 @@ interface ActivityContextType {
   createActivity: (activity: CreateActivityInput) => Promise<Activity>;
   updateActivity: (id: string, updates: Partial<Activity>) => Promise<void>;
   deleteActivity: (id: string) => Promise<void>;
+  deleteCategory: (id: string) => Promise<void>;
   createApplication: (application: Omit<Application, "id" | "appliedAt" | "status">) => Promise<Application>;
   updateApplication: (id: string, updates: Partial<Application>) => Promise<void>;
   createNotification: (notification: Omit<Notification, "id" | "read" | "createdAt">) => Promise<Notification>;
@@ -280,6 +281,16 @@ export const ActivityProvider = ({ children }: { children: ReactNode }) => {
     setApplications((prev) => prev.filter((app) => app.activityId !== id));
     } catch (error: any) {
       throw new Error(error.message || "Failed to delete activity");
+    }
+  };
+
+  /** Delete a category. */
+  const deleteCategory = async (id: string) => {
+    try {
+      await categoriesApi.delete(id);
+      setCategories((prev) => prev.filter((cat) => cat.id !== id));
+    } catch (error: any) {
+      throw new Error(error.message || "Failed to delete category");
     }
   };
 
@@ -536,6 +547,7 @@ export const ActivityProvider = ({ children }: { children: ReactNode }) => {
       createActivity,
       updateActivity,
       deleteActivity,
+      deleteCategory,
       createApplication,
       updateApplication,
       createNotification,

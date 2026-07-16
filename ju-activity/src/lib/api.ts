@@ -27,6 +27,7 @@ api.interceptors.response.use(
     }
     const message =
       error.response.data?.message ||
+      error.response.data?.Message ||
       `Request failed with status ${error.response.status}`;
     throw new Error(message);
   }
@@ -297,4 +298,6 @@ export const categoriesApi = {
   getAll: () => api.get("/categories"),
 
   create: (name: string) => api.post("/categories", { name }),
+
+  delete: (id: string) => api.delete(`/categories/${id}`),
 };
