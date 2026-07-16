@@ -50,5 +50,23 @@ namespace backend.Controllers
 
             return Ok(new { id = category.Id.ToString(), name = category.Name });
         }
+
+        [HttpDelete("{id}")]
+        [Authorize(Roles = "admin")]
+        public async Task<IActionResult> Delete(Guid id)
+        {
+            var category = await _db.Categories.FindAsync(id);
+            if (category == null)
+                return NotFound(new { Success = false, Message = "Category not found" });
+
+            var systemCategories = new[] { "workshop", "seminar", "training", "extracurricular" };
+            if (systemCategories.Contains(category.Name.ToLower()))
+                return BadRequest(new { Success = false, Message = $"'{category.Name}' is a system category and cannot be deleted." });
+
+            _db.Categories.Remove(category);
+            await _db.SaveChangesAsync();
+
+            return Ok(new { Success = true, Message = "Category deleted" });
+        }
     }
 }

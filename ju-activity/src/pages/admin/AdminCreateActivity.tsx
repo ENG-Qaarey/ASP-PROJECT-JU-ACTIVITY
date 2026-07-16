@@ -15,6 +15,7 @@ import {
   FileText,
   Save,
   ShieldCheck,
+  Trash2,
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import {
@@ -33,7 +34,7 @@ import { USER_STATUS } from "@/constants/status";
 
 const AdminCreateActivity = () => {
   const navigate = useNavigate();
-  const { createActivity } = useActivity();
+  const { createActivity, deleteCategory } = useActivity();
   const { users, refreshUsers } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -50,6 +51,7 @@ const AdminCreateActivity = () => {
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
+  const [deletingCategoryId, setDeletingCategoryId] = useState<string | null>(null);
 
   useEffect(() => {
     refreshUsers();
@@ -65,6 +67,28 @@ const AdminCreateActivity = () => {
     }
   };
 
+  const customCategories = useMemo(
+    () => categories.filter(cat => !["workshop", "seminar", "training", "extracurricular"].includes(cat.name.toLowerCase())),
+    [categories]
+  );
+
+  const handleDeleteCategory = async (id: string, name: string) => {
+    if (!window.confirm(`Delete category "${name}"? This cannot be undone.`)) return;
+    setDeletingCategoryId(id);
+    try {
+      await deleteCategory(id);
+      setCategories((prev) => prev.filter((cat) => cat.id !== id));
+      if (formData.category === name) {
+        setFormData((prev) => ({ ...prev, category: "" }));
+      }
+      toast({ title: "Category Deleted", description: `"${name}" has been removed.` });
+    } catch (error) {
+      toast({ title: "Failed", description: error instanceof Error ? error.message : "Could not delete category.", variant: "destructive" });
+    } finally {
+      setDeletingCategoryId(null);
+    }
+  };
+
   const coordinators = useMemo(() => {
     return (users ?? []).filter((u) => u.role === ROLES.COORDINATOR && (u.status ?? USER_STATUS.ACTIVE) === USER_STATUS.ACTIVE);
   }, [users]);
@@ -77,6 +101,11 @@ const AdminCreateActivity = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (deletingCategoryId !== null) {
+      toast({ title: "Deletion in Progress", description: "Please wait until the category deletion finishes.", variant: "destructive" });
+      return;
+    }
 
     if (
       !formData.title ||
@@ -154,6 +183,7 @@ const AdminCreateActivity = () => {
             variant="outline" 
             onClick={() => setIsCreatingCategory(true)}
             className="shrink-0"
+            disabled={deletingCategoryId !== null}
           >
             + New Category
           </Button>
@@ -173,7 +203,31 @@ const AdminCreateActivity = () => {
               className="bg-card border rounded-xl p-6 w-full max-w-md shadow-xl"
               onClick={(e) => e.stopPropagation()}
             >
-              <h2 className="text-lg font-semibold mb-4">Create New Category</h2>
+              <h2 className="text-lg font-semibold mb-4">Manage Categories</h2>
+
+              {customCategories.length > 0 && (
+                <div className="mb-4 space-y-1">
+                  <p className="text-sm text-muted-foreground mb-2">Existing categories:</p>
+                  {customCategories.map((cat) => (
+                    <div key={cat.id} className="flex items-center justify-between bg-muted/50 rounded-md px-3 py-1.5">
+                      <span className="text-sm capitalize">{cat.name}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        disabled={deletingCategoryId !== null || isLoading}
+                        aria-label={`Delete category ${cat.name}`}
+                        onClick={() => handleDeleteCategory(cat.id, cat.name)}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <p className="text-sm text-muted-foreground mb-2">Add new category:</p>
               <Input
                 placeholder="Enter category name (e.g. Hackathon)"
                 value={newCategoryName}
@@ -195,7 +249,7 @@ const AdminCreateActivity = () => {
                 <Button 
                   type="button" 
                   className="flex-1"
-                  disabled={!newCategoryName.trim() || isLoading}
+                  disabled={!newCategoryName.trim() || isLoading || deletingCategoryId !== null}
                   onClick={async () => {
                     if (!newCategoryName.trim()) return;
                     setIsLoading(true);
@@ -206,7 +260,7 @@ const AdminCreateActivity = () => {
                       setNewCategoryName("");
                       setIsCreatingCategory(false);
                     } catch (error) {
-                      toast({ title: "Failed", description: "Could not create category.", variant: "destructive" });
+                      toast({ title: "Failed", description: error instanceof Error ? error.message : "Could not create category.", variant: "destructive" });
                     } finally {
                       setIsLoading(false);
                     }
@@ -352,7 +406,7 @@ const AdminCreateActivity = () => {
                   >
                     Cancel
                   </Button>
-                  <Button type="submit" className="sm:flex-1" disabled={isLoading}>
+                  <Button type="submit" className="sm:flex-1" disabled={isLoading || deletingCategoryId !== null}>
                     <Save className="w-4 h-4 mr-2" />
                     {isLoading ? "Publishing..." : "Publish Activity"}
                   </Button>
