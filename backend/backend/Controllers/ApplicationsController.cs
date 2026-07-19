@@ -131,17 +131,19 @@ namespace backend.Controllers
 
             await _db.SaveChangesAsync();
 
-            var statusText = isFull ? "waitlisted" : "pending";
-
-            var studentNotif = new Notification
+            Notification? studentNotif = null;
+            if (isFull)
             {
-                RecipientId = studentId,
-                Title = "Application Submitted",
-                Message = $"You have applied to \"{activity.Title}\". Status: {statusText}.",
-                Type = isFull ? NotificationType.Waitlist : NotificationType.Approval,
-                SenderRole = "student"
-            };
-            _db.Notifications.Add(studentNotif);
+                studentNotif = new Notification
+                {
+                    RecipientId = studentId,
+                    Title = "Application Submitted",
+                    Message = $"You have applied to \"{activity.Title}\". Status: waitlisted.",
+                    Type = NotificationType.Waitlist,
+                    SenderRole = "student"
+                };
+                _db.Notifications.Add(studentNotif);
+            }
 
             Notification? coordNotif = null;
             if (activity.CoordinatorId != Guid.Empty)
@@ -159,7 +161,10 @@ namespace backend.Controllers
 
             await _db.SaveChangesAsync();
 
-            await _hub.Clients.Group($"user-{studentId}").SendAsync("NotificationReceived", MapNotification(studentNotif));
+            if (studentNotif != null)
+            {
+                await _hub.Clients.Group($"user-{studentId}").SendAsync("NotificationReceived", MapNotification(studentNotif));
+            }
             if (coordNotif != null)
             {
                 await _hub.Clients.Group($"user-{activity.CoordinatorId}").SendAsync("NotificationReceived", MapNotification(coordNotif));

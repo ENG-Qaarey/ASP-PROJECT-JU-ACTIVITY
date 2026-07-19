@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
 import { useActivity } from "@/contexts/ActivityContext";
+import { CallProvider } from "@/contexts/CallContext";
 import { messagesApi } from "@/lib/api";
 import { formatRelativeTime } from "@/lib/format";
 import ChatRoomView from "@/components/chat/ChatRoomView";
@@ -65,7 +66,7 @@ export function ChatTemplate() {
     let available = activities;
     if (user.role === ROLES.STUDENT) {
       const myActivityIds = applications
-        .filter((a) => a.studentId === user.id && (a.status === "approved" || a.status === "pending"))
+        .filter((a) => a.studentId === user.id && a.status === "approved")
         .map((a) => a.activityId);
       available = activities.filter((a) => myActivityIds.includes(a.id));
     } else if (user.role === ROLES.COORDINATOR) {
@@ -216,7 +217,9 @@ export function ChatTemplate() {
 
       <ResizablePanel defaultSize={72} className={`bg-background ${!activityId ? 'max-md:hidden' : ''}`}>
         {activityId && selectedActivity ? (
-          <ChatRoomView activityId={activityId} activityTitle={selectedActivity.title} />
+          <CallProvider>
+            <ChatRoomView activityId={activityId} activityTitle={selectedActivity.title} />
+          </CallProvider>
         ) : (
           <div className="h-full flex flex-col items-center justify-center bg-gradient-to-b from-background via-background to-accent/10">
             <motion.div

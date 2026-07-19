@@ -138,6 +138,7 @@ app.UseAuthorization();
 app.UseStaticFiles();
 app.MapControllers();
 app.MapHub<NotificationHub>("/hubs/notifications");
+app.MapHub<CallHub>("/hubs/calls");
 
 using (var scope = app.Services.CreateScope())
 {

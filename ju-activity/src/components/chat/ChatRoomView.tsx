@@ -9,11 +9,14 @@ import { ChevronDown, MessageCircle } from "lucide-react";
 import { messagesApi } from "@/lib/api";
 import { validateMedia } from "@/lib/media-validation";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCall } from "@/contexts/CallContext";
 import ChatRoomSkeleton from "@/components/chat/ChatRoomSkeleton";
 import ChatHeader from "@/components/chat/ChatHeader";
 import MessageBubble from "@/components/chat/MessageBubble";
 import ChatInput from "@/components/chat/ChatInput";
 import MembersPanel from "@/components/chat/MembersPanel";
+import IncomingCallDialog from "@/components/chat/IncomingCallDialog";
+import CallOverlay from "@/components/chat/CallOverlay";
 import { ChatMessage, Member, ReplyTo } from "@/types/chat";
 import { groupByDate, formatTime } from "@/lib/format";
 import { ROLES } from "@/constants/roles";
@@ -56,6 +59,25 @@ export default function ChatRoomView({ activityId, activityTitle }: ChatRoomView
   const [replyTo, setReplyTo] = useState<ReplyTo | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [newMessageCount, setNewMessageCount] = useState(0);
+
+  const [callDuration, setCallDuration] = useState(0);
+  const callDurationRef = useRef<number | null>(null);
+
+  const call = useCall();
+
+  const startCallTimer = () => {
+    callDurationRef.current = window.setInterval(() => {
+      setCallDuration((prev) => prev + 1);
+    }, 1000);
+  };
+
+  const stopCallTimer = () => {
+    if (callDurationRef.current !== null) {
+      clearInterval(callDurationRef.current);
+      callDurationRef.current = null;
+    }
+    setCallDuration(0);
+  };
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
@@ -220,6 +242,9 @@ export default function ChatRoomView({ activityId, activityTitle }: ChatRoomView
         setTypingUsers((prev) => prev.filter((u) => u !== data.userId));
       });
 
+      // Call signaling is now handled by the dedicated CallHub connection
+      // managed internally by the useCall hook.
+
       try {
         await connection.start();
         await connection.invoke("JoinActivity", activityId);
@@ -240,6 +265,12 @@ export default function ChatRoomView({ activityId, activityTitle }: ChatRoomView
       }
     };
   }, [activityId]);
+
+  useEffect(() => {
+    if (call.status === "connected") startCallTimer();
+    else stopCallTimer();
+    return () => stopCallTimer();
+  }, [call.status]);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -454,6 +485,15 @@ export default function ChatRoomView({ activityId, activityTitle }: ChatRoomView
         showMembers={showMembers}
         onBack={() => navigate(`/${rolePrefix}/chat`)}
         onToggleMembers={() => setShowMembers(!showMembers)}
+        onStartVoiceCall={() => {
+          const target = members.find((m) => m.id !== currentUserId);
+          if (target) call.startCall(target.id, activityId, false);
+        }}
+        onStartVideoCall={() => {
+          const target = members.find((m) => m.id !== currentUserId);
+          if (target) call.startCall(target.id, activityId, true);
+        }}
+        callsDisabled={call.status !== "idle"}
       />
 
       <div className="flex flex-1 min-h-0 overflow-hidden">
@@ -626,6 +666,37 @@ export default function ChatRoomView({ activityId, activityTitle }: ChatRoomView
       </AnimatePresence>
 
       <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
+
+      <AnimatePresence>
+        {call.incomingCall && call.status === "ringing" && (
+          <IncomingCallDialog
+            callerName={call.incomingCall.callerName}
+            callerAvatar={call.incomingCall.callerAvatar}
+            isVideo={call.incomingCall.isVideo}
+            onAccept={() => call.answerCall(activityId)}
+            onDecline={() => call.rejectCall(activityId)}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {call.status !== "idle" ? (
+          <CallOverlay
+            localStream={call.localStream}
+            remoteStream={call.remoteStream}
+            isMuted={call.isMuted}
+            isVideoOff={call.isVideoOff}
+            duration={callDuration}
+            callerName={call.remoteUser?.name || activityTitle}
+            callerAvatar={call.remoteUser?.avatar || null}
+            isCaller={!call.incomingCall}
+            callError={call.callError}
+            onToggleMute={call.toggleMute}
+            onToggleVideo={call.toggleVideo}
+            onEndCall={() => call.endCall(activityId)}
+          />
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 }

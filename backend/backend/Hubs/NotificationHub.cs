@@ -73,5 +73,34 @@ namespace backend.Hubs
                 });
             }
         }
+
+        // --- Call signaling ---
+
+        public async Task JoinCall(string activityId)
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, $"call-{activityId}");
+        }
+
+        public async Task LeaveCall(string activityId)
+        {
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"call-{activityId}");
+        }
+
+        public async Task Signal(string activityId, string type, string data)
+        {
+            var userId = Context.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            await Clients.OthersInGroup($"call-{activityId}").SendAsync("CallSignalReceived", new
+            {
+                type,
+                data,
+                fromUserId = userId
+            });
+        }
+
+        public async Task EndCall(string activityId)
+        {
+            await Clients.Group($"call-{activityId}").SendAsync("CallEnded", new { activityId });
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"call-{activityId}");
+        }
     }
 }
