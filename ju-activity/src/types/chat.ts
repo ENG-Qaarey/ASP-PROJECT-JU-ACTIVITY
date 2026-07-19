@@ -33,3 +33,11 @@ export interface ReplyTo {
   content: string;
   senderName: string;
 }
+
+export type CallStatus = "idle" | "ringing" | "connecting" | "connected" | "ended";
+
+export interface CallSignal {
+  type: string;
+  data: string;
+  fromUserId: string;
+}

@@ -1,3 +1,9 @@
+export const RTC_CONFIG = {
+  iceServers: [
+    { urls: "stun:stun.l.google.com:19302" },
+  ],
+};
+
 export const MEDIA = {
   AUDIO: {
     MAX_DURATION: 300, // 5 minutes in seconds

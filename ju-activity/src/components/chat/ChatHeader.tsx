@@ -11,10 +11,14 @@ interface ChatHeaderProps {
   showMembers: boolean;
   onBack: () => void;
   onToggleMembers: () => void;
+  onStartVoiceCall?: () => void;
+  onStartVideoCall?: () => void;
+  callsDisabled?: boolean;
 }
 
 export default function ChatHeader({
   title, members, total, showMembers, onBack, onToggleMembers,
+  onStartVoiceCall, onStartVideoCall, callsDisabled,
 }: ChatHeaderProps) {
   return (
     <div className="flex items-center gap-2 border-b border-border/60 bg-card/60 backdrop-blur-xl px-3 sm:px-4 h-14 shrink-0 shadow-sm">
@@ -59,11 +63,13 @@ export default function ChatHeader({
       </div>
       <div className="flex items-center gap-px sm:gap-0.5">
         <Button variant="ghost" size="icon"
-          className="rounded-full h-8 w-8 sm:h-9 sm:w-9 hover:bg-accent/70 hidden sm:inline-flex transition-colors" title="Voice call">
+          className="rounded-full h-8 w-8 sm:h-9 sm:w-9 hover:bg-accent/70 hidden sm:inline-flex transition-colors"
+          title="Voice call" onClick={onStartVoiceCall} disabled={callsDisabled}>
           <Phone className="h-4 w-4" />
         </Button>
         <Button variant="ghost" size="icon"
-          className="rounded-full h-8 w-8 sm:h-9 sm:w-9 hover:bg-accent/70 hidden sm:inline-flex transition-colors" title="Video call">
+          className="rounded-full h-8 w-8 sm:h-9 sm:w-9 hover:bg-accent/70 hidden sm:inline-flex transition-colors"
+          title="Video call" onClick={onStartVideoCall} disabled={callsDisabled}>
           <Video className="h-4 w-4" />
         </Button>
         <Button variant="ghost" size="icon"

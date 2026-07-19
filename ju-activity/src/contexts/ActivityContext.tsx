@@ -230,7 +230,15 @@ export const ActivityProvider = ({ children }: { children: ReactNode }) => {
     if (!user) return [];
     return notifications.filter((notif) => {
       if (user.role !== ROLES.ADMIN) {
-        return notif.recipientId === user.id;
+        if (notif.recipientId !== user.id) return false;
+        if (
+          notif.type === "approval" &&
+          notif.title === "Application Submitted" &&
+          notif.message?.includes("Status: pending")
+        ) {
+          return false;
+        }
+        return true;
       }
       return notif.type !== "announcement";
     });
