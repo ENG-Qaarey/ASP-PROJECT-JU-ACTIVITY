@@ -20,6 +20,7 @@ export const ROUTES = {
   COORDINATOR: {
     DASHBOARD: "/coordinator/dashboard",
     ACTIVITIES: "/coordinator/activities",
+    CREATE_ACTIVITY: "/coordinator/activities/new",
     ACTIVITY_DETAILS: (id: string) => `/coordinator/activities/${id}`,
     ACTIVITY_EDIT: (id: string) => `/coordinator/activities/${id}/edit`,
     APPLICATIONS: "/coordinator/applications",
@@ -35,13 +36,13 @@ export const ROUTES = {
   ADMIN: {
     DASHBOARD: "/admin/dashboard",
     CREATE_ACTIVITY: "/admin/create-activity",
+    EDIT_ACTIVITY: (id: string) => `/admin/create-activity/${id}`,
     APPLICATIONS: "/admin/applications",
     USERS: "/admin/users",
     MANAGE_USERS: "/admin/manage-users",
     MANAGE_ROLES: "/admin/manage-roles",
     ACTIVITIES: "/admin/activities",
     ACTIVITY_DETAILS: (id: string) => `/admin/activities/${id}`,
-    MONITOR_ACTIVITIES: "/admin/monitor-activities",
     CHAT: "/admin/chat",
     CHAT_ROOM: (activityId?: string) =>
       `/admin/chat${activityId ? `/${activityId}` : ""}`,

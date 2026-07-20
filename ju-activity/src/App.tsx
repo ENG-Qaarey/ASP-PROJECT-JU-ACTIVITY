@@ -38,7 +38,6 @@ import AdminApplications from "./pages/admin/AdminApplications";
 import AdminNotifications from "./pages/admin/AdminNotifications";
 import ManageUsers from "./pages/admin/ManageUsers";
 import ManageRoles from "./pages/admin/ManageRoles";
-import MonitorActivities from "./pages/admin/MonitorActivities";
 import AdminReports from "./pages/admin/AdminReports";
 
 import AdminLogs from "./pages/admin/AdminLogs";
@@ -95,6 +94,7 @@ const App = () => (
                    <Routes>
                     <Route path="dashboard" element={<CoordinatorDashboard />} />
                     <Route path="activities" element={<ManageActivities />} />
+                    <Route path="activities/new" element={<CreateActivity />} />
                     <Route path="activities/:id" element={<ActivityDetails />} />
                     <Route path="activities/:id/edit" element={<CreateActivity />} /> {/* Mock edit route reuses create */}
                     <Route path="applications" element={<CoordinatorApplications />} />
@@ -118,13 +118,13 @@ const App = () => (
                    <Routes>
                     <Route path="dashboard" element={<AdminDashboard />} />
                     <Route path="create-activity" element={<AdminCreateActivity />} />
+                    <Route path="create-activity/:id" element={<AdminCreateActivity />} />
                     <Route path="applications" element={<AdminApplications />} />
                     <Route path="users" element={<AdminUsers />} />
                     <Route path="manage-users" element={<ManageUsers />} />
                     <Route path="manage-roles" element={<ManageRoles />} />
                     <Route path="activities" element={<AdminActivities />} />
                     <Route path="activities/:id" element={<ActivityDetails />} />
-                    <Route path="monitor-activities" element={<MonitorActivities />} />
                     <Route path="chat" element={<UnifiedChatPage />} />
                     <Route path="chat/:activityId" element={<UnifiedChatPage />} />
                     <Route path="notifications" element={<AdminNotifications />} />

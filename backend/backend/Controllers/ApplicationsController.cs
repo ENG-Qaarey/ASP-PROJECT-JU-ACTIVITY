@@ -33,6 +33,7 @@ namespace backend.Controllers
             var query = _db.Applications
                 .Include(a => a.Student)
                 .Include(a => a.Activity)
+                .Include(a => a.Answers)
                 .AsQueryable();
 
             if (!string.IsNullOrEmpty(status))
@@ -130,6 +131,24 @@ namespace backend.Controllers
             }
 
             await _db.SaveChangesAsync();
+
+            if (request.Answers?.Count > 0)
+            {
+                foreach (var ans in request.Answers)
+                {
+                    if (Guid.TryParse(ans.ActivityQuestionId, out var questionId))
+                    {
+                        var answer = new ApplicationAnswer
+                        {
+                            ApplicationId = application.Id,
+                            ActivityQuestionId = questionId,
+                            Answer = ans.Answer
+                        };
+                        _db.ApplicationAnswers.Add(answer);
+                    }
+                }
+                await _db.SaveChangesAsync();
+            }
 
             Notification? studentNotif = null;
             if (isFull)
@@ -287,7 +306,13 @@ namespace backend.Controllers
                 status = a.Status.ToString().ToLower(),
                 appliedAt = a.AppliedAt.ToString("o"),
                 notes = a.Notes,
-                isAdmin = a.IsAdmin
+                isAdmin = a.IsAdmin,
+                answers = a.Answers?.Select(ans => new
+                {
+                    id = ans.Id.ToString(),
+                    activityQuestionId = ans.ActivityQuestionId.ToString(),
+                    answer = ans.Answer
+                })
             };
         }
 

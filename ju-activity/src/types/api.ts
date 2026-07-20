@@ -35,7 +35,41 @@ export interface Activity {
   enrolled: number;
   coordinatorId: string;
   coordinatorName: string;
-  status: "upcoming" | "ongoing" | "completed";
+  status: "draft" | "upcoming" | "ongoing" | "completed";
+  imageUrl?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  radius?: number | null;
+  isDraft?: boolean;
+  recurrencePattern?: string | null;
+  parentActivityId?: string | null;
+  requirements?: ActivityRequirement[];
+  questions?: ActivityQuestion[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ActivityRequirement {
+  id: string;
+  type: string;
+  label: string;
+  value: string;
+  isRequired: boolean;
+}
+
+export interface ActivityQuestion {
+  id: string;
+  questionText: string;
+  questionType: string;
+  options: string;
+  isRequired: boolean;
+  displayOrder: number;
+}
+
+export interface ApplicationAnswer {
+  id: string;
+  activityQuestionId: string;
+  answer: string;
 }
 
 export interface Application {
@@ -56,6 +90,7 @@ export interface Application {
     email: string;
     avatar?: string | null;
   };
+  answers?: ApplicationAnswer[];
 }
 
 export interface Notification {

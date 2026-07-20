@@ -83,11 +83,10 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           title: "Activities",
           url: ROUTES.ADMIN.ACTIVITIES,
           icon: Activity,
-          isActive: location.pathname.startsWith("/admin/activities") || location.pathname.startsWith("/admin/create-activity") || location.pathname.startsWith("/admin/monitor"),
+          isActive: location.pathname.startsWith("/admin/activities") || location.pathname.startsWith("/admin/create-activity"),
           items: [
             { title: "Create Activity", url: ROUTES.ADMIN.CREATE_ACTIVITY },
             { title: "View All", url: ROUTES.ADMIN.ACTIVITIES },
-            { title: "View Activities", url: ROUTES.ADMIN.MONITOR_ACTIVITIES },
           ],
         },
         {
@@ -130,7 +129,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           isActive: location.pathname.startsWith("/coordinator/activities"),
           items: [
             { title: "Manage", url: ROUTES.COORDINATOR.ACTIVITIES },
-            { title: "Create", url: ROUTES.COORDINATOR.ACTIVITIES + "/new" },
+            { title: "Create", url: ROUTES.COORDINATOR.CREATE_ACTIVITY },
           ],
         },
         {

@@ -14,11 +14,12 @@ interface ChatHeaderProps {
   onStartVoiceCall?: () => void;
   onStartVideoCall?: () => void;
   callsDisabled?: boolean;
+  avatarUrl?: string;
 }
 
 export default function ChatHeader({
   title, members, total, showMembers, onBack, onToggleMembers,
-  onStartVoiceCall, onStartVideoCall, callsDisabled,
+  onStartVoiceCall, onStartVideoCall, callsDisabled, avatarUrl,
 }: ChatHeaderProps) {
   return (
     <div className="flex items-center gap-2 border-b border-border/60 bg-card/60 backdrop-blur-xl px-3 sm:px-4 h-14 shrink-0 shadow-sm">
@@ -28,7 +29,8 @@ export default function ChatHeader({
       </Button>
       <div className="flex items-center gap-2.5 flex-1 min-w-0">
         <div className="relative shrink-0">
-          <Avatar className="h-9 w-9 sm:h-10 sm:w-10 ring-2 ring-background shadow-md">
+          <Avatar className="h-9 w-9 sm:h-10 sm:w-10 ring-2 ring-background shadow-md overflow-hidden">
+            {avatarUrl && <AvatarImage src={avatarUrl} />}
             <AvatarFallback className="text-sm bg-gradient-to-br from-primary to-primary/70 text-primary-foreground font-bold">
               {(title || "A").charAt(0).toUpperCase()}
             </AvatarFallback>

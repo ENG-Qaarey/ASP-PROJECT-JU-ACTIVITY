@@ -22,12 +22,33 @@ import { groupByDate, formatTime } from "@/lib/format";
 import { ROLES } from "@/constants/roles";
 import { API, STORAGE_KEYS } from "@/constants/api";
 
+const API_BASE = API.BASE_URL.replace(/\/api\/?$/, "");
+
+const CATEGORY_DEFAULTS: Record<string, string> = {
+  workshop: `${API_BASE}/uploads/activities/workshop.svg`,
+  seminar: `${API_BASE}/uploads/activities/seminar.svg`,
+  training: `${API_BASE}/uploads/activities/training.svg`,
+  extracurricular: `${API_BASE}/uploads/activities/extracurricular.svg`,
+  default: `${API_BASE}/uploads/activities/default.svg`,
+};
+
+const resolveImageUrl = (url?: string | null, category?: string | null): string => {
+  if (url) {
+    if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("blob:") || url.startsWith("data:")) return url;
+    return `${API_BASE}${url}`;
+  }
+  const key = (category || "").toLowerCase();
+  return CATEGORY_DEFAULTS[key] || CATEGORY_DEFAULTS.default;
+};
+
 interface ChatRoomViewProps {
   activityId: string;
   activityTitle: string;
+  activityImageUrl?: string | null;
+  activityCategory?: string | null;
 }
 
-export default function ChatRoomView({ activityId, activityTitle }: ChatRoomViewProps) {
+export default function ChatRoomView({ activityId, activityTitle, activityImageUrl, activityCategory }: ChatRoomViewProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const rolePrefix = user?.role === ROLES.ADMIN ? ROLES.ADMIN : user?.role === ROLES.COORDINATOR ? ROLES.COORDINATOR : ROLES.STUDENT;
@@ -176,7 +197,7 @@ export default function ChatRoomView({ activityId, activityTitle }: ChatRoomView
       if (!token) return;
 
       const connection = new HubConnectionBuilder()
-        .withUrl("/hubs/notifications", {
+        .withUrl(API.HUB_URL, {
           accessTokenFactory: () => localStorage.getItem(STORAGE_KEYS.TOKEN) ?? "",
         })
         .withAutomaticReconnect({
@@ -249,8 +270,8 @@ export default function ChatRoomView({ activityId, activityTitle }: ChatRoomView
         await connection.start();
         await connection.invoke("JoinActivity", activityId);
         connectionRef.current = connection;
-      } catch {
-        toast({ title: "Connection Failed", description: "Could not connect to real-time chat.", variant: "destructive" });
+      } catch (err) {
+        console.warn("Chat SignalR connection failed, will retry...", err);
       }
     };
 
@@ -494,6 +515,7 @@ export default function ChatRoomView({ activityId, activityTitle }: ChatRoomView
           if (target) call.startCall(target.id, activityId, true);
         }}
         callsDisabled={call.status !== "idle"}
+        avatarUrl={resolveImageUrl(activityImageUrl, activityCategory)}
       />
 
       <div className="flex flex-1 min-h-0 overflow-hidden">

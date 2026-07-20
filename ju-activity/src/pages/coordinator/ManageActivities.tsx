@@ -1,16 +1,17 @@
-import { useMemo, useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { motion, AnimatePresence } from "framer-motion";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { useActivity } from "@/contexts/ActivityContext";
-import { useAuth } from "@/contexts/AuthContext";
-import { ROLES } from "@/constants/roles";
-import { toast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,673 +22,601 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { toast } from "@/hooks/use-toast";
+import {
+  Calendar,
+  Clock,
+  MapPin,
+  Users,
+  Search,
+  SlidersHorizontal,
+  Eye,
+  Edit,
+  Trash2,
+  X,
+  Image as ImageIcon,
+  LayoutGrid,
+  List,
+  QrCode,
+  Save,
+} from "lucide-react";
+import DashboardLayout from "@/components/layout/DashboardLayout";
+import type { Activity } from "@/types/api";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import DashboardLayout from "@/components/layout/DashboardLayout";
+import { useActivity } from "@/contexts/ActivityContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { API } from "@/constants/api";
+import { ROUTES } from "@/constants/routes";
+import { ROLES } from "@/constants/roles";
 import { QRCodeSVG } from "qrcode.react";
 import { attendanceApi } from "@/lib/api";
-import { Calendar, MapPin, Edit, Trash2, Eye, Users, Save, QrCode } from "lucide-react";
-import { Activity } from "@/types/api";
+
+const API_BASE = API.BASE_URL.replace(/\/api\/?$/, "");
+
+const CATEGORY_DEFAULTS: Record<string, string> = {
+  workshop: `${API_BASE}/uploads/activities/workshop.svg`,
+  seminar: `${API_BASE}/uploads/activities/seminar.svg`,
+  training: `${API_BASE}/uploads/activities/training.svg`,
+  extracurricular: `${API_BASE}/uploads/activities/extracurricular.svg`,
+  default: `${API_BASE}/uploads/activities/default.svg`,
+};
+
+const resolveImageUrl = (url?: string | null, category?: string | null): string => {
+  if (url) {
+    if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("blob:") || url.startsWith("data:")) return url;
+    return `${API_BASE}${url}`;
+  }
+  const key = (category || "").toLowerCase();
+  return CATEGORY_DEFAULTS[key] || CATEGORY_DEFAULTS.default;
+};
+
+const STATUS_OPTIONS = [
+  { value: "all", label: "All Statuses" },
+  { value: "upcoming", label: "Upcoming" },
+  { value: "ongoing", label: "Ongoing" },
+  { value: "completed", label: "Completed" },
+];
+
+const CATEGORY_OPTIONS = [
+  { value: "all", label: "All Categories" },
+  { value: "workshop", label: "Workshop" },
+  { value: "seminar", label: "Seminar" },
+  { value: "training", label: "Training" },
+  { value: "extracurricular", label: "Extracurricular" },
+];
+
+const SORT_OPTIONS = [
+  { value: "date_asc", label: "Date (nearest)" },
+  { value: "date_desc", label: "Date (furthest)" },
+  { value: "title_asc", label: "Title (A-Z)" },
+  { value: "capacity_desc", label: "Capacity (most)" },
+  { value: "enrolled_desc", label: "Enrolled (most)" },
+];
 
 const ManageActivities = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { activities, deleteActivity, updateActivity, getApplicationsByActivity, getApprovedApplicationsByActivity } = useActivity();
-  const [search, setSearch] = useState("");
-  const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [viewStudentsId, setViewStudentsId] = useState<string | null>(null);
-  const [editId, setEditId] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-  const [editFormData, setEditFormData] = useState<Partial<Activity>>({});
-  
-  // QR State
+
+  // Filters
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("date_asc");
+  const [showFilters, setShowFilters] = useState(false);
+
+  // UI state
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<Activity | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Coordinator-specific: QR + Students
   const [qrActivityId, setQrActivityId] = useState<string | null>(null);
   const [qrToken, setQrToken] = useState<string | null>(null);
   const [isGeneratingQR, setIsGeneratingQR] = useState(false);
+  const [viewStudentsId, setViewStudentsId] = useState<string | null>(null);
+
+  const canManageActivity = (activity: Activity) => {
+    if (!user) return false;
+    if (user.role === ROLES.ADMIN) return true;
+    if (user.role === ROLES.COORDINATOR) {
+      return activity.coordinatorId === user.id;
+    }
+    return false;
+  };
 
   const handleShowQR = async (activityId: string) => {
     setIsGeneratingQR(true);
     try {
       const { token } = await attendanceApi.generateQR(activityId);
-      // We encode both activityId and token in the QR code as a JSON string
       const qrData = JSON.stringify({ activityId, token });
       setQrToken(qrData);
       setQrActivityId(activityId);
     } catch (error: any) {
-      toast({
-        title: "QR Error",
-        description: error?.message || "Failed to generate attendance QR code",
-        variant: "destructive",
-      });
+      toast({ title: "QR Error", description: error?.message || "Failed to generate attendance QR code", variant: "destructive" });
     } finally {
       setIsGeneratingQR(false);
     }
   };
 
-  const canManageActivity = (activity: Activity) => {
-    if (!user) return false;
-    if (user.role === ROLES.ADMIN) return true;
-    return activity.coordinatorId === user.id;
-  };
-
-  const toDateOnly = (value: string) => {
-    if (!value) return value;
-    // Backend returns ISO strings; the UI prefers YYYY-MM-DD.
-    return value.includes("T") ? value.split("T")[0] : value;
-  };
-
-  // If admin, show all activities; if coordinator, show all activities (including admin-created ones)
-  const coordinatorActivities = activities;
-
   const filteredActivities = useMemo(() => {
-    let filtered = coordinatorActivities;
-    if (search) {
-      filtered = filtered.filter(
-        (activity) =>
-          activity.title.toLowerCase().includes(search.toLowerCase()) ||
-          activity.location.toLowerCase().includes(search.toLowerCase())
+    let result = [...activities];
+
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase();
+      result = result.filter(
+        (a) =>
+          a.title.toLowerCase().includes(q) ||
+          a.coordinatorName?.toLowerCase().includes(q) ||
+          a.location?.toLowerCase().includes(q) ||
+          a.category?.toLowerCase().includes(q)
       );
     }
-    return filtered.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  }, [search, coordinatorActivities]);
 
-  const handleDelete = async (id: string) => {
-    const activity = activities.find((a) => a.id === id);
-    if (!activity) {
-      toast({
-        title: "Not Found",
-        description: "Activity not found.",
-        variant: "destructive",
-      });
-      setDeleteId(null);
-      return;
+    if (statusFilter !== "all") {
+      result = result.filter((a) => a.status === statusFilter && !a.isDraft);
     }
 
-    if (!canManageActivity(activity)) {
-      toast({
-        title: "Forbidden",
-        description: "You can only delete activities you created.",
-        variant: "destructive",
-      });
-      setDeleteId(null);
-      return;
+    if (categoryFilter !== "all") {
+      result = result.filter((a) => a.category?.toLowerCase() === categoryFilter.toLowerCase());
     }
 
-    const applications = getApplicationsByActivity(id);
+    switch (sortBy) {
+      case "date_asc":
+        result.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        break;
+      case "date_desc":
+        result.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        break;
+      case "title_asc":
+        result.sort((a, b) => a.title.localeCompare(b.title));
+        break;
+      case "capacity_desc":
+        result.sort((a, b) => b.capacity - a.capacity);
+        break;
+      case "enrolled_desc":
+        result.sort((a, b) => b.enrolled - a.enrolled);
+        break;
+    }
 
+    return result;
+  }, [activities, searchTerm, statusFilter, categoryFilter, sortBy]);
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (statusFilter !== "all") count++;
+    if (categoryFilter !== "all") count++;
+    return count;
+  }, [statusFilter, categoryFilter]);
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("all");
+    setCategoryFilter("all");
+    setSortBy("date_asc");
+  };
+
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    if (!canManageActivity(pendingDelete)) {
+      toast({ title: "Forbidden", description: "You can only delete activities you created.", variant: "destructive" });
+      setPendingDelete(null);
+      return;
+    }
+    const applications = getApplicationsByActivity(pendingDelete.id);
     const pendingApplications = applications.filter((app) => app.status === "pending");
     if (pendingApplications.length > 0) {
-      toast({
-        title: "Cannot Delete",
-        description: "This activity has pending applications. Please handle them first.",
-        variant: "destructive",
-      });
+      toast({ title: "Cannot Delete", description: "This activity has pending applications. Please handle them first.", variant: "destructive" });
+      setPendingDelete(null);
       return;
     }
-
+    setIsDeleting(true);
     try {
-      await deleteActivity(id);
-      toast({
-        title: "Activity Deleted",
-        description: "The activity has been removed successfully.",
-      });
-    } catch (e: any) {
-      toast({
-        title: "Delete Failed",
-        description: e?.message || "Failed to delete activity",
-        variant: "destructive",
-      });
-    } finally {
-      setDeleteId(null);
-    }
-  };
-
-  const statusMap: Record<string, string> = {
-    upcoming: "text-primary bg-primary/10",
-    ongoing: "text-success bg-success/10",
-    completed: "text-muted-foreground/80 bg-muted/30",
-  };
-
-  const handleEditClick = (activity: Activity) => {
-    if (!canManageActivity(activity)) {
-      toast({
-        title: "Forbidden",
-        description: "You can only edit activities you created.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setEditId(activity.id);
-    // Convert time from "10:00 AM" format to "10:00" for input
-    const timeMatch = activity.time.match(/(\d+):(\d+)\s*(AM|PM)/i);
-    let timeValue = activity.time;
-    if (timeMatch) {
-      let hours = parseInt(timeMatch[1]);
-      const minutes = timeMatch[2];
-      const ampm = timeMatch[3].toUpperCase();
-      if (ampm === "PM" && hours !== 12) hours += 12;
-      if (ampm === "AM" && hours === 12) hours = 0;
-      timeValue = `${hours.toString().padStart(2, "0")}:${minutes}`;
-    }
-    setEditFormData({
-      title: activity.title,
-      description: activity.description,
-      category: activity.category,
-      date: toDateOnly(activity.date),
-      time: timeValue,
-      location: activity.location,
-      capacity: activity.capacity,
-      status: activity.status,
-    });
-  };
-
-  const handleEditChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    setEditFormData({ ...editFormData, [e.target.name]: e.target.value });
-  };
-
-  const handleEditSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editId) return;
-
-    if (
-      !editFormData.title ||
-      !editFormData.description ||
-      !editFormData.category ||
-      !editFormData.date ||
-      !editFormData.time ||
-      !editFormData.location ||
-      !editFormData.capacity
-    ) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (editFormData.capacity && editFormData.capacity < 1) {
-      toast({
-        title: "Error",
-        description: "Capacity must be at least 1",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsSaving(true);
-    try {
-      const capacityNumber = Number(editFormData.capacity);
-      if (!Number.isFinite(capacityNumber) || capacityNumber < 1) {
-        toast({
-          title: "Error",
-          description: "Capacity must be at least 1",
-          variant: "destructive",
-        });
-        setIsSaving(false);
-        return;
-      }
-
-      await updateActivity(editId, {
-        title: editFormData.title.trim(),
-        description: editFormData.description.trim(),
-        category: editFormData.category as "workshop" | "seminar" | "training" | "extracurricular",
-        date: editFormData.date,
-        time: editFormData.time,
-        location: editFormData.location.trim(),
-        capacity: capacityNumber,
-        status: editFormData.status,
-      });
-
-      toast({
-        title: "Activity Updated!",
-        description: "The activity has been updated successfully.",
-      });
-
-      setEditId(null);
-      setEditFormData({});
+      await deleteActivity(pendingDelete.id);
+      toast({ title: "Activity deleted", description: "The activity has been removed." });
     } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update activity",
-        variant: "destructive",
-      });
+      toast({ title: "Delete failed", description: error instanceof Error ? error.message : "Unable to delete activity", variant: "destructive" });
     } finally {
-      setIsSaving(false);
+      setIsDeleting(false);
+      setPendingDelete(null);
+    }
+  };
+
+  const statusColor = (a: Activity) => {
+    if (a.isDraft) return "bg-muted text-muted-foreground border-border";
+    switch (a.status) {
+      case "upcoming": return "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800";
+      case "ongoing": return "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800";
+      case "completed": return "bg-muted text-muted-foreground border-border";
+      default: return "bg-muted text-muted-foreground border-border";
     }
   };
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="gradient-hero rounded-2xl p-6 text-primary-foreground"
-        >
-          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+      <div className="space-y-5">
+        {/* Header */}
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+          className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 rounded-2xl border border-primary/10">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold">Manage Activities</h1>
-              <p className="text-primary-foreground/70 max-w-xl">
-                {user?.role === ROLES.ADMIN 
-                  ? "Manage all system activities, edit details, and monitor participation across the university."
-                  : "Organize the events you oversee, edit details, and monitor participation all from one place."}
+              <h2 className="text-2xl font-bold tracking-tight">Manage Activities</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                {user?.role === ROLES.ADMIN
+                  ? "Track all events, coordinators, and statuses across JU."
+                  : "Organize the events you oversee, edit details, and monitor participation."}
               </p>
             </div>
-            <div className="space-y-2 w-full md:w-auto">
-              <Input
-                placeholder="Search by title or location"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="bg-white/80"
-              />
+            <div className="flex items-center gap-2">
+              {user?.role === ROLES.COORDINATOR && (
+                <Button onClick={() => navigate(ROUTES.COORDINATOR.CREATE_ACTIVITY)}>
+                  Create Activity
+                </Button>
+              )}
+              <span className="text-xs text-muted-foreground">{filteredActivities.length} of {activities.length}</span>
+              <div className="flex border rounded-lg overflow-hidden">
+                <button onClick={() => setViewMode("list")} className={`p-1.5 transition-colors ${viewMode === "list" ? "bg-primary text-primary-foreground" : "bg-muted/30 text-muted-foreground hover:bg-muted/50"}`}>
+                  <List className="w-4 h-4" />
+                </button>
+                <button onClick={() => setViewMode("grid")} className={`p-1.5 transition-colors ${viewMode === "grid" ? "bg-primary text-primary-foreground" : "bg-muted/30 text-muted-foreground hover:bg-muted/50"}`}>
+                  <LayoutGrid className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
         </motion.div>
 
-        <div className="space-y-4">
-          {filteredActivities.length === 0 ? (
-            <Card className="rounded-3xl shadow-xl">
-              <CardContent className="p-12 text-center">
-                <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="font-semibold text-lg mb-2">No activities found</h3>
-                <p className="text-muted-foreground">
-                  {search ? "Try adjusting your search" : "No activities available yet"}
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            filteredActivities.map((activity) => (
-              <Card key={activity.id} className="rounded-3xl shadow-xl overflow-hidden">
-                <CardContent className="p-4 md:p-6">
-                  {/* Mobile Layout */}
-                  <div className="flex flex-col gap-4 md:hidden">
-                    <div className="flex items-start gap-4">
-                      <div className="flex flex-col items-center justify-center w-20 h-20 bg-primary/5 rounded-3xl border border-primary/10 flex-shrink-0">
-                        <span className="text-xs font-semibold text-primary uppercase">
-                          {new Date(activity.date).toLocaleDateString('default', { month: 'short' })}
-                        </span>
-                        <span className="text-2xl font-bold text-foreground">
-                          {new Date(activity.date).getDate()}
-                        </span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2 flex-wrap">
-                          <Badge className={statusMap[activity.status]}>{activity.status}</Badge>
-                        </div>
-                        <h3 className="text-lg font-semibold mb-2 truncate">{activity.title}</h3>
-                        <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-4 h-4" />
-                            {toDateOnly(activity.date)} • {activity.time}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <MapPin className="w-4 h-4" />
-                            {activity.location}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Users className="w-4 h-4" />
-                            {activity.enrolled}/{activity.capacity}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 border-t pt-4">
-                      <Button variant="ghost" size="sm" onClick={() => handleShowQR(activity.id)} disabled={isGeneratingQR && qrActivityId === activity.id} className="w-full justify-center">
-                        <QrCode className="w-4 h-4 mr-2" />
-                        Show QR
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => setViewStudentsId(activity.id)} className="w-full justify-center">
-                        <Users className="w-4 h-4 mr-2" />
-                        View Students ({getApprovedApplicationsByActivity(activity.id).length})
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => navigate(`/coordinator/activities/${activity.id}`)} className="w-full justify-center">
-                        <Eye className="w-4 h-4 mr-2" />
-                        View Details
-                      </Button>
-                      {canManageActivity(activity) && (
-                        <>
-                          <Button variant="outline" size="sm" onClick={() => handleEditClick(activity)} className="w-full justify-center">
-                            <Edit className="w-4 h-4 mr-2" />
-                            Edit
-                          </Button>
-                          <Button variant="outline" size="sm" className="text-destructive border-destructive w-full justify-center" onClick={() => setDeleteId(activity.id)}>
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Delete
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Desktop Layout */}
-                  <div className="hidden md:flex items-center gap-6">
-                    <div className="flex flex-col items-center justify-center w-24 h-24 bg-primary/5 rounded-3xl border border-primary/10 flex-shrink-0">
-                      <span className="text-sm font-semibold text-primary uppercase">
-                        {new Date(activity.date).toLocaleDateString('default', { month: 'short' })}
-                      </span>
-                      <span className="text-3xl font-bold text-foreground">
-                        {new Date(activity.date).getDate()}
-                      </span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="text-xl font-semibold truncate">{activity.title}</h3>
-                        <Badge className={statusMap[activity.status]}>{activity.status}</Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-3">{activity.description}</p>
-                      <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4" />
-                          {toDateOnly(activity.date)} • {activity.time}
-                        </span>
-                        <span className="flex items-center gap-2">
-                          <MapPin className="w-4 h-4" />
-                          {activity.location}
-                        </span>
-                        <span className="flex items-center gap-2">
-                          <Users className="w-4 h-4" />
-                          {activity.enrolled}/{activity.capacity} enrolled
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 border-l pl-6">
-                      <Button variant="ghost" size="sm" onClick={() => handleShowQR(activity.id)} disabled={isGeneratingQR && qrActivityId === activity.id} className="gap-2">
-                        <QrCode className="w-4 h-4" />
-                        Show QR
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => setViewStudentsId(activity.id)} className="gap-2">
-                        <Users className="w-4 h-4" />
-                        View Students ({getApprovedApplicationsByActivity(activity.id).length})
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => navigate(`/coordinator/activities/${activity.id}`)} className="gap-2">
-                        <Eye className="w-4 h-4" />
-                        View Details
-                      </Button>
-                      {canManageActivity(activity) && (
-                        <>
-                          <Button variant="outline" size="sm" onClick={() => handleEditClick(activity)} className="gap-2">
-                            <Edit className="w-4 h-4" />
-                            Edit
-                          </Button>
-                          <Button variant="outline" size="sm" className="text-destructive border-destructive gap-2" onClick={() => setDeleteId(activity.id)}>
-                            <Trash2 className="w-4 h-4" />
-                            Delete
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
+        {/* Search + Filter Toggle */}
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by title, coordinator, location..."
+              className="pl-9 h-10"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => setShowFilters(!showFilters)}
+            className={`h-10 gap-2 ${showFilters ? "border-primary/50 bg-primary/5 text-primary" : ""}`}
+          >
+            <SlidersHorizontal className="w-4 h-4" />
+            Filters
+            {activeFilterCount > 0 && (
+              <span className="ml-1 w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
+                {activeFilterCount}
+              </span>
+            )}
+          </Button>
+          {activeFilterCount > 0 && (
+            <Button variant="ghost" size="sm" onClick={clearFilters} className="h-10 px-3 text-muted-foreground hover:text-foreground">
+              <X className="w-3.5 h-3.5 mr-1" />Clear
+            </Button>
           )}
         </div>
 
-        <AlertDialog open={deleteId !== null} onOpenChange={() => setDeleteId(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete the activity
-                {deleteId && getApplicationsByActivity(deleteId).length > 0 && " and all associated applications"}.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => deleteId && handleDelete(deleteId)}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              >
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
-        <Dialog open={viewStudentsId !== null} onOpenChange={() => setViewStudentsId(null)}>
-          <DialogContent className="sm:max-w-2xl">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Users className="w-5 h-5" />
-                Registered Students
-              </DialogTitle>
-              <DialogDescription>
-                {viewStudentsId && activities.find((a) => a.id === viewStudentsId)?.title}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="max-h-[60vh] overflow-y-auto space-y-3">
-              {viewStudentsId ? (
-                getApprovedApplicationsByActivity(viewStudentsId).length === 0 ? (
-                  <div className="text-center py-8">
-                    <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No registered students yet</p>
+        {/* Filter Panel */}
+        <AnimatePresence>
+          {showFilters && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              <Card className="border border-muted/40">
+                <CardContent className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Status</label>
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                      <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {STATUS_OPTIONS.map((o) => (<SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                ) : (
-                  getApprovedApplicationsByActivity(viewStudentsId).map((application) => (
-                    <Card key={application.id}>
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-medium">{application.studentName}</p>
-                            <p className="text-sm text-muted-foreground">
-                              Applied: {application.appliedAt}
-                            </p>
-                          </div>
-                          <Badge className="bg-success/10 text-success">Approved</Badge>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
-                )
-              ) : null}
-            </div>
-          </DialogContent>
-        </Dialog>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Category</label>
+                    <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                      <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {CATEGORY_OPTIONS.map((o) => (<SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Sort By</label>
+                    <Select value={sortBy} onValueChange={setSortBy}>
+                      <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {SORT_OPTIONS.map((o) => (<SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        <Dialog open={editId !== null} onOpenChange={() => {
-          setEditId(null);
-          setEditFormData({});
-        }}>
-          <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Edit className="w-5 h-5" />
-                Edit Activity
-              </DialogTitle>
-              <DialogDescription>
-                Update the activity details below
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleEditSubmit} className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-title">Activity Title *</Label>
-                <Input
-                  id="edit-title"
-                  name="title"
-                  placeholder="Enter activity title"
-                  value={editFormData.title || ""}
-                  onChange={handleEditChange}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="edit-description">Description *</Label>
-                <Textarea
-                  id="edit-description"
-                  name="description"
-                  placeholder="Describe the activity in detail..."
-                  value={editFormData.description || ""}
-                  onChange={handleEditChange}
-                  rows={4}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Category *</Label>
-                <Select
-                  value={editFormData.category || ""}
-                  onValueChange={(value) => setEditFormData({ ...editFormData, category: value as Activity["category"] })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="workshop">Workshop</SelectItem>
-                    <SelectItem value="seminar">Seminar</SelectItem>
-                    <SelectItem value="training">Training</SelectItem>
-                    <SelectItem value="extracurricular">Extracurricular</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-date">Date *</Label>
-                  <Input
-                    id="edit-date"
-                    name="date"
-                    type="date"
-                    value={editFormData.date || ""}
-                    onChange={handleEditChange}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-time">Time *</Label>
-                  <Input
-                    id="edit-time"
-                    name="time"
-                    type="time"
-                    value={editFormData.time || ""}
-                    onChange={handleEditChange}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="edit-location">Location *</Label>
-                <Input
-                  id="edit-location"
-                  name="location"
-                  placeholder="Enter location"
-                  value={editFormData.location || ""}
-                  onChange={handleEditChange}
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-capacity">Maximum Capacity *</Label>
-                  <Input
-                    id="edit-capacity"
-                    name="capacity"
-                    type="number"
-                    min="1"
-                    placeholder="Enter maximum number of participants"
-                    value={editFormData.capacity || ""}
-                    onChange={(e) => setEditFormData({ ...editFormData, capacity: parseInt(e.target.value) || 0 })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Status *</Label>
-                  <Select
-                    value={editFormData.status || "upcoming"}
-                    onValueChange={(value) => setEditFormData({ ...editFormData, status: value as Activity["status"] })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="upcoming">Upcoming</SelectItem>
-                      <SelectItem value="ongoing">Ongoing</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="flex gap-4 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => {
-                    setEditId(null);
-                    setEditFormData({});
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" className="flex-1" disabled={isSaving}>
-                  <Save className="w-4 h-4 mr-2" />
-                  {isSaving ? "Saving..." : "Save Changes"}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
-
-        <Dialog open={qrToken !== null} onOpenChange={() => {
-          setQrToken(null);
-          setQrActivityId(null);
-        }}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <QrCode className="w-5 h-5" />
-                Attendance QR Code
-              </DialogTitle>
-              <DialogDescription>
-                Students can scan this code using the mobile app to mark their attendance.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex flex-col items-center justify-center p-6 space-y-4">
-              <div className="bg-white p-4 rounded-xl shadow-inner border-2 border-primary/20">
-                {qrToken && (
-                  <QRCodeSVG 
-                    value={qrToken} 
-                    size={256}
-                    level="H"
-                    includeMargin={true}
-                  />
-                )}
-              </div>
-              <p className="text-sm font-medium text-center text-muted-foreground">
-                This code is time-limited and secure.
-              </p>
-              <Button 
-                variant="outline" 
-                className="w-full"
-                onClick={() => handleShowQR(qrActivityId!)}
+        {/* Activities */}
+        {filteredActivities.length === 0 ? (
+          <div className="text-center py-16 text-muted-foreground">
+            <p className="text-sm">No activities match your filters.</p>
+            <Button variant="link" onClick={clearFilters} className="mt-2 text-xs">Clear all filters</Button>
+          </div>
+        ) : viewMode === "list" ? (
+          <div className="space-y-3">
+            {filteredActivities.map((activity, idx) => (
+              <motion.div
+                key={activity.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.03 }}
               >
-                <Save className="w-4 h-4 mr-2" />
-                Refresh Code
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+                <Card className="border border-muted/40 overflow-hidden hover:border-primary/20 transition-colors">
+                  <CardContent className="p-0">
+                    <div className="flex">
+                      {/* Image */}
+                      <div className="w-28 h-28 sm:w-36 sm:h-36 flex-shrink-0 bg-muted/30 relative overflow-hidden">
+                        <img src={resolveImageUrl(activity.imageUrl, activity.category)} alt="" className="w-full h-full object-cover" />
+                      </div>
+
+                      {/* Content */}
+                      <div className="flex-1 min-w-0 p-3 sm:p-4 flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <Badge className={`text-[10px] capitalize ${statusColor(activity)}`}>{activity.status}</Badge>
+                            <Badge variant="outline" className="text-[10px] capitalize">{activity.category}</Badge>
+                            <span className="text-[10px] text-muted-foreground hidden sm:inline">by {activity.coordinatorName}</span>
+                          </div>
+                          <h3 className="text-sm sm:text-base font-semibold truncate">{activity.title}</h3>
+                          <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{new Date(activity.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+                            <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{activity.time}</span>
+                            <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{activity.location}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 mt-2">
+                          <Users className="w-3 h-3 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">{activity.enrolled}/{activity.capacity}</span>
+                          <div className="flex-1 max-w-[120px]">
+                            <Progress value={Math.min(100, Math.round((activity.enrolled / activity.capacity) * 100))} className="h-1" />
+                          </div>
+                          <div className="flex items-center gap-1 ml-auto">
+                            <Button variant="ghost" size="sm" onClick={() => handleShowQR(activity.id)} disabled={isGeneratingQR && qrActivityId === activity.id} className="h-7 px-2 text-[10px] gap-1">
+                              <QrCode className="w-3 h-3" />QR
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => setViewStudentsId(activity.id)} className="h-7 px-2 text-[10px] gap-1">
+                              <Users className="w-3 h-3" />{getApprovedApplicationsByActivity(activity.id).length}
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => { setSelectedActivity(activity); setDetailsOpen(true); }} className="h-7 px-2 text-[10px] gap-1">
+                              <Eye className="w-3 h-3" />View
+                            </Button>
+                            {canManageActivity(activity) && (
+                              <>
+                                <Button variant="ghost" size="sm" onClick={() => navigate(ROUTES.COORDINATOR.ACTIVITY_EDIT(activity.id))} className="h-7 px-2 text-[10px] gap-1">
+                                  <Edit className="w-3 h-3" />Edit
+                                </Button>
+                                <Button variant="ghost" size="sm" onClick={() => setPendingDelete(activity)} className="h-7 px-2 text-[10px] gap-1 text-destructive hover:text-destructive">
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredActivities.map((activity, idx) => (
+              <motion.div
+                key={activity.id}
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: idx * 0.03 }}
+              >
+                <Card className="border border-muted/40 overflow-hidden hover:border-primary/20 transition-colors group">
+                  <div className="h-40 bg-muted/30 relative overflow-hidden">
+                    <img src={resolveImageUrl(activity.imageUrl, activity.category)} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                    <span className="absolute top-2 right-2 text-[10px] font-bold bg-foreground/80 text-background px-2 py-0.5 rounded backdrop-blur">
+                      {new Date(activity.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    </span>
+                  </div>
+                  <CardContent className="p-3 space-y-2">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <Badge className={`text-[9px] capitalize ${statusColor(activity)}`}>{activity.status}</Badge>
+                      <Badge variant="outline" className="text-[9px] capitalize">{activity.category}</Badge>
+                    </div>
+                    <h3 className="text-sm font-semibold line-clamp-1">{activity.title}</h3>
+                    <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+                      <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{activity.time}</span>
+                      <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{activity.location}</span>
+                    </div>
+                    <div className="flex items-center gap-2 pt-1 border-t border-muted/30">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                          <Users className="w-3 h-3" />
+                          <span>{activity.enrolled}/{activity.capacity}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => handleShowQR(activity.id)} disabled={isGeneratingQR && qrActivityId === activity.id} className="h-6 px-1.5 text-[9px]">
+                          <QrCode className="w-2.5 h-2.5" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => setViewStudentsId(activity.id)} className="h-6 px-1.5 text-[9px]">
+                          <Users className="w-2.5 h-2.5" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => { setSelectedActivity(activity); setDetailsOpen(true); }} className="h-6 px-1.5 text-[9px]">
+                          <Eye className="w-2.5 h-2.5" />
+                        </Button>
+                        {canManageActivity(activity) && (
+                          <>
+                            <Button variant="ghost" size="sm" onClick={() => navigate(ROUTES.COORDINATOR.ACTIVITY_EDIT(activity.id))} className="h-6 px-1.5 text-[9px]">
+                              <Edit className="w-2.5 h-2.5" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => setPendingDelete(activity)} className="h-6 px-1.5 text-[9px] text-destructive hover:text-destructive">
+                              <Trash2 className="w-2.5 h-2.5" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
+
+      {/* Delete Dialog */}
+      <AlertDialog open={pendingDelete !== null} onOpenChange={() => setPendingDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete activity?</AlertDialogTitle>
+            <AlertDialogDescription>This action cannot be undone. The activity and its schedule will be permanently removed.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={isDeleting}>
+              {isDeleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Quick View Dialog */}
+      <Dialog open={detailsOpen} onOpenChange={(open) => { setDetailsOpen(open); if (!open) setSelectedActivity(null); }}>
+        <DialogContent className="w-[90vw] max-w-2xl overflow-hidden rounded-2xl border border-muted/40 p-0 sm:max-h-[85vh]">
+          {selectedActivity && (
+            <div className="flex max-h-[85vh] flex-col overflow-hidden">
+              <div className="h-48 relative overflow-hidden">
+                <img src={resolveImageUrl(selectedActivity.imageUrl, selectedActivity.category)} alt="" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
+              </div>
+              <div className="border-b border-muted/40 bg-card/70 p-5">
+                <div className="flex items-center gap-2 mb-2">
+                  <Badge className={`text-[10px] capitalize ${statusColor(selectedActivity)}`}>{selectedActivity.status}</Badge>
+                  <Badge variant="outline" className="text-[10px] capitalize">{selectedActivity.category}</Badge>
+                </div>
+                <h3 className="text-xl font-semibold">{selectedActivity.title}</h3>
+                <p className="text-sm text-muted-foreground">Coordinated by {selectedActivity.coordinatorName}</p>
+                <div className="mt-3 grid gap-3 text-sm text-muted-foreground sm:grid-cols-2">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    {new Date(selectedActivity.date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" })}
+                  </div>
+                  <div className="flex items-center gap-2"><Clock className="h-4 w-4" />{selectedActivity.time}</div>
+                </div>
+              </div>
+              <div className="space-y-4 overflow-y-auto px-5 pb-5">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-xl border border-muted/40 p-4">
+                    <p className="text-xs uppercase text-muted-foreground">Location</p>
+                    <div className="mt-1 flex items-center gap-2 text-sm font-medium"><MapPin className="h-4 w-4 text-primary" />{selectedActivity.location}</div>
+                  </div>
+                  <div className="rounded-xl border border-muted/40 p-4">
+                    <p className="text-xs uppercase text-muted-foreground">Capacity</p>
+                    <div className="mt-1 flex items-center justify-between text-sm font-medium">
+                      <span>{selectedActivity.enrolled}/{selectedActivity.capacity} attendees</span>
+                      <span className="text-xs text-muted-foreground">{Math.max(selectedActivity.capacity - selectedActivity.enrolled, 0)} left</span>
+                    </div>
+                    <Progress value={Math.min(100, Math.round((selectedActivity.enrolled / selectedActivity.capacity) * 100))} className="mt-3 h-2" />
+                  </div>
+                </div>
+                <div className="rounded-xl border border-muted/40 bg-muted/20 p-4">
+                  <p className="text-xs uppercase text-muted-foreground">Overview</p>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground/90">{selectedActivity.description || "No description provided."}</p>
+                </div>
+              </div>
+              <DialogFooter className="border-t border-muted/40 p-4">
+                <Button variant="outline" onClick={() => setDetailsOpen(false)}>Close</Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* View Students Dialog */}
+      <Dialog open={viewStudentsId !== null} onOpenChange={() => setViewStudentsId(null)}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5" />
+              Registered Students
+            </DialogTitle>
+            <DialogDescription>
+              {viewStudentsId && activities.find((a) => a.id === viewStudentsId)?.title}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-y-auto space-y-3">
+            {viewStudentsId ? (
+              getApprovedApplicationsByActivity(viewStudentsId).length === 0 ? (
+                <div className="text-center py-8">
+                  <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No registered students yet</p>
+                </div>
+              ) : (
+                getApprovedApplicationsByActivity(viewStudentsId).map((application) => (
+                  <Card key={application.id}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">{application.studentName}</p>
+                          <p className="text-sm text-muted-foreground">Applied: {application.appliedAt}</p>
+                        </div>
+                        <Badge className="bg-success/10 text-success">Approved</Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )
+            ) : null}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* QR Code Dialog */}
+      <Dialog open={qrToken !== null} onOpenChange={() => { setQrToken(null); setQrActivityId(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <QrCode className="w-5 h-5" />
+              Attendance QR Code
+            </DialogTitle>
+            <DialogDescription>Students can scan this code to mark their attendance.</DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center justify-center p-6 space-y-4">
+            <div className="bg-white p-4 rounded-xl shadow-inner border-2 border-primary/20">
+              {qrToken && <QRCodeSVG value={qrToken} size={256} level="H" includeMargin={true} />}
+            </div>
+            <p className="text-sm font-medium text-center text-muted-foreground">This code is time-limited and secure.</p>
+            <Button variant="outline" className="w-full" onClick={() => handleShowQR(qrActivityId!)}>
+              <Save className="w-4 h-4 mr-2" />
+              Refresh Code
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };

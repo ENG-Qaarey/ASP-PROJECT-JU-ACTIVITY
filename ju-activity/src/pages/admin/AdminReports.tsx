@@ -23,7 +23,14 @@ import {
     generateApplicationsSummaryReport,
 } from "@/lib/reportUtils";
 
-const mockReports: ReportDefinition[] = [];
+const mockReports: ReportDefinition[] = [
+    { id: "rep-1", title: "Quarterly Activity Participation", description: "Breakdown of activity sign-ups and attendance", type: "Analytics" },
+    { id: "rep-2", title: "Coordinator Performance", description: "Approval rates, event counts, and coordinator ratings", type: "Performance" },
+    { id: "rep-3", title: "System Usage Trends", description: "Activity creation, user sign-ups, and platform engagement over time", type: "Usage" },
+    { id: "rep-4", title: "Students Report", description: "Student participation, engagement, and activity history", type: "Student" },
+    { id: "rep-5", title: "Attendance Report", description: "Detailed attendance records and attendance rates", type: "Attendance" },
+    { id: "rep-6", title: "Applications Summary", description: "Summary of all applications with status breakdown", type: "Applications" },
+];
 
 const AdminReports = () => {
     const { activities, applications, attendance } = useActivity();

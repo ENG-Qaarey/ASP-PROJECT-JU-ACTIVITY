@@ -2,6 +2,23 @@ using System.ComponentModel.DataAnnotations;
 
 namespace backend.DTOs
 {
+    public class ActivityRequirementDto
+    {
+        public string Type { get; set; } = string.Empty;
+        public string Label { get; set; } = string.Empty;
+        public string? Value { get; set; }
+        public bool IsRequired { get; set; } = true;
+    }
+
+    public class ActivityQuestionDto
+    {
+        public string QuestionText { get; set; } = string.Empty;
+        public string QuestionType { get; set; } = string.Empty;
+        public string? Options { get; set; }
+        public bool IsRequired { get; set; } = true;
+        public int DisplayOrder { get; set; } = 0;
+    }
+
     public class CreateActivityRequest
     {
         [Required(ErrorMessage = "Title is required")]
@@ -35,6 +52,10 @@ namespace backend.DTOs
         public double? Longitude { get; set; }
         public double? Radius { get; set; }
         public Guid? CoordinatorId { get; set; }
+        public bool IsDraft { get; set; } = true;
+        public string? RecurrencePattern { get; set; }
+        public List<ActivityRequirementDto>? Requirements { get; set; }
+        public List<ActivityQuestionDto>? Questions { get; set; }
     }
 
     public class UpdateActivityRequest
@@ -64,5 +85,15 @@ namespace backend.DTOs
         public double? Latitude { get; set; }
         public double? Longitude { get; set; }
         public double? Radius { get; set; }
+        public bool? IsDraft { get; set; }
+        public string? RecurrencePattern { get; set; }
+        public List<ActivityRequirementDto>? Requirements { get; set; }
+        public List<ActivityQuestionDto>? Questions { get; set; }
+    }
+
+    public class ApplicationAnswerDto
+    {
+        public string ActivityQuestionId { get; set; } = string.Empty;
+        public string? Answer { get; set; }
     }
 }

@@ -7,6 +7,23 @@ namespace backend.Models
     {
         public static async Task SeedAsync(AppDbContext db)
         {
+            var activitiesWithoutImages = db.Activities.Where(a => string.IsNullOrEmpty(a.ImageUrl)).ToList();
+            if (activitiesWithoutImages.Count > 0)
+            {
+                foreach (var activity in activitiesWithoutImages)
+                {
+                    activity.ImageUrl = (activity.Category ?? "").ToLower() switch
+                    {
+                        "workshop" => "/uploads/activities/workshop.svg",
+                        "seminar" => "/uploads/activities/seminar.svg",
+                        "training" => "/uploads/activities/training.svg",
+                        "extracurricular" => "/uploads/activities/extracurricular.svg",
+                        _ => "/uploads/activities/default.svg"
+                    };
+                }
+                await db.SaveChangesAsync();
+            }
+
             if (db.Users.Any())
                 return;
 

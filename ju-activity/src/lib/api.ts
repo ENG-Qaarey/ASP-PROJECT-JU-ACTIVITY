@@ -4,6 +4,7 @@ import { STORAGE_KEYS, API } from "@/constants/api";
 const api = axios.create({
   baseURL: API.BASE_URL,
   headers: { "Content-Type": "application/json" },
+  timeout: 15000,
 });
 
 api.interceptors.request.use((config) => {
@@ -117,6 +118,18 @@ export const activitiesApi = {
     api.put(`/activities/${id}`, data),
 
   delete: (id: number | string) => api.delete(`/activities/${id}`),
+
+  publish: (id: string) => api.post(`/activities/${id}/publish`),
+
+  getDrafts: () => api.get("/activities/drafts"),
+
+  uploadImage: (id: string, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return api.post(`/activities/${id}/image`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
 };
 
 // ============================================================
@@ -300,4 +313,16 @@ export const categoriesApi = {
   create: (name: string) => api.post("/categories", { name }),
 
   delete: (id: string) => api.delete(`/categories/${id}`),
+};
+
+// ============================================================
+// 10. DEPARTMENTS
+// ============================================================
+
+export const departmentsApi = {
+  getAll: () => api.get("/departments"),
+
+  create: (name: string) => api.post("/departments", { name }),
+
+  delete: (id: string) => api.delete(`/departments/${id}`),
 };

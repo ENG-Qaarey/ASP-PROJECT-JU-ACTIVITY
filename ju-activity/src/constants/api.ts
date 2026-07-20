@@ -11,10 +11,10 @@ export const API = {
   BASE_URL: "http://localhost:5281/api",
 
   // SignalR hub for real-time chat and notifications
-  HUB_URL: "/hubs/notifications",
+  HUB_URL: "http://localhost:5281/hubs/notifications",
 
   // SignalR hub for WebRTC call signaling
-  CALL_HUB_URL: "/hubs/calls",
+  CALL_HUB_URL: "http://localhost:5281/hubs/calls",
 
   // How many items to show per page in lists
   PAGE_SIZE: 50,

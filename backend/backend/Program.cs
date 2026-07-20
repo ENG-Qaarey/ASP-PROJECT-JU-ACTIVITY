@@ -31,7 +31,8 @@ builder.Services.AddSignalR();
 builder.Services.AddOpenApi();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
+           .ConfigureWarnings(warnings => warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -143,17 +144,19 @@ app.MapHub<CallHub>("/hubs/calls");
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    
+    // Drop & recreate if migrations can't apply (EnsureCreated/Migrate conflict)
     try
     {
         db.Database.Migrate();
         Console.WriteLine("Database migrated successfully.");
     }
-    catch (Exception ex)
+    catch
     {
-        Console.WriteLine($"Migration failed: {ex.Message}");
-        Console.WriteLine("Attempting EnsureCreated as fallback...");
+        Console.WriteLine("Migration conflict detected — dropping and recreating database...");
+        db.Database.EnsureDeleted();
         db.Database.EnsureCreated();
-        Console.WriteLine("Database created via EnsureCreated.");
+        Console.WriteLine("Database recreated successfully.");
     }
 
     await DbSeeder.SeedAsync(db);

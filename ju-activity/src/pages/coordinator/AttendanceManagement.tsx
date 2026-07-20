@@ -2,6 +2,11 @@ import { useMemo, useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  RadioGroup,
+  RadioGroupItem,
+} from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useActivity } from "@/contexts/ActivityContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -355,34 +360,38 @@ const AttendanceManagement = () => {
                             </div>
 
                             <div className="flex flex-wrap items-center justify-between gap-2 sm:justify-end">
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  type="button"
-                                  variant={attendance[application.studentId] === "present" ? "default" : "outline"}
-                                  size="sm"
-                                  onClick={() => setAttendanceStatus(application.studentId, "present")}
-                                  className={
-                                    attendance[application.studentId] === "present"
-                                      ? "bg-success text-success-foreground hover:bg-success/90"
-                                      : ""
-                                  }
-                                >
-                                  Present
-                                </Button>
-                                <Button
-                                  type="button"
-                                  variant={attendance[application.studentId] === "absent" ? "default" : "outline"}
-                                  size="sm"
-                                  onClick={() => setAttendanceStatus(application.studentId, "absent")}
-                                  className={
-                                    attendance[application.studentId] === "absent"
-                                      ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                      : ""
-                                  }
-                                >
-                                  Absent
-                                </Button>
-                              </div>
+                              <RadioGroup
+                                value={attendance[application.studentId]}
+                                onValueChange={(val) => setAttendanceStatus(application.studentId, val as "present" | "absent")}
+                                className="flex items-center gap-4"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <RadioGroupItem
+                                    value="present"
+                                    id={`present-${application.studentId}`}
+                                    className="text-success"
+                                  />
+                                  <Label
+                                    htmlFor={`present-${application.studentId}`}
+                                    className="text-sm font-medium text-foreground cursor-pointer"
+                                  >
+                                    Present
+                                  </Label>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <RadioGroupItem
+                                    value="absent"
+                                    id={`absent-${application.studentId}`}
+                                    className="text-destructive"
+                                  />
+                                  <Label
+                                    htmlFor={`absent-${application.studentId}`}
+                                    className="text-sm font-medium text-foreground cursor-pointer"
+                                  >
+                                    Absent
+                                  </Label>
+                                </div>
+                              </RadioGroup>
 
                               <motion.div
                                 animate={{
@@ -401,16 +410,6 @@ const AttendanceManagement = () => {
                                   {attendance[application.studentId] === "present" ? "Present" : "Absent"}
                                 </Badge>
                               </motion.div>
-
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => toggleAttendance(application.studentId)}
-                                className="text-xs"
-                              >
-                                Toggle
-                              </Button>
                             </div>
                           </motion.div>
                         ))}

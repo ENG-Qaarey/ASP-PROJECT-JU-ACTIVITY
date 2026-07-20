@@ -34,5 +34,7 @@ namespace backend.Models
         public string? Notes { get; set; }
 
         public bool IsAdmin { get; set; } = false;
+
+        public ICollection<ApplicationAnswer> Answers { get; set; } = new List<ApplicationAnswer>();
     }
 }

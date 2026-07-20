@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="100%" height="100%">
+  <defs>
+    <linearGradient id="trainingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#06b6d4" />
+    </linearGradient>
+  </defs>
+  <rect width="800" height="450" fill="url(#trainingGrad)" />
+  <circle cx="400" cy="180" r="70" fill="white" fill-opacity="0.15" />
+  <!-- Training / Book Icon -->
+  <path d="M360 150 L440 150 L440 220 L360 220 Z" fill="none" stroke="white" stroke-width="8" stroke-linejoin="round" />
+  <line x1="360" y1="185" x2="440" y2="185" stroke="white" stroke-width="6" />
+  <path d="M375 220 L375 240 L425 240 L425 220" fill="none" stroke="white" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+  <!-- Text -->
+  <text x="400" y="320" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="34" font-weight="800" fill="white" text-anchor="middle" letter-spacing="2">TRAINING</text>
+  <text x="400" y="360" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="18" fill="white" fill-opacity="0.8" text-anchor="middle">Jazeera University Activity Hub</text>
+</svg>

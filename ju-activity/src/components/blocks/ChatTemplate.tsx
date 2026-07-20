@@ -3,12 +3,13 @@ import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ROLES } from "@/constants/roles";
 import { UI } from "@/constants/ui";
+import { API } from "@/constants/api";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -45,6 +46,25 @@ interface LastMessagePreview {
   senderName: string;
   createdAt: string;
 }
+
+const API_BASE = API.BASE_URL.replace(/\/api\/?$/, "");
+
+const CATEGORY_DEFAULTS: Record<string, string> = {
+  workshop: `${API_BASE}/uploads/activities/workshop.svg`,
+  seminar: `${API_BASE}/uploads/activities/seminar.svg`,
+  training: `${API_BASE}/uploads/activities/training.svg`,
+  extracurricular: `${API_BASE}/uploads/activities/extracurricular.svg`,
+  default: `${API_BASE}/uploads/activities/default.svg`,
+};
+
+const resolveImageUrl = (url?: string | null, category?: string | null): string => {
+  if (url) {
+    if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("blob:") || url.startsWith("data:")) return url;
+    return `${API_BASE}${url}`;
+  }
+  const key = (category || "").toLowerCase();
+  return CATEGORY_DEFAULTS[key] || CATEGORY_DEFAULTS.default;
+};
 
 export function ChatTemplate() {
   const { activityId } = useParams<{ activityId: string }>();
@@ -182,7 +202,8 @@ export function ChatTemplate() {
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <Avatar className="h-11 w-11 shrink-0 ring-1 ring-border shadow-sm">
+                      <Avatar className="h-11 w-11 shrink-0 ring-1 ring-border shadow-sm overflow-hidden">
+                        <AvatarImage src={resolveImageUrl(activity.imageUrl, activity.category)} />
                         <AvatarFallback className="text-sm font-semibold bg-primary/10 text-primary">
                           {(activity.title || "A").charAt(0).toUpperCase()}
                         </AvatarFallback>
@@ -218,7 +239,12 @@ export function ChatTemplate() {
       <ResizablePanel defaultSize={72} className={`bg-background ${!activityId ? 'max-md:hidden' : ''}`}>
         {activityId && selectedActivity ? (
           <CallProvider>
-            <ChatRoomView activityId={activityId} activityTitle={selectedActivity.title} />
+            <ChatRoomView 
+              activityId={activityId} 
+              activityTitle={selectedActivity.title} 
+              activityImageUrl={selectedActivity.imageUrl} 
+              activityCategory={selectedActivity.category} 
+            />
           </CallProvider>
         ) : (
           <div className="h-full flex flex-col items-center justify-center bg-gradient-to-b from-background via-background to-accent/10">

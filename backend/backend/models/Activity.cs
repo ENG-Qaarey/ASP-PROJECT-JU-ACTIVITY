@@ -52,6 +52,16 @@ namespace backend.Models
 
         public double? Radius { get; set; } = 100;
 
+        public bool IsDraft { get; set; } = true;
+
+        [MaxLength(2000)]
+        public string? RecurrencePattern { get; set; }
+
+        public Guid? ParentActivityId { get; set; }
+
+        [ForeignKey(nameof(ParentActivityId))]
+        public Activity? ParentActivity { get; set; }
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
@@ -59,5 +69,8 @@ namespace backend.Models
         public ICollection<Application> Applications { get; set; } = new List<Application>();
         public ICollection<Attendance> Attendances { get; set; } = new List<Attendance>();
         public ICollection<Message> Messages { get; set; } = new List<Message>();
+        public ICollection<ActivityRequirement> Requirements { get; set; } = new List<ActivityRequirement>();
+        public ICollection<ActivityQuestion> Questions { get; set; } = new List<ActivityQuestion>();
+        public ICollection<Activity> ChildActivities { get; set; } = new List<Activity>();
     }
 }

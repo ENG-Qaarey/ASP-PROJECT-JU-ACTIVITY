@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using backend.Data;
@@ -11,9 +12,11 @@ using backend.Data;
 namespace backend.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260719204400_AddActivityRequirementsAndQuestions")]
+    partial class AddActivityRequirementsAndQuestions
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -59,9 +62,6 @@ namespace backend.Data.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
-                    b.Property<bool>("IsDraft")
-                        .HasColumnType("boolean");
-
                     b.Property<double?>("Latitude")
                         .HasColumnType("double precision");
 
@@ -72,19 +72,12 @@ namespace backend.Data.Migrations
                     b.Property<double?>("Longitude")
                         .HasColumnType("double precision");
 
-                    b.Property<Guid?>("ParentActivityId")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("QrCodeSecret")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
                     b.Property<double?>("Radius")
                         .HasColumnType("double precision");
-
-                    b.Property<string>("RecurrencePattern")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -108,78 +101,7 @@ namespace backend.Data.Migrations
 
                     b.HasIndex("CoordinatorId");
 
-                    b.HasIndex("ParentActivityId");
-
                     b.ToTable("Activities");
-                });
-
-            modelBuilder.Entity("backend.Models.ActivityQuestion", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ActivityId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("DisplayOrder")
-                        .HasColumnType("integer");
-
-                    b.Property<bool>("IsRequired")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Options")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
-
-                    b.Property<string>("QuestionText")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<string>("QuestionType")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ActivityId");
-
-                    b.ToTable("ActivityQuestions");
-                });
-
-            modelBuilder.Entity("backend.Models.ActivityRequirement", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ActivityId")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("IsRequired")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Label")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<string>("Value")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ActivityId");
-
-                    b.ToTable("ActivityRequirements");
                 });
 
             modelBuilder.Entity("backend.Models.AdminProfile", b =>
@@ -253,31 +175,6 @@ namespace backend.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("Applications");
-                });
-
-            modelBuilder.Entity("backend.Models.ApplicationAnswer", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ActivityQuestionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Answer")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
-
-                    b.Property<Guid>("ApplicationId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ActivityQuestionId");
-
-                    b.HasIndex("ApplicationId");
-
-                    b.ToTable("ApplicationAnswers");
                 });
 
             modelBuilder.Entity("backend.Models.Attendance", b =>
@@ -447,77 +344,6 @@ namespace backend.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("CoordinatorProfiles");
-                });
-
-            modelBuilder.Entity("backend.Models.Department", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Name")
-                        .IsUnique();
-
-                    b.ToTable("Departments");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("11111111-1111-1111-1111-111111111111"),
-                            Name = "Computer Science"
-                        },
-                        new
-                        {
-                            Id = new Guid("22222222-2222-2222-2222-222222222222"),
-                            Name = "Engineering"
-                        },
-                        new
-                        {
-                            Id = new Guid("33333333-3333-3333-3333-333333333333"),
-                            Name = "Business Administration"
-                        },
-                        new
-                        {
-                            Id = new Guid("44444444-4444-4444-4444-444444444444"),
-                            Name = "Medicine"
-                        },
-                        new
-                        {
-                            Id = new Guid("55555555-5555-5555-5555-555555555555"),
-                            Name = "Law"
-                        },
-                        new
-                        {
-                            Id = new Guid("66666666-6666-6666-6666-666666666666"),
-                            Name = "Education"
-                        },
-                        new
-                        {
-                            Id = new Guid("77777777-7777-7777-7777-777777777777"),
-                            Name = "Arts and Sciences"
-                        },
-                        new
-                        {
-                            Id = new Guid("88888888-8888-8888-8888-888888888888"),
-                            Name = "Architecture"
-                        },
-                        new
-                        {
-                            Id = new Guid("99999999-9999-9999-9999-999999999999"),
-                            Name = "Pharmacy"
-                        },
-                        new
-                        {
-                            Id = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
-                            Name = "Nursing"
-                        });
                 });
 
             modelBuilder.Entity("backend.Models.Message", b =>
@@ -790,36 +616,7 @@ namespace backend.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("backend.Models.Activity", "ParentActivity")
-                        .WithMany("ChildActivities")
-                        .HasForeignKey("ParentActivityId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.Navigation("Coordinator");
-
-                    b.Navigation("ParentActivity");
-                });
-
-            modelBuilder.Entity("backend.Models.ActivityQuestion", b =>
-                {
-                    b.HasOne("backend.Models.Activity", "Activity")
-                        .WithMany("Questions")
-                        .HasForeignKey("ActivityId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Activity");
-                });
-
-            modelBuilder.Entity("backend.Models.ActivityRequirement", b =>
-                {
-                    b.HasOne("backend.Models.Activity", "Activity")
-                        .WithMany("Requirements")
-                        .HasForeignKey("ActivityId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Activity");
                 });
 
             modelBuilder.Entity("backend.Models.AdminProfile", b =>
@@ -850,25 +647,6 @@ namespace backend.Data.Migrations
                     b.Navigation("Activity");
 
                     b.Navigation("Student");
-                });
-
-            modelBuilder.Entity("backend.Models.ApplicationAnswer", b =>
-                {
-                    b.HasOne("backend.Models.ActivityQuestion", "ActivityQuestion")
-                        .WithMany()
-                        .HasForeignKey("ActivityQuestionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("backend.Models.Application", "Application")
-                        .WithMany("Answers")
-                        .HasForeignKey("ApplicationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ActivityQuestion");
-
-                    b.Navigation("Application");
                 });
 
             modelBuilder.Entity("backend.Models.Attendance", b =>
@@ -987,18 +765,7 @@ namespace backend.Data.Migrations
 
                     b.Navigation("Attendances");
 
-                    b.Navigation("ChildActivities");
-
                     b.Navigation("Messages");
-
-                    b.Navigation("Questions");
-
-                    b.Navigation("Requirements");
-                });
-
-            modelBuilder.Entity("backend.Models.Application", b =>
-                {
-                    b.Navigation("Answers");
                 });
 
             modelBuilder.Entity("backend.Models.User", b =>

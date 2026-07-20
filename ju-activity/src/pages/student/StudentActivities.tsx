@@ -23,6 +23,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { API } from "@/constants/api";
+
+const API_BASE = API.BASE_URL.replace(/\/api\/?$/, "");
+
+const CATEGORY_DEFAULTS: Record<string, string> = {
+  workshop: `${API_BASE}/uploads/activities/workshop.svg`,
+  seminar: `${API_BASE}/uploads/activities/seminar.svg`,
+  training: `${API_BASE}/uploads/activities/training.svg`,
+  extracurricular: `${API_BASE}/uploads/activities/extracurricular.svg`,
+  default: `${API_BASE}/uploads/activities/default.svg`,
+};
+
+const resolveImageUrl = (url?: string | null, category?: string | null): string => {
+  if (url) {
+    if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("blob:") || url.startsWith("data:")) return url;
+    return `${API_BASE}${url}`;
+  }
+  const key = (category || "").toLowerCase();
+  return CATEGORY_DEFAULTS[key] || CATEGORY_DEFAULTS.default;
+};
 
 const StudentActivities = () => {
   const navigate = useNavigate();
@@ -179,7 +199,10 @@ const StudentActivities = () => {
                 {(() => {
                   const alreadyApplied = appliedActivityIds.has(activity.id);
                   return (
-                    <Card className="h-full hover:shadow-lg transition-all duration-200 hover:-translate-y-1 cursor-pointer group">
+                    <Card className="h-full hover:shadow-lg transition-all duration-200 hover:-translate-y-1 cursor-pointer group overflow-hidden">
+                      <div className="h-48 overflow-hidden bg-muted">
+                        <img src={resolveImageUrl(activity.imageUrl, activity.category)} alt={activity.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                      </div>
                       <CardContent className="p-5">
                         {/* Category Badge */}
                         <span

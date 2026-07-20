@@ -17,8 +17,25 @@ type CreateActivityInput = Pick<
   "title" | "description" | "date" | "time" | "location" | "capacity"
 > & {
   category: string;
-  // Admins can assign an activity to a coordinator; coordinators cannot spoof this (backend enforces).
   coordinatorId?: string;
+  imageUrl?: string;
+  latitude?: number;
+  longitude?: number;
+  radius?: number;
+  isDraft?: boolean;
+  recurrencePattern?: string;
+  requirements?: Array<{
+    type: string;
+    label: string;
+    value: string;
+    isRequired: boolean;
+  }>;
+  questions?: Array<{
+    questionText: string;
+    questionType: string;
+    options: string;
+    isRequired: boolean;
+  }>;
 };
 
 /** Central data store for activities, applications, notifications, and attendance. */
@@ -30,6 +47,7 @@ interface ActivityContextType {
   attendance: Attendance[];
   isLoading: boolean;
   createActivity: (activity: CreateActivityInput) => Promise<Activity>;
+  publishActivity: (id: string) => Promise<Activity>;
   updateActivity: (id: string, updates: Partial<Activity>) => Promise<void>;
   deleteActivity: (id: string) => Promise<void>;
   deleteCategory: (id: string) => Promise<void>;
@@ -141,7 +159,7 @@ export const ActivityProvider = ({ children }: { children: ReactNode }) => {
       try {
         await connection.start();
       } catch (err) {
-        toast({ title: "Connection Failed", description: "Could not connect to the real-time server.", variant: "destructive" });
+        console.warn("SignalR initial connection failed, will retry...", err);
       }
     };
 
@@ -173,54 +191,33 @@ export const ActivityProvider = ({ children }: { children: ReactNode }) => {
 
     setIsLoading(true);
     try {
-      // Kick off requests in parallel
-      const promises: Promise<any>[] = [];
-      
-      const activitiesPromise = activitiesApi.getAll(undefined);
-      const categoriesPromise = categoriesApi.getAll();
-      promises.push(activitiesPromise, categoriesPromise);
-
-      if (hasToken) {
-        const applicationsParams = user.role === ROLES.STUDENT
-          ? { studentId: user.id }
-          : undefined;
-        const applicationsPromise = applicationsApi.getAll(applicationsParams);
-        
-        const notificationsPromise = user.role === ROLES.ADMIN
-          ? notificationsApi.getAll()
-          : notificationsApi.getAll({ recipientId: user.id });
-        
-        const attendancePromise = user.role === ROLES.STUDENT
-          ? attendanceApi.getAll({ studentId: user.id })
-          : Promise.resolve([]);
-          
-        promises.push(applicationsPromise, notificationsPromise, attendancePromise);
-      }
-
-      // Wait for all promises
-      const [activitiesData, categoriesData, applicationsData, notificationsData, attendanceData] = await Promise.all([
-        activitiesPromise,
-        categoriesPromise,
+      const results = await Promise.allSettled([
+        activitiesApi.getAll(undefined),
+        categoriesApi.getAll(),
         hasToken ? applicationsApi.getAll(user.role === ROLES.STUDENT ? { studentId: user.id } : undefined) : Promise.resolve([]),
         hasToken ? (user.role === ROLES.ADMIN ? notificationsApi.getAll() : notificationsApi.getAll({ recipientId: user.id })) : Promise.resolve([]),
-        hasToken ? (user.role === ROLES.STUDENT ? attendanceApi.getAll({ studentId: user.id }) : Promise.resolve([])) : Promise.resolve([])
+        hasToken ? (user.role === ROLES.STUDENT ? attendanceApi.getAll({ studentId: user.id }) : Promise.resolve([])) : Promise.resolve([]),
       ]);
 
-      setActivities(activitiesData);
-      setCategories(categoriesData);
-      if (hasToken) {
-        setApplications(applicationsData);
-        setNotifications(notificationsData);
-        setAttendance(attendanceData);
+      const [activitiesResult, categoriesResult, applicationsResult, notificationsResult, attendanceResult] = results;
+
+      if (activitiesResult.status === "fulfilled") setActivities(activitiesResult.value);
+      if (categoriesResult.status === "fulfilled") setCategories(categoriesResult.value);
+      if (hasToken && applicationsResult.status === "fulfilled") setApplications(applicationsResult.value);
+      if (hasToken && notificationsResult.status === "fulfilled") setNotifications(notificationsResult.value);
+      if (hasToken && attendanceResult.status === "fulfilled") setAttendance(attendanceResult.value);
+
+      const failed = results.filter((r) => r.status === "rejected");
+      if (failed.length > 0) {
+        console.warn("Some data failed to load:", failed.map((r) => (r as PromiseRejectedResult).reason));
       }
     } catch (error) {
       console.error("Failed to load data from backend:", error);
-      toast({ 
-        title: "Failed to Load Data", 
-        description: error instanceof Error ? error.message : "An unknown error occurred", 
-        variant: "destructive" 
+      toast({
+        title: "Failed to Load Data",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "destructive"
       });
-      // Don't reset data if there was an error—maybe user can still use cached data
     } finally {
       setIsLoading(false);
     }
@@ -265,6 +262,18 @@ export const ActivityProvider = ({ children }: { children: ReactNode }) => {
       return newActivity;
     } catch (error: any) {
       throw new Error(error.message || "Failed to create activity");
+    }
+  };
+
+  const publishActivity = async (id: string): Promise<Activity> => {
+    try {
+      const published = await activitiesApi.publish(id);
+      setActivities((prev) =>
+        prev.map((a) => (a.id === id ? published : a))
+      );
+      return published;
+    } catch (error: any) {
+      throw new Error(error.message || "Failed to publish activity");
     }
   };
 
@@ -553,6 +562,7 @@ export const ActivityProvider = ({ children }: { children: ReactNode }) => {
       attendance,
       isLoading,
       createActivity,
+      publishActivity,
       updateActivity,
       deleteActivity,
       deleteCategory,
